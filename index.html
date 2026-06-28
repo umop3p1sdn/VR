@@ -7,7 +7,7 @@
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
   <script>
   // ===================================================================
-  //  GELUID — gunshot zonder los bestand (Web Audio)
+  //  GELUID — gunshot (Web Audio, geen bestand nodig)
   // ===================================================================
   let ACTX = null;
   function bang() {
@@ -37,7 +37,46 @@
   }
   window.ZOMBIES = [];
 
-  // onderdeel-specs (ook gebruikt om losse stukken te spawnen)
+  // tracer-straal (lichtflits langs de kogelbaan)
+  function spawnBeam(a, b, color, radius, life) {
+    const scene = document.querySelector('a-scene');
+    const mid = a.clone().add(b).multiplyScalar(0.5);
+    const len = Math.max(0.1, a.distanceTo(b));
+    const cyl = document.createElement('a-cylinder');
+    cyl.setAttribute('radius', radius);
+    cyl.setAttribute('height', len);
+    cyl.setAttribute('color', color);
+    cyl.setAttribute('material', 'emissive:' + color + ';emissiveIntensity:2;transparent:true;opacity:0.9');
+    cyl.setAttribute('position', mid.x + ' ' + mid.y + ' ' + mid.z);
+    const dir = b.clone().sub(a).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    cyl.addEventListener('loaded', function () { cyl.object3D.quaternion.copy(q); });
+    scene.appendChild(cyl);
+    setTimeout(function () { if (cyl.parentNode) cyl.parentNode.removeChild(cyl); }, life || 70);
+  }
+
+  // bloed op de raakplek
+  function blood(point, dir) {
+    const scene = document.querySelector('a-scene');
+    const f = document.createElement('a-sphere');
+    f.setAttribute('radius', 0.08);
+    f.setAttribute('material', 'color:#a01010;emissive:#ff2020;emissiveIntensity:1.5;transparent:true;opacity:0.95');
+    f.setAttribute('position', point.x + ' ' + point.y + ' ' + point.z);
+    scene.appendChild(f);
+    setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 130);
+    for (let i = 0; i < 6; i++) {
+      const dpl = document.createElement('a-sphere');
+      dpl.setAttribute('radius', 0.02 + Math.random() * 0.02);
+      dpl.setAttribute('color', '#6e0d0d');
+      dpl.setAttribute('position', point.x + ' ' + point.y + ' ' + point.z);
+      const v = new THREE.Vector3((Math.random() - .5) * 2, 1 + Math.random() * 2, (Math.random() - .5) * 2);
+      v.add(dir.clone().multiplyScalar(1.5));
+      dpl.addEventListener('loaded', function () { dpl.object3D.userData.launchVel = v; });
+      dpl.setAttribute('gib', '');
+      scene.appendChild(dpl);
+    }
+  }
+
   const PART = {
     head:  { tag: 'a-sphere', attrs: { radius: 0.17, color: '#5a6b4a' }, pos: '0 1.5 0',  rot: '0 0 0' },
     torso: { tag: 'a-box', attrs: { depth: 0.28, width: 0.5, height: 0.8, color: '#3c4a35' }, pos: '0 0.95 0', rot: '0 0 0' },
@@ -47,32 +86,27 @@
     legR:  { tag: 'a-box', attrs: { depth: 0.2, width: 0.18, height: 0.6, color: '#2d3a28' }, pos: '0.12 0.3 0',  rot: '0 0 0' }
   };
 
-  // ===================================================================
-  //  GIB — een afgeschoten stuk dat wegvliegt en blijft liggen
-  // ===================================================================
+  // GIB — afgeschoten stuk dat valt en blijft liggen
   AFRAME.registerComponent('gib', {
     init: function () {
-      this.vel = (this.el.object3D.userData.launchVel) || new THREE.Vector3(0, 1, 0);
+      this.vel = this.el.object3D.userData.launchVel || new THREE.Vector3(0, 1, 0);
       this.spin = new THREE.Vector3((Math.random()-.5)*12, (Math.random()-.5)*12, (Math.random()-.5)*12);
       this.life = 0; this.rest = false;
     },
     tick: function (t, dt) {
       const s = (dt || 16) / 1000; const o = this.el.object3D;
-      if (this.el.object3D.userData.launchVel && this.vel.lengthSq() === 1) this.vel = this.el.object3D.userData.launchVel;
       if (!this.rest) {
         this.vel.y -= 9.8 * s;
         o.position.addScaledVector(this.vel, s);
         o.rotation.x += this.spin.x * s; o.rotation.y += this.spin.y * s; o.rotation.z += this.spin.z * s;
-        if (o.position.y <= 0.08) { o.position.y = 0.08; this.rest = true; }
+        if (o.position.y <= 0.06) { o.position.y = 0.06; this.rest = true; }
       }
       this.life += s;
       if (this.life > 6 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
     }
   });
 
-  // ===================================================================
-  //  ZOMBIE — losse delen, dismemberment, loopgedrag
-  // ===================================================================
+  // ZOMBIE
   AFRAME.registerComponent('zombie', {
     init: function () {
       this.dead = false; this.crawler = false;
@@ -84,8 +118,6 @@
       this.fallDir = (Math.random() < 0.5) ? 1 : -1;
       this.parts = {};
       const self = this;
-
-      // bouw de delen
       Object.keys(PART).forEach(function (name) {
         const spec = PART[name];
         const e = document.createElement(spec.tag);
@@ -106,11 +138,9 @@
           });
         }
       });
-
       window.ZOMBIES.push(this.el);
       this.el.object3D.userData.zombieComp = this;
     },
-
     spawnGib: function (name, dir) {
       const ref = this.parts[name]; if (!ref) return;
       const spec = PART[name];
@@ -126,7 +156,6 @@
       this.el.removeChild(ref);
       this.parts[name] = null;
     },
-
     hitPart: function (part, dir) {
       if (this.dead) return;
       if (part === 'head') { this.spawnGib('head', dir); this.kill(dir); return; }
@@ -137,9 +166,7 @@
         else { this.speed *= 0.55; }
         return;
       }
-      // romp: stukje eraf + schade
       this.torsoHP -= 1;
-      // klein chunkje wegspatten
       const ref = this.parts.torso;
       if (ref) {
         const wp = new THREE.Vector3(); ref.object3D.getWorldPosition(wp);
@@ -157,7 +184,6 @@
       }
       if (this.torsoHP <= 0) this.kill(dir);
     },
-
     kill: function (dir) {
       if (this.dead) return;
       this.dead = true; addScore(1);
@@ -165,7 +191,6 @@
       const i = window.ZOMBIES.indexOf(this.el);
       if (i > -1) window.ZOMBIES.splice(i, 1);
     },
-
     tick: function (time, dt) {
       const s = (dt || 16) / 1000; const o = this.el.object3D;
       if (!this.dead) {
@@ -194,9 +219,6 @@
     }
   });
 
-  // ===================================================================
-  //  SPAWNER
-  // ===================================================================
   AFRAME.registerComponent('zombie-spawner', {
     schema: { interval: { default: 2000 }, max: { default: 8 } },
     init: function () { this.acc = 0; },
@@ -214,14 +236,28 @@
     }
   });
 
-  // ===================================================================
-  //  GUN — linkerhand, trigger schiet, raakt het exacte onderdeel
-  // ===================================================================
+  // meer licht als zombies dichterbij komen
+  AFRAME.registerComponent('proximity-light', {
+    init: function () { this.base = 0.5; this.acc = 0; },
+    tick: function (time, dt) {
+      this.acc += (dt || 16); if (this.acc < 120) return; this.acc = 0;
+      let min = 99;
+      for (let i = 0; i < window.ZOMBIES.length; i++) {
+        const p = window.ZOMBIES[i].object3D.position;
+        const d = Math.hypot(p.x, p.z); if (d < min) min = d;
+      }
+      let t = 0; if (min < 10) t = (10 - min) / 8;
+      t = Math.max(0, Math.min(1, t));
+      this.el.setAttribute('light', 'intensity', this.base + t * 0.45);
+    }
+  });
+
+  // GUN — linkerhand
   AFRAME.registerComponent('gun', {
     init: function () {
-      this.ray = new THREE.Raycaster(); this.ray.far = 60;
+      this.ray = new THREE.Raycaster(); this.ray.far = 80;
       this.origin = new THREE.Vector3(); this.dir = new THREE.Vector3();
-      this.q = new THREE.Quaternion();
+      this.q = new THREE.Quaternion(); this.muzzle = new THREE.Vector3();
       this.flash = this.el.querySelector('#muzzleFlash');
       const self = this;
       this.el.addEventListener('triggerdown', function () { self.shoot(false); });
@@ -240,13 +276,21 @@
       this.dir.set(0, 0, -1).applyQuaternion(this.q).normalize();
       this.ray.set(this.origin, this.dir);
 
-      let best = null, bestDist = Infinity, bestObj = null;
+      let best = null, bestDist = Infinity, bestObj = null, bestPoint = null;
       for (let i = 0; i < window.ZOMBIES.length; i++) {
         const el = window.ZOMBIES[i];
         const hits = this.ray.intersectObject(el.object3D, true);
-        if (hits.length && hits[0].distance < bestDist) { bestDist = hits[0].distance; best = el; bestObj = hits[0].object; }
+        if (hits.length && hits[0].distance < bestDist) {
+          bestDist = hits[0].distance; best = el; bestObj = hits[0].object; bestPoint = hits[0].point.clone();
+        }
       }
+      // tracer vanaf de loop
+      this.muzzle.copy(this.origin).addScaledVector(this.dir, 0.24);
+      const end = bestPoint ? bestPoint : this.origin.clone().addScaledVector(this.dir, 60);
+      spawnBeam(this.muzzle, end, '#ffd98a', 0.012, 70);
+
       if (best) {
+        blood(bestPoint, this.dir);
         let o = bestObj, part = null;
         while (o) { if (o.userData && o.userData.part) { part = o.userData.part; break; } o = o.parent; }
         const comp = best.object3D.userData.zombieComp;
@@ -261,7 +305,7 @@
            zombie-spawner="interval: 2000; max: 8"
            renderer="colorManagement: true; antialias: true">
 
-    <a-entity light="type: ambient; color: #20222e; intensity: 0.5"></a-entity>
+    <a-entity light="type: ambient; color: #20222e; intensity: 0.5" proximity-light></a-entity>
     <a-entity light="type: directional; color: #3a4a6a; intensity: 0.25" position="-1 2 -1"></a-entity>
 
     <a-plane rotation="-90 0 0" width="8" height="60" position="0 0 -20" color="#1a1c22"></a-plane>
@@ -276,12 +320,36 @@
     <a-entity id="rig" position="0 0 0">
       <a-camera wasd-controls-enabled="false"></a-camera>
 
+      <!-- LINKERHAND met nette handgun -->
       <a-entity id="leftHand" gun meta-touch-controls="hand: left" oculus-touch-controls="hand: left">
-        <a-box position="0 -0.02 -0.02" width="0.04" height="0.09" depth="0.06" color="#161616"></a-box>
-        <a-box position="0 0.01 -0.14" width="0.035" height="0.04" depth="0.18" color="#222"></a-box>
-        <a-box position="0 -0.06 0" width="0.035" height="0.08" depth="0.05" rotation="20 0 0" color="#111"></a-box>
-        <a-entity id="muzzleFlash" visible="false" position="0 0.01 -0.24">
-          <a-sphere radius="0.05" color="#ffd27a" material="emissive:#ffb44a;emissiveIntensity:2"></a-sphere>
+        <!-- frame onder de slede -->
+        <a-box position="0 -0.01 -0.1" width="0.04" height="0.035" depth="0.2"
+               material="color:#15171b;metalness:0.6;roughness:0.4"></a-box>
+        <!-- slede -->
+        <a-box position="0 0.03 -0.1" width="0.045" height="0.05" depth="0.22"
+               material="color:#2b2f36;metalness:0.8;roughness:0.3"></a-box>
+        <!-- loop-opening -->
+        <a-cylinder position="0 0.03 -0.23" radius="0.013" height="0.03" rotation="90 0 0"
+               material="color:#0a0a0a;metalness:0.9;roughness:0.2"></a-cylinder>
+        <!-- korrel + vizier (lichtgevend, zo zie je waar je richt) -->
+        <a-box position="0 0.06 -0.2" width="0.006" height="0.012" depth="0.006"
+               material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.9"></a-box>
+        <a-box position="0 0.06 0.0" width="0.02" height="0.012" depth="0.006"
+               material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.6"></a-box>
+        <!-- greep -->
+        <a-box position="0 -0.09 0.02" width="0.04" height="0.12" depth="0.05" rotation="18 0 0"
+               material="color:#1a1a1d;metalness:0.3;roughness:0.7"></a-box>
+        <!-- trekkerbeugel -->
+        <a-torus position="0 -0.05 -0.03" radius="0.028" radius-tubular="0.005" arc="220" rotation="90 0 0"
+               material="color:#15171b;metalness:0.6;roughness:0.4"></a-torus>
+
+        <!-- richtstraal uit de loop (zoals de demo-laser) -->
+        <a-cylinder position="0 0.03 -15.23" radius="0.004" height="30" rotation="90 0 0"
+               material="color:#45e0ff;emissive:#45e0ff;emissiveIntensity:0.8;transparent:true;opacity:0.32"></a-cylinder>
+
+        <!-- muzzle flash -->
+        <a-entity id="muzzleFlash" visible="false" position="0 0.03 -0.26">
+          <a-sphere radius="0.05" material="color:#ffd27a;emissive:#ffb44a;emissiveIntensity:2"></a-sphere>
           <a-light type="point" color="#ffb44a" intensity="2" distance="6"></a-light>
         </a-entity>
       </a-entity>
