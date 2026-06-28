@@ -19,7 +19,9 @@
     <a-box position="0 0.06 0.0" width="0.02" height="0.012" depth="0.006" material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.6"></a-box>
     <a-box position="0 -0.09 0.02" width="0.04" height="0.12" depth="0.05" rotation="18 0 0" material="color:#1a1a1d;metalness:0.3;roughness:0.7"></a-box>
     <a-torus position="0 -0.05 -0.03" radius="0.028" radius-tubular="0.005" arc="220" rotation="90 0 0" material="color:#15171b;metalness:0.6;roughness:0.4"></a-torus>
-    <a-cylinder position="0 0.03 -15.23" radius="0.004" height="30" rotation="90 0 0" material="color:#45e0ff;emissive:#45e0ff;emissiveIntensity:0.8;transparent:true;opacity:0.3"></a-cylinder>
+    <a-entity id="aimGroup" position="0 0.02 0" rotation="-45 0 0">
+      <a-cylinder position="0 0 -15" radius="0.004" height="30" rotation="90 0 0" material="color:#45e0ff;emissive:#45e0ff;emissiveIntensity:0.9;transparent:true;opacity:0.5;shader:flat"></a-cylinder>
+    </a-entity>
     <a-entity id="muzzleFlash" visible="false" position="0 0.03 -0.26">
       <a-sphere radius="0.05" material="color:#ffd27a;emissive:#ffb44a;emissiveIntensity:2"></a-sphere>
       <a-light type="point" color="#ffb44a" intensity="2" distance="6"></a-light>
@@ -403,6 +405,7 @@
       this.origin = new THREE.Vector3(); this.dir = new THREE.Vector3();
       this.q = new THREE.Quaternion(); this.muzzle = new THREE.Vector3();
       this.flash = this.el.querySelector('#muzzleFlash');
+      this.aimGroup = this.el.querySelector('#aimGroup');
       const self = this;
       this.el.addEventListener('triggerdown', function () { if (!window.GAME_OVER) self.shoot(false); });
       window.addEventListener('mousedown', function () { if (window.GAME_STARTED && !window.GAME_OVER) self.shoot(true); });
@@ -411,9 +414,16 @@
     shoot: function (fromCamera) {
       bang();
       if (this.flash) { this.flash.setAttribute('visible', true); const f = this.flash; setTimeout(function () { f.setAttribute('visible', false); }, 45); }
-      let src = this.el.object3D;
-      if (fromCamera) { const cam = document.querySelector('a-camera') || document.querySelector('[camera]'); if (cam) src = cam.object3D; }
-      src.getWorldPosition(this.origin); src.getWorldQuaternion(this.q);
+      if (fromCamera) {
+        const cam = document.querySelector('a-camera') || document.querySelector('[camera]');
+        const src = cam ? cam.object3D : this.el.object3D;
+        src.getWorldPosition(this.origin); src.getWorldQuaternion(this.q);
+      } else if (this.aimGroup) {
+        this.aimGroup.object3D.getWorldPosition(this.origin);
+        this.aimGroup.object3D.getWorldQuaternion(this.q);
+      } else {
+        this.el.object3D.getWorldPosition(this.origin); this.el.object3D.getWorldQuaternion(this.q);
+      }
       this.dir.set(0, 0, -1).applyQuaternion(this.q).normalize();
       this.ray.set(this.origin, this.dir);
       let best = null, bestDist = Infinity, bestObj = null, bestPoint = null;
