@@ -7,18 +7,21 @@
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
   <script>
   window.GAME_STARTED = false; window.GAME_OVER = false;
-  window.GUN_HAND = 'left'; window.HEALTH = 100;
-  window.WAVE = 1; window.SPAWN_INTERVAL = 2000; window.SPAWN_MAX = 6; window.SPEEDMULT = 1;
+  window.GUN_HAND = 'left'; window.HEALTH = 100; window.DAYTIME = true;
+  window.WAVE = 1; window.SPAWN_INTERVAL = 1800; window.SPAWN_MAX = 7; window.SPEEDMULT = 1;
   window.ZOMBIES = [];
 
-  const GUN_MODEL_HTML = `
+  // losse-blokjes pistool als terugval als models/gun.glb ontbreekt
+  const GUN_FB = `
     <a-box position="0 -0.01 -0.1" width="0.04" height="0.035" depth="0.2" material="color:#15171b;metalness:0.6;roughness:0.4"></a-box>
     <a-box position="0 0.03 -0.1" width="0.045" height="0.05" depth="0.22" material="color:#2b2f36;metalness:0.8;roughness:0.3"></a-box>
     <a-cylinder position="0 0.03 -0.23" radius="0.013" height="0.03" rotation="90 0 0" material="color:#0a0a0a;metalness:0.9;roughness:0.2"></a-cylinder>
     <a-box position="0 0.06 -0.2" width="0.006" height="0.012" depth="0.006" material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.9"></a-box>
     <a-box position="0 0.06 0.0" width="0.02" height="0.012" depth="0.006" material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.6"></a-box>
     <a-box position="0 -0.09 0.02" width="0.04" height="0.12" depth="0.05" rotation="18 0 0" material="color:#1a1a1d;metalness:0.3;roughness:0.7"></a-box>
-    <a-torus position="0 -0.05 -0.03" radius="0.028" radius-tubular="0.005" arc="220" rotation="90 0 0" material="color:#15171b;metalness:0.6;roughness:0.4"></a-torus>
+    <a-torus position="0 -0.05 -0.03" radius="0.028" radius-tubular="0.005" arc="220" rotation="90 0 0" material="color:#15171b;metalness:0.6;roughness:0.4"></a-torus>`;
+  const GUN_MODEL_HTML = `
+    <a-entity id="gunVisual" gltf-fallback="src: models/gun.glb; fb: gun; scale: 0.2 0.2 0.2; rot: 0 0 0"></a-entity>
     <a-entity id="aimGroup" position="0 0.02 0" rotation="-45 0 0">
       <a-cylinder position="0 0 -15" radius="0.004" height="30" rotation="90 0 0" material="color:#45e0ff;emissive:#45e0ff;emissiveIntensity:0.9;transparent:true;opacity:0.5;shader:flat"></a-cylinder>
     </a-entity>
@@ -33,6 +36,36 @@
     const l = document.querySelector('#btnLeft'), r = document.querySelector('#btnRight');
     if (l) l.setAttribute('material', 'color:' + (window.GUN_HAND === 'left' ? '#2a6f4a' : '#1d2230') + ';opacity:0.95;transparent:true');
     if (r) r.setAttribute('material', 'color:' + (window.GUN_HAND === 'right' ? '#2a6f4a' : '#1d2230') + ';opacity:0.95;transparent:true');
+  }
+  function updateTimeUI() {
+    const b = document.querySelector('#btnDay'); const t = document.querySelector('#btnDayText');
+    if (b) b.setAttribute('material', 'color:' + (window.DAYTIME ? '#3a6ea5' : '#23304a') + ';opacity:0.95;transparent:true');
+    if (t) t.setAttribute('value', window.DAYTIME ? 'DAG' : 'NACHT');
+  }
+  function applyTimeOfDay() {
+    const day = window.DAYTIME;
+    const scene = document.querySelector('a-scene');
+    const sky = document.querySelector('#sky'), moon = document.querySelector('#moon');
+    const stars = document.querySelector('#sky-extra'), sun = document.querySelector('#sun');
+    const amb = document.querySelector('#ambLight'), dir = document.querySelector('#dirLight');
+    if (day) {
+      if (sky) sky.setAttribute('color', '#8fb6dd');
+      if (scene) scene.setAttribute('fog', 'type: exponential; color: #c2d2de; density: 0.013');
+      if (amb) amb.setAttribute('light', 'color', '#ffffff');
+      if (dir) { dir.setAttribute('light', 'type: directional; color: #fff3df; intensity: 1.0'); dir.object3D.position.set(6, 10, 2); }
+      if (moon) moon.setAttribute('visible', false);
+      if (stars) stars.setAttribute('visible', false);
+      if (sun) sun.setAttribute('visible', true);
+    } else {
+      if (sky) sky.setAttribute('color', '#04050a');
+      if (scene) scene.setAttribute('fog', 'type: exponential; color: #060810; density: 0.05');
+      if (amb) amb.setAttribute('light', 'color', '#1a1f2e');
+      if (dir) { dir.setAttribute('light', 'type: directional; color: #2a3a5a; intensity: 0.2'); dir.object3D.position.set(-1, 3, -1); }
+      if (moon) moon.setAttribute('visible', true);
+      if (stars) stars.setAttribute('visible', true);
+      if (sun) sun.setAttribute('visible', false);
+    }
+    updateTimeUI();
   }
 
   // ================= AUDIO =================
@@ -64,8 +97,7 @@
       const o2 = ACTX.createOscillator(); o2.type = 'sine'; o2.frequency.value = 105 + Math.random() * 30;
       const lp = ACTX.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 650; lp.Q.value = 7;
       const g = ACTX.createGain();
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(vol || 0.22, t + 0.15);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || 0.22, t + 0.15);
       g.gain.linearRampToValueAtTime(0, t + 0.9 + Math.random() * 0.4);
       o1.connect(lp); o2.connect(lp); lp.connect(g).connect(ACTX.destination);
       o1.start(t); o2.start(t); o1.stop(t + 1.5); o2.stop(t + 1.5);
@@ -75,17 +107,14 @@
     try {
       ensureAudio();
       const o = ACTX.createOscillator(); o.type = 'sine'; o.frequency.value = 47;
-      const g = ACTX.createGain(); g.gain.value = 0.05;
-      o.connect(g).connect(ACTX.destination); o.start();
+      const g = ACTX.createGain(); g.gain.value = 0.05; o.connect(g).connect(ACTX.destination); o.start();
       const buf = ACTX.createBuffer(1, ACTX.sampleRate * 2, ACTX.sampleRate);
       const dd = buf.getChannelData(0); for (let i = 0; i < dd.length; i++) dd[i] = Math.random() * 2 - 1;
       const n = ACTX.createBufferSource(); n.buffer = buf; n.loop = true;
       const nf = ACTX.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 320; nf.Q.value = 0.5;
-      const ng = ACTX.createGain(); ng.gain.value = 0.025;
-      n.connect(nf).connect(ng).connect(ACTX.destination); n.start();
+      const ng = ACTX.createGain(); ng.gain.value = 0.022; n.connect(nf).connect(ng).connect(ACTX.destination); n.start();
     } catch (e) {}
   }
-
   function nearestZombieDist() {
     let min = 99;
     for (let i = 0; i < window.ZOMBIES.length; i++) {
@@ -94,7 +123,6 @@
     }
     return min;
   }
-
   function addScore(n) {
     const el = document.querySelector('#scoreText'); if (!el) return;
     const cur = parseInt((el.getAttribute('value') || '').replace(/\D/g, '')) || 0;
@@ -109,10 +137,7 @@
     fill.object3D.position.x = -0.29 * (1 - frac);
     fill.setAttribute('material', 'color:' + (frac > 0.5 ? '#3bd16f' : frac > 0.25 ? '#e0b03a' : '#e03a3a') + ';shader:flat');
   }
-  function flashDamage() {
-    const el = document.querySelector('#dmgFlash');
-    if (el && el.components['dmg-flash']) el.components['dmg-flash'].hit();
-  }
+  function flashDamage() { const el = document.querySelector('#dmgFlash'); if (el && el.components['dmg-flash']) el.components['dmg-flash'].hit(); }
   function damagePlayer(n) {
     if (window.GAME_OVER || !window.GAME_STARTED) return;
     window.HEALTH = Math.max(0, window.HEALTH - n);
@@ -144,7 +169,6 @@
     updateHealthUI();
     const handEl = document.querySelector(window.GUN_HAND === 'right' ? '#rightHand' : '#leftHand');
     if (handEl) buildGun(handEl);
-    // kreun-scheduler
     window.MOAN_TIMER = setInterval(function () {
       if (!window.GAME_STARTED || window.GAME_OVER || window.ZOMBIES.length === 0) return;
       const min = nearestZombieDist();
@@ -190,8 +214,8 @@
   }
 
   const PART = {
-    head:  { tag: 'a-sphere', attrs: { radius: 0.17 }, pos: '0 1.5 0',  rot: '0 0 0', slot: 'skin' },
-    torso: { tag: 'a-box', attrs: { depth: 0.28, width: 0.5, height: 0.8 }, pos: '0 0.95 0', rot: '0 0 0', slot: 'cloth' },
+    head:  { tag: 'a-sphere', attrs: { radius: 0.17 }, pos: '0 1.5 0',  rot: '5 0 0', slot: 'skin' },
+    torso: { tag: 'a-box', attrs: { depth: 0.28, width: 0.5, height: 0.8 }, pos: '0 0.95 0', rot: '10 0 0', slot: 'cloth' },
     armL:  { tag: 'a-box', attrs: { depth: 0.4, width: 0.16, height: 0.13 }, pos: '-0.2 1.05 0.28', rot: '-70 0 0', slot: 'skin' },
     armR:  { tag: 'a-box', attrs: { depth: 0.4, width: 0.16, height: 0.13 }, pos: '0.2 1.05 0.28',  rot: '-70 0 0', slot: 'skin' },
     legL:  { tag: 'a-box', attrs: { depth: 0.2, width: 0.18, height: 0.6 }, pos: '-0.12 0.3 0', rot: '0 0 0', slot: 'pants' },
@@ -203,6 +227,37 @@
     { skin: '#7d8a6c', cloth: '#4a5240', pants: '#363c2c' },
     { skin: '#8a8475', cloth: '#3a3f48', pants: '#2a2d33' }
   ];
+  const ARM_BASE = -1.221; // -70 graden in radialen
+
+  // ---- losse-blokjes terugval per modeltype ----
+  const FB = {
+    gun: GUN_FB,
+    car: `
+      <a-box position="0 0.35 0" width="0.95" height="0.45" depth="2.0" color="#7a2222"></a-box>
+      <a-box position="0 0.72 -0.1" width="0.85" height="0.4" depth="1.1" color="#7a2222"></a-box>
+      <a-cylinder position="0.5 0.22 0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#111"></a-cylinder>
+      <a-cylinder position="-0.5 0.22 0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#111"></a-cylinder>
+      <a-cylinder position="0.5 0.22 -0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#111"></a-cylinder>
+      <a-cylinder position="-0.5 0.22 -0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#111"></a-cylinder>`,
+    barrel: `<a-cylinder position="0 0.45 0" radius="0.28" height="0.9" material="color:#3a342c;metalness:0.4;roughness:0.8"></a-cylinder>`
+  };
+
+  // Laadt een GLB; bij fout (ontbrekend bestand) val terug op losse blokjes.
+  AFRAME.registerComponent('gltf-fallback', {
+    schema: { src: { default: '' }, scale: { default: '1 1 1' }, rot: { default: '0 0 0' }, fb: { default: '' } },
+    init: function () {
+      const el = this.el, data = this.data; let done = false; const self = this;
+      el.addEventListener('model-loaded', function () { done = true; el.setAttribute('scale', data.scale); el.setAttribute('rotation', data.rot); });
+      el.addEventListener('model-error', function () { if (!done) self.fallback(); });
+      if (data.src) el.setAttribute('gltf-model', data.src); else self.fallback();
+      setTimeout(function () { if (!done && !el.getObject3D('mesh')) self.fallback(); }, 4500);
+    },
+    fallback: function () {
+      if (this.fbDone) return; this.fbDone = true;
+      this.el.removeAttribute('gltf-model');
+      this.el.innerHTML = FB[this.data.fb] || '';
+    }
+  });
 
   AFRAME.registerComponent('dmg-flash', {
     init: function () { this.o = 0; },
@@ -211,12 +266,13 @@
       if (this.o > 0) { this.o = Math.max(0, this.o - (dt || 16) / 400); this.el.setAttribute('material', 'color:#ff0000;opacity:' + this.o + ';transparent:true;shader:flat'); }
     }
   });
-
   AFRAME.registerComponent('flicker', {
     schema: { base: { default: 1 } },
-    tick: function () { this.el.setAttribute('light', 'intensity', this.data.base * (0.55 + Math.random() * 0.6)); }
+    tick: function () {
+      if (window.DAYTIME) { this.el.setAttribute('light', 'intensity', 0); return; }
+      this.el.setAttribute('light', 'intensity', this.data.base * (0.55 + Math.random() * 0.6));
+    }
   });
-
   AFRAME.registerComponent('gib', {
     init: function () {
       this.vel = this.el.object3D.userData.launchVel || new THREE.Vector3(0, 1, 0);
@@ -237,21 +293,26 @@
 
   AFRAME.registerComponent('zombie', {
     init: function () {
-      this.dead = false; this.crawler = false;
-      const runner = Math.random() < 0.14;
-      this.runner = runner;
-      this.speed = (runner ? 1.3 + Math.random() * 0.4 : 0.55 + Math.random() * 0.4) * (window.SPEEDMULT || 1);
-      this.sway = Math.random() * Math.PI * 2;
-      this.legs = 2; this.torsoHP = 3; this.dieTimer = 0;
+      this.dead = false; this.crawler = false; this.phase = Math.random() * 6;
+      const r = Math.random();
+      let type = 'normal';
+      if (r < 0.13) type = 'runner'; else if (r < 0.25) type = 'brute'; else if (r < 0.32) type = 'crawler';
+      this.type = type; this.runner = (type === 'runner');
+      let sk, sc;
+      if (type === 'runner') { this.speed = 1.7 + Math.random() * 0.5; sk = { skin: '#9a5a5a', cloth: '#5a2f2f', pants: '#412424' }; sc = 0.85 + Math.random() * 0.15; this.torsoHP = 2; this.touchDmg = 28; }
+      else if (type === 'brute') { this.speed = 0.55 + Math.random() * 0.2; sk = { skin: '#6b7a55', cloth: '#3a4630', pants: '#2c3626' }; sc = 1.35 + Math.random() * 0.2; this.torsoHP = 6; this.touchDmg = 36; }
+      else if (type === 'crawler') { this.speed = 0.55 + Math.random() * 0.2; sk = SKINS[Math.floor(Math.random() * SKINS.length)]; sc = 0.95 + Math.random() * 0.15; this.torsoHP = 2; this.touchDmg = 15; this.crawler = true; this.legs = 0; }
+      else { this.speed = 0.9 + Math.random() * 0.45; sk = SKINS[Math.floor(Math.random() * SKINS.length)]; sc = 0.9 + Math.random() * 0.2; this.torsoHP = 3; this.touchDmg = 18; }
+      if (type !== 'crawler') this.legs = 2;
+      this.speed *= (window.SPEEDMULT || 1);
       this.knock = new THREE.Vector3();
       this.fallAxis = (Math.random() < 0.5) ? 'x' : 'z';
       this.fallDir = (Math.random() < 0.5) ? 1 : -1;
       this.parts = {};
       const self = this;
-      const sk = runner ? { skin: '#8a5a5a', cloth: '#5a2f2f', pants: '#412424' } : SKINS[Math.floor(Math.random() * SKINS.length)];
-      const sc = 0.9 + Math.random() * 0.25;
       this.el.setAttribute('scale', sc + ' ' + sc + ' ' + sc);
       Object.keys(PART).forEach(function (name) {
+        if (self.crawler && (name === 'legL' || name === 'legR')) return;
         const spec = PART[name];
         const e = document.createElement(spec.tag);
         Object.keys(spec.attrs).forEach(function (k) { e.setAttribute(k, spec.attrs[k]); });
@@ -264,12 +325,13 @@
             ['0.06 0.02 0.15', '-0.06 0.02 0.15'].forEach(function (p) {
               const eye = document.createElement('a-sphere');
               eye.setAttribute('radius', 0.03); eye.setAttribute('position', p);
-              eye.setAttribute('material', 'color:#ff2b2b;emissive:#ff2b2b;emissiveIntensity:' + (runner ? 1.6 : 1) + ';shader:flat');
+              eye.setAttribute('material', 'color:#ff2b2b;emissive:#ff2b2b;emissiveIntensity:' + (self.runner ? 1.7 : 1) + ';shader:flat');
               e.appendChild(eye);
             });
           });
         }
       });
+      if (type === 'brute' && this.parts.torso) this.parts.torso.setAttribute('scale', '1.45 1.1 1.35');
       window.ZOMBIES.push(this.el);
       this.el.object3D.userData.zombieComp = this;
     },
@@ -294,7 +356,7 @@
       if (part === 'armL' || part === 'armR') { this.spawnGib(part, dir); return; }
       if (part === 'legL' || part === 'legR') {
         this.spawnGib(part, dir); this.legs -= 1;
-        if (this.legs <= 0) { this.crawler = true; this.speed = 0.26; } else { this.speed *= 0.55; }
+        if (this.legs <= 0) { this.crawler = true; this.speed = 0.3; } else { this.speed *= 0.55; }
         return;
       }
       this.torsoHP -= 1;
@@ -310,8 +372,6 @@
         chunk.addEventListener('loaded', function () { chunk.object3D.userData.launchVel = v; });
         chunk.setAttribute('gib', '');
         this.el.sceneEl.appendChild(chunk);
-        const s = ref.getAttribute('scale') || { x: 1, y: 1, z: 1 };
-        ref.setAttribute('scale', (s.x * 0.88) + ' ' + (s.y * 0.92) + ' ' + (s.z * 0.88));
       }
       if (this.torsoHP <= 0) this.kill(dir);
     },
@@ -332,16 +392,29 @@
         const p = o.position;
         const dx = -p.x, dz = -p.z;
         const dist = Math.hypot(dx, dz) || 1;
-        if (dist < 1.1) { damagePlayer(this.runner ? 28 : 18); this.remove0(); return; }
-        this.sway += s * (this.runner ? 9 : 5);
-        p.x += (dx / dist) * this.speed * s + Math.cos(this.sway) * 0.004;
-        p.z += (dz / dist) * this.speed * s;
+        if (dist < 1.1) { damagePlayer(this.touchDmg || 18); this.remove0(); return; }
         const faceY = Math.atan2(dx, dz);
-        if (this.crawler) { o.rotation.set(1.25, faceY, 0); o.position.y = 0; }
-        else if (this.legs === 1) { o.rotation.set(0, faceY, 0.25); o.position.y = 0.02 * Math.sin(this.sway * 2); }
-        else { o.rotation.set(0, faceY, 0); o.position.y = 0.02 * Math.sin(this.sway * 2); }
+        this.phase += s * (2.5 + this.speed * 3.5);
+        const swing = Math.sin(this.phase), swing2 = Math.sin(this.phase + Math.PI);
+        p.x += (dx / dist) * this.speed * s + Math.cos(this.phase) * 0.003;
+        p.z += (dz / dist) * this.speed * s;
+        if (this.crawler) {
+          o.rotation.set(1.25, faceY, 0); o.position.y = 0;
+          if (this.parts.armL) this.parts.armL.object3D.rotation.x = -1.0 + Math.sin(this.phase) * 0.45;
+          if (this.parts.armR) this.parts.armR.object3D.rotation.x = -1.0 + Math.sin(this.phase + Math.PI) * 0.45;
+        } else {
+          const lurch = Math.sin(this.phase) * 0.05;
+          const lean = (this.legs === 1) ? 0.25 : 0;
+          o.rotation.set(0.12, faceY, lurch + lean);
+          o.position.y = 0.02 + 0.02 * Math.abs(Math.sin(this.phase));
+          if (this.parts.legL) this.parts.legL.object3D.rotation.x = swing * 0.55;
+          if (this.parts.legR) this.parts.legR.object3D.rotation.x = swing2 * 0.55;
+          if (this.parts.armL) this.parts.armL.object3D.rotation.x = ARM_BASE + Math.sin(this.phase * 0.5) * 0.22;
+          if (this.parts.armR) this.parts.armR.object3D.rotation.x = ARM_BASE + Math.sin(this.phase * 0.5 + 1) * 0.22;
+          if (this.parts.head) this.parts.head.object3D.rotation.z = Math.sin(this.phase * 0.5) * 0.12;
+        }
       } else {
-        this.dieTimer += s;
+        this.dieTimer = (this.dieTimer || 0) + s;
         o.position.x += this.knock.x * s; o.position.z += this.knock.z * s;
         this.knock.multiplyScalar(0.86);
         const target = Math.PI / 2 * this.fallDir;
@@ -371,14 +444,13 @@
       this.el.sceneEl.appendChild(z);
     }
   });
-
   AFRAME.registerComponent('wave-director', {
     init: function () { this.acc = 0; this.apply(); },
     apply: function () {
       const w = window.WAVE;
-      window.SPAWN_INTERVAL = Math.max(700, 2000 - (w - 1) * 170);
-      window.SPAWN_MAX = Math.min(16, 5 + w);
-      window.SPEEDMULT = 1 + (w - 1) * 0.1;
+      window.SPAWN_INTERVAL = Math.max(650, 1800 - (w - 1) * 160);
+      window.SPAWN_MAX = Math.min(18, 6 + w);
+      window.SPEEDMULT = 1 + (w - 1) * 0.12;
       const t = document.querySelector('#waveText'); if (t) t.setAttribute('value', 'GOLF ' + w);
     },
     tick: function (time, dt) {
@@ -387,15 +459,14 @@
       if (this.acc > 25000) { this.acc = 0; window.WAVE++; this.apply(); }
     }
   });
-
   AFRAME.registerComponent('proximity-light', {
-    init: function () { this.base = 0.45; this.acc = 0; },
+    init: function () { this.acc = 0; },
     tick: function (time, dt) {
       this.acc += (dt || 16); if (this.acc < 120) return; this.acc = 0;
+      const base = window.DAYTIME ? 0.85 : 0.45;
       const min = nearestZombieDist();
-      let t = 0; if (min < 10) t = (10 - min) / 8;
-      t = Math.max(0, Math.min(1, t));
-      this.el.setAttribute('light', 'intensity', this.base + t * 0.4);
+      let t = 0; if (min < 10) t = (10 - min) / 8; t = Math.max(0, Math.min(1, t));
+      this.el.setAttribute('light', 'intensity', base + t * (window.DAYTIME ? 0.15 : 0.4));
     }
   });
 
@@ -447,39 +518,44 @@
   </script>
 </head>
 <body>
-  <a-scene background="color: #05060a" fog="type: exponential; color: #060810; density: 0.05"
+  <a-scene background="color: #8fb6dd" fog="type: exponential; color: #c2d2de; density: 0.013"
            zombie-spawner wave-director renderer="colorManagement: true; antialias: true">
 
-    <a-entity light="type: ambient; color: #1a1f2e; intensity: 0.45" proximity-light></a-entity>
-    <a-entity light="type: directional; color: #2a3a5a; intensity: 0.2" position="-1 3 -1"></a-entity>
+    <a-entity id="ambLight" light="type: ambient; color: #ffffff; intensity: 0.85" proximity-light></a-entity>
+    <a-entity id="dirLight" light="type: directional; color: #fff3df; intensity: 1.0" position="6 10 2"></a-entity>
 
-    <!-- straat -->
-    <a-plane rotation="-90 0 0" width="8" height="60" position="0 0 -20" color="#15171c"></a-plane>
-    <a-box position="3.7 0.1 -20" width="1" height="0.2" depth="60" color="#202329"></a-box>
-    <a-box position="-3.7 0.1 -20" width="1" height="0.2" depth="60" color="#202329"></a-box>
-    <a-sky color="#04050a"></a-sky>
-    <!-- maan -->
-    <a-sphere position="14 16 -34" radius="2.2" material="color:#cdd6e0;emissive:#aab4c4;emissiveIntensity:0.6;shader:flat"></a-sphere>
-    <a-entity id="sky-extra"></a-entity>
+    <a-plane rotation="-90 0 0" width="8" height="60" position="0 0 -20" color="#3a3d42"></a-plane>
+    <a-box position="3.7 0.1 -20" width="1" height="0.2" depth="60" color="#52555c"></a-box>
+    <a-box position="-3.7 0.1 -20" width="1" height="0.2" depth="60" color="#52555c"></a-box>
+    <a-sky id="sky" color="#8fb6dd"></a-sky>
+    <a-sphere id="sun" position="10 15 -30" radius="2.2" material="color:#fff6d0;emissive:#fff0b0;emissiveIntensity:0.8;shader:flat"></a-sphere>
+    <a-sphere id="moon" visible="false" position="14 16 -34" radius="2.2" material="color:#cdd6e0;emissive:#aab4c4;emissiveIntensity:0.6;shader:flat"></a-sphere>
+    <a-entity id="sky-extra" visible="false"></a-entity>
     <a-entity id="street"></a-entity>
 
     <a-text id="waveText" value="GOLF 1" align="center" color="#ff8a6a" width="6" position="0 3.05 -4"></a-text>
-    <a-text id="scoreText" value="KILLS: 0" align="center" color="#e8e8e8" width="6" position="0 2.75 -4"></a-text>
+    <a-text id="scoreText" value="KILLS: 0" align="center" color="#222831" width="6" position="0 2.75 -4"></a-text>
 
     <!-- START MENU -->
     <a-entity id="menu" position="0 0 0">
-      <a-plane position="0 1.55 -2" width="1.7" height="1.25" material="color:#0c0e14;opacity:0.92;transparent:true"></a-plane>
-      <a-plane position="0 1.55 -2.01" width="1.78" height="1.33" material="color:#45e0ff;opacity:0.15;transparent:true"></a-plane>
-      <a-text value="DONKERE STRAAT" align="center" color="#e8e8e8" width="3" position="0 2.02 -1.98"></a-text>
-      <a-text value="Zombie Shooter" align="center" color="#8aa0b0" width="2" position="0 1.84 -1.98"></a-text>
-      <a-text value="Schiethand" align="center" color="#cfcfcf" width="2" position="0 1.62 -1.98"></a-text>
-      <a-plane id="btnLeft" class="menu-btn" position="-0.38 1.42 -1.98" width="0.6" height="0.18" material="color:#2a6f4a;opacity:0.95;transparent:true"></a-plane>
-      <a-text value="LINKS" align="center" color="#ffffff" width="2.2" position="-0.38 1.42 -1.97"></a-text>
-      <a-plane id="btnRight" class="menu-btn" position="0.38 1.42 -1.98" width="0.6" height="0.18" material="color:#1d2230;opacity:0.95;transparent:true"></a-plane>
-      <a-text value="RECHTS" align="center" color="#ffffff" width="2.2" position="0.38 1.42 -1.97"></a-text>
-      <a-plane id="btnStart" class="menu-btn" position="0 1.13 -1.98" width="0.95" height="0.26" material="color:#7a1f1f;opacity:0.97;transparent:true"></a-plane>
-      <a-text value="START" align="center" color="#ffffff" width="3" position="0 1.13 -1.97"></a-text>
-      <a-text value="Richt met de straal en knijp de trigger" align="center" color="#7c8794" width="1.7" position="0 0.93 -1.98"></a-text>
+      <a-plane position="0 1.5 -2" width="1.7" height="1.5" material="color:#0c0e14;opacity:0.92;transparent:true"></a-plane>
+      <a-plane position="0 1.5 -2.01" width="1.78" height="1.58" material="color:#45e0ff;opacity:0.15;transparent:true"></a-plane>
+      <a-text value="DONKERE STRAAT" align="center" color="#e8e8e8" width="3" position="0 2.08 -1.98"></a-text>
+      <a-text value="Zombie Shooter" align="center" color="#8aa0b0" width="2" position="0 1.9 -1.98"></a-text>
+
+      <a-text value="Schiethand" align="center" color="#cfcfcf" width="2" position="0 1.7 -1.98"></a-text>
+      <a-plane id="btnLeft" class="menu-btn" position="-0.38 1.52 -1.98" width="0.6" height="0.16" material="color:#2a6f4a;opacity:0.95;transparent:true"></a-plane>
+      <a-text value="LINKS" align="center" color="#ffffff" width="2.2" position="-0.38 1.52 -1.97"></a-text>
+      <a-plane id="btnRight" class="menu-btn" position="0.38 1.52 -1.98" width="0.6" height="0.16" material="color:#1d2230;opacity:0.95;transparent:true"></a-plane>
+      <a-text value="RECHTS" align="center" color="#ffffff" width="2.2" position="0.38 1.52 -1.97"></a-text>
+
+      <a-text value="Tijd" align="center" color="#cfcfcf" width="2" position="0 1.34 -1.98"></a-text>
+      <a-plane id="btnDay" class="menu-btn" position="0 1.18 -1.98" width="0.8" height="0.16" material="color:#3a6ea5;opacity:0.95;transparent:true"></a-plane>
+      <a-text id="btnDayText" value="DAG" align="center" color="#ffffff" width="2.4" position="0 1.18 -1.97"></a-text>
+
+      <a-plane id="btnStart" class="menu-btn" position="0 0.92 -1.98" width="0.95" height="0.24" material="color:#7a1f1f;opacity:0.97;transparent:true"></a-plane>
+      <a-text value="START" align="center" color="#ffffff" width="3" position="0 0.92 -1.97"></a-text>
+      <a-text value="Richt met de straal en knijp de trigger" align="center" color="#7c8794" width="1.7" position="0 0.74 -1.98"></a-text>
     </a-entity>
 
     <!-- GAME OVER -->
@@ -493,7 +569,7 @@
     <!-- SPELER -->
     <a-entity id="rig" position="0 0 0">
       <a-camera wasd-controls-enabled="false">
-        <a-cursor color="#45e0ff" fuse="false" raycaster="objects: .menu-btn"></a-cursor>
+        <a-cursor color="#1a3a5a" fuse="false" raycaster="objects: .menu-btn"></a-cursor>
         <a-entity id="hud" visible="false" position="0 -0.55 -1">
           <a-plane width="0.6" height="0.05" material="color:#101216;opacity:0.7;transparent:true;shader:flat"></a-plane>
           <a-plane id="hpFill" width="0.58" height="0.035" position="0 0 0.001" material="color:#3bd16f;shader:flat"></a-plane>
@@ -517,9 +593,7 @@
       (function () {
         const street = document.querySelector('#street');
         const sky = document.querySelector('#sky-extra');
-        const colors = ['#13151a', '#181b22', '#101218', '#171920'];
-
-        // sterren
+        const colors = ['#3a3f46', '#434952', '#33373e', '#3f444c'];
         for (let i = 0; i < 50; i++) {
           const st = document.createElement('a-sphere');
           const a = Math.random() * Math.PI * 2, r = 40, h = 8 + Math.random() * 22;
@@ -528,7 +602,6 @@
           st.setAttribute('material', 'color:#dfe6f0;emissive:#dfe6f0;emissiveIntensity:0.7;shader:flat');
           sky.appendChild(st);
         }
-
         function building(x, z, w, h, d) {
           const b = document.createElement('a-entity');
           const c = colors[Math.floor(Math.random() * colors.length)];
@@ -538,8 +611,7 @@
             if (Math.random() < 0.4) {
               const wy = 1 + Math.random() * (h - 1.5);
               const wz = z + (Math.random() - 0.5) * (d - 1);
-              const lit = Math.random() < 0.6;
-              b.innerHTML += '<a-plane position="' + (x + side * (w/2 + 0.01)) + ' ' + wy + ' ' + wz + '" rotation="0 ' + (side * 90) + ' 0" width="0.35" height="0.5" material="color:' + (lit ? '#ffcf6e' : '#0a0a0c') + (lit ? ';emissive:#ffcf6e;emissiveIntensity:0.7' : '') + ';shader:flat"></a-plane>';
+              b.innerHTML += '<a-plane position="' + (x + side * (w/2 + 0.01)) + ' ' + wy + ' ' + wz + '" rotation="0 ' + (side * 90) + ' 0" width="0.35" height="0.5" material="color:#5a6675;opacity:0.8;shader:flat"></a-plane>';
             }
           }
           street.appendChild(b);
@@ -547,65 +619,58 @@
         function lamp(x, z, real) {
           const l = document.createElement('a-entity');
           l.innerHTML =
-            '<a-cylinder position="' + x + ' 1.6 ' + z + '" radius="0.05" height="3.2" color="#0d0d10"></a-cylinder>' +
-            '<a-sphere position="' + x + ' 3.2 ' + z + '" radius="0.13" material="color:#fff1c0;emissive:#ffdf94;emissiveIntensity:1.3;shader:flat"></a-sphere>';
+            '<a-cylinder position="' + x + ' 1.6 ' + z + '" radius="0.05" height="3.2" color="#2a2c30"></a-cylinder>' +
+            '<a-sphere position="' + x + ' 3.2 ' + z + '" radius="0.13" material="color:#cfd4da;shader:flat"></a-sphere>';
           street.appendChild(l);
           if (real) {
             const li = document.createElement('a-entity');
             li.setAttribute('position', x + ' 3.1 ' + z);
-            li.setAttribute('light', 'type: point; color: #ffcf7a; intensity: 0.9; distance: 10; decay: 2');
-            if (Math.random() < 0.5) li.setAttribute('flicker', 'base: 0.9');
+            li.setAttribute('light', 'type: point; color: #ffcf7a; intensity: 0; distance: 10; decay: 2');
+            li.setAttribute('flicker', 'base: 0.9');
             street.appendChild(li);
           }
         }
         function fireBarrel(x, z) {
           const b = document.createElement('a-entity');
-          b.innerHTML =
-            '<a-cylinder position="' + x + ' 0.45 ' + z + '" radius="0.28" height="0.9" material="color:#2a2622;metalness:0.4;roughness:0.8"></a-cylinder>' +
-            '<a-cone position="' + x + ' 1.05 ' + z + '" radius-bottom="0.22" radius-top="0.02" height="0.5" material="color:#ff7a18;emissive:#ff5a00;emissiveIntensity:1.6;transparent:true;opacity:0.9;shader:flat"></a-cone>' +
-            '<a-cone position="' + x + ' 1.2 ' + z + '" radius-bottom="0.12" radius-top="0.01" height="0.35" material="color:#ffd24a;emissive:#ffb000;emissiveIntensity:1.8;transparent:true;opacity:0.85;shader:flat"></a-cone>';
+          b.setAttribute('position', x + ' 0 ' + z);
+          b.setAttribute('gltf-fallback', 'src: models/barrel.glb; fb: barrel; scale: 1 1 1; rot: 0 0 0');
           street.appendChild(b);
+          const flame = document.createElement('a-cone');
+          flame.setAttribute('position', x + ' 1.05 ' + z);
+          flame.setAttribute('radius-bottom', 0.22); flame.setAttribute('radius-top', 0.02); flame.setAttribute('height', 0.5);
+          flame.setAttribute('material', 'color:#ff7a18;emissive:#ff5a00;emissiveIntensity:1.2;transparent:true;opacity:0.85;shader:flat');
+          street.appendChild(flame);
           const li = document.createElement('a-entity');
           li.setAttribute('position', x + ' 1.0 ' + z);
-          li.setAttribute('light', 'type: point; color: #ff8a30; intensity: 1.2; distance: 8; decay: 2');
+          li.setAttribute('light', 'type: point; color: #ff8a30; intensity: 0; distance: 8; decay: 2');
           li.setAttribute('flicker', 'base: 1.2');
           street.appendChild(li);
         }
         function car(x, z, wreck) {
-          const cc = ['#241c1c', '#1c241f', '#22202a', '#1c1c1c'][Math.floor(Math.random()*4)];
           const c = document.createElement('a-entity');
-          c.setAttribute('rotation', '0 ' + ((Math.random() < 0.5) ? 0 : 180) + ' ' + (wreck ? 18 : 0) + '');
           c.setAttribute('position', x + ' ' + (wreck ? 0.1 : 0) + ' ' + z);
-          c.innerHTML =
-            '<a-box position="0 0.35 0" width="0.95" height="0.45" depth="2.0" color="' + cc + '"></a-box>' +
-            '<a-box position="0 0.72 -0.1" width="0.85" height="0.4" depth="1.1" color="' + cc + '"></a-box>' +
-            '<a-cylinder position="0.5 0.22 0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#0a0a0a"></a-cylinder>' +
-            '<a-cylinder position="-0.5 0.22 0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#0a0a0a"></a-cylinder>' +
-            '<a-cylinder position="0.5 0.22 -0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#0a0a0a"></a-cylinder>' +
-            '<a-cylinder position="-0.5 0.22 -0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#0a0a0a"></a-cylinder>';
+          c.setAttribute('gltf-fallback', 'src: models/car.glb; fb: car; scale: 1 1 1; rot: 0 ' + ((Math.random() < 0.5) ? 0 : 180) + ' ' + (wreck ? 18 : 0));
           street.appendChild(c);
         }
         function debris(x, z) {
           const d = document.createElement('a-box');
           d.setAttribute('width', 0.2 + Math.random() * 0.3); d.setAttribute('height', 0.12 + Math.random() * 0.2); d.setAttribute('depth', 0.2 + Math.random() * 0.3);
           d.setAttribute('position', x + ' 0.1 ' + z); d.setAttribute('rotation', '0 ' + (Math.random()*90) + ' 0');
-          d.setAttribute('color', '#1a1c20'); street.appendChild(d);
+          d.setAttribute('color', '#41454c'); street.appendChild(d);
         }
         function bloodStain(x, z) {
           const p = document.createElement('a-circle');
           p.setAttribute('radius', 0.25 + Math.random() * 0.4);
           p.setAttribute('rotation', '-90 ' + (Math.random()*180) + ' 0');
           p.setAttribute('position', x + ' 0.02 ' + z);
-          p.setAttribute('material', 'color:#3a0a0a;opacity:0.85;transparent:true;shader:flat');
+          p.setAttribute('material', 'color:#5a1414;opacity:0.85;transparent:true;shader:flat');
           street.appendChild(p);
         }
         function dumpster(x, z) {
           const d = document.createElement('a-box');
           d.setAttribute('width', 1.0); d.setAttribute('height', 0.7); d.setAttribute('depth', 0.6);
-          d.setAttribute('position', x + ' 0.35 ' + z); d.setAttribute('color', '#1f3329');
-          street.appendChild(d);
+          d.setAttribute('position', x + ' 0.35 ' + z); d.setAttribute('color', '#2f5340'); street.appendChild(d);
         }
-
         for (let z = -4; z > -52; z -= 6) {
           building(-6 + (Math.random() * 0.6), z, 3 + Math.random(), 4 + Math.random() * 7, 5);
           building(6 - (Math.random() * 0.6), z, 3 + Math.random(), 4 + Math.random() * 7, 5);
@@ -620,11 +685,13 @@
       })();
 
       window.addEventListener('load', function () {
-        const bl = document.querySelector('#btnLeft'), br = document.querySelector('#btnRight'), bs = document.querySelector('#btnStart');
+        const bl = document.querySelector('#btnLeft'), br = document.querySelector('#btnRight');
+        const bs = document.querySelector('#btnStart'), bd = document.querySelector('#btnDay');
         if (bl) bl.addEventListener('click', function () { window.GUN_HAND = 'left'; updateHandUI(); });
         if (br) br.addEventListener('click', function () { window.GUN_HAND = 'right'; updateHandUI(); });
+        if (bd) bd.addEventListener('click', function () { window.DAYTIME = !window.DAYTIME; applyTimeOfDay(); });
         if (bs) bs.addEventListener('click', function () { startGame(); });
-        updateHandUI();
+        updateHandUI(); applyTimeOfDay();
       });
     </script>
 
