@@ -6,8 +6,52 @@
   <title>Donkere Straat — Zombie Shooter</title>
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
   <script>
+  window.GAME_STARTED = false;
+  window.GUN_HAND = 'left';
+
+  // het pistool-model (wordt op de gekozen hand gezet bij START)
+  const GUN_MODEL_HTML = `
+    <a-box position="0 -0.01 -0.1" width="0.04" height="0.035" depth="0.2" material="color:#15171b;metalness:0.6;roughness:0.4"></a-box>
+    <a-box position="0 0.03 -0.1" width="0.045" height="0.05" depth="0.22" material="color:#2b2f36;metalness:0.8;roughness:0.3"></a-box>
+    <a-cylinder position="0 0.03 -0.23" radius="0.013" height="0.03" rotation="90 0 0" material="color:#0a0a0a;metalness:0.9;roughness:0.2"></a-cylinder>
+    <a-box position="0 0.06 -0.2" width="0.006" height="0.012" depth="0.006" material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.9"></a-box>
+    <a-box position="0 0.06 0.0" width="0.02" height="0.012" depth="0.006" material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.6"></a-box>
+    <a-box position="0 -0.09 0.02" width="0.04" height="0.12" depth="0.05" rotation="18 0 0" material="color:#1a1a1d;metalness:0.3;roughness:0.7"></a-box>
+    <a-torus position="0 -0.05 -0.03" radius="0.028" radius-tubular="0.005" arc="220" rotation="90 0 0" material="color:#15171b;metalness:0.6;roughness:0.4"></a-torus>
+    <a-cylinder position="0 0.03 -15.23" radius="0.004" height="30" rotation="90 0 0" material="color:#45e0ff;emissive:#45e0ff;emissiveIntensity:0.8;transparent:true;opacity:0.32"></a-cylinder>
+    <a-entity id="muzzleFlash" visible="false" position="0 0.03 -0.26">
+      <a-sphere radius="0.05" material="color:#ffd27a;emissive:#ffb44a;emissiveIntensity:2"></a-sphere>
+      <a-light type="point" color="#ffb44a" intensity="2" distance="6"></a-light>
+    </a-entity>`;
+
+  function buildGun(handEl) {
+    handEl.innerHTML = GUN_MODEL_HTML;
+    handEl.setAttribute('gun', '');
+  }
+
+  function updateHandUI() {
+    const l = document.querySelector('#btnLeft'), r = document.querySelector('#btnRight');
+    if (l) l.setAttribute('material', 'color:' + (window.GUN_HAND === 'left' ? '#2a6f4a' : '#1d2230') + ';opacity:0.95');
+    if (r) r.setAttribute('material', 'color:' + (window.GUN_HAND === 'right' ? '#2a6f4a' : '#1d2230') + ';opacity:0.95');
+  }
+
+  function startGame() {
+    if (window.GAME_STARTED) return;
+    window.GAME_STARTED = true;
+    const menu = document.querySelector('#menu');
+    if (menu && menu.parentNode) menu.parentNode.removeChild(menu);
+    // menu-pointers uit beide handen halen
+    document.querySelectorAll('.hand').forEach(function (h) {
+      h.removeAttribute('cursor'); h.removeAttribute('raycaster');
+      const ml = h.querySelector('.menu-laser'); if (ml && ml.parentNode) ml.parentNode.removeChild(ml);
+    });
+    // pistool op de gekozen hand
+    const handEl = document.querySelector(window.GUN_HAND === 'right' ? '#rightHand' : '#leftHand');
+    if (handEl) buildGun(handEl);
+  }
+
   // ===================================================================
-  //  GELUID — gunshot (Web Audio, geen bestand nodig)
+  //  GELUID
   // ===================================================================
   let ACTX = null;
   function bang() {
@@ -37,15 +81,12 @@
   }
   window.ZOMBIES = [];
 
-  // tracer-straal (lichtflits langs de kogelbaan)
   function spawnBeam(a, b, color, radius, life) {
     const scene = document.querySelector('a-scene');
     const mid = a.clone().add(b).multiplyScalar(0.5);
     const len = Math.max(0.1, a.distanceTo(b));
     const cyl = document.createElement('a-cylinder');
-    cyl.setAttribute('radius', radius);
-    cyl.setAttribute('height', len);
-    cyl.setAttribute('color', color);
+    cyl.setAttribute('radius', radius); cyl.setAttribute('height', len); cyl.setAttribute('color', color);
     cyl.setAttribute('material', 'emissive:' + color + ';emissiveIntensity:2;transparent:true;opacity:0.9');
     cyl.setAttribute('position', mid.x + ' ' + mid.y + ' ' + mid.z);
     const dir = b.clone().sub(a).normalize();
@@ -55,7 +96,6 @@
     setTimeout(function () { if (cyl.parentNode) cyl.parentNode.removeChild(cyl); }, life || 70);
   }
 
-  // bloed op de raakplek
   function blood(point, dir) {
     const scene = document.querySelector('a-scene');
     const f = document.createElement('a-sphere');
@@ -86,7 +126,6 @@
     legR:  { tag: 'a-box', attrs: { depth: 0.2, width: 0.18, height: 0.6, color: '#2d3a28' }, pos: '0.12 0.3 0',  rot: '0 0 0' }
   };
 
-  // GIB — afgeschoten stuk dat valt en blijft liggen
   AFRAME.registerComponent('gib', {
     init: function () {
       this.vel = this.el.object3D.userData.launchVel || new THREE.Vector3(0, 1, 0);
@@ -106,7 +145,6 @@
     }
   });
 
-  // ZOMBIE
   AFRAME.registerComponent('zombie', {
     init: function () {
       this.dead = false; this.crawler = false;
@@ -223,6 +261,7 @@
     schema: { interval: { default: 2000 }, max: { default: 8 } },
     init: function () { this.acc = 0; },
     tick: function (time, dt) {
+      if (!window.GAME_STARTED) return;
       this.acc += (dt || 16);
       if (this.acc < this.data.interval) return;
       this.acc = 0;
@@ -236,7 +275,6 @@
     }
   });
 
-  // meer licht als zombies dichterbij komen
   AFRAME.registerComponent('proximity-light', {
     init: function () { this.base = 0.5; this.acc = 0; },
     tick: function (time, dt) {
@@ -252,7 +290,6 @@
     }
   });
 
-  // GUN — linkerhand
   AFRAME.registerComponent('gun', {
     init: function () {
       this.ray = new THREE.Raycaster(); this.ray.far = 80;
@@ -261,7 +298,7 @@
       this.flash = this.el.querySelector('#muzzleFlash');
       const self = this;
       this.el.addEventListener('triggerdown', function () { self.shoot(false); });
-      window.addEventListener('mousedown', function () { self.shoot(true); });
+      window.addEventListener('mousedown', function () { if (window.GAME_STARTED) self.shoot(true); });
       window.addEventListener('keydown', function (e) { if (e.code === 'Space') self.shoot(true); });
     },
     shoot: function (fromCamera) {
@@ -284,7 +321,6 @@
           bestDist = hits[0].distance; best = el; bestObj = hits[0].object; bestPoint = hits[0].point.clone();
         }
       }
-      // tracer vanaf de loop
       this.muzzle.copy(this.origin).addScaledVector(this.dir, 0.24);
       const end = bestPoint ? bestPoint : this.origin.clone().addScaledVector(this.dir, 60);
       spawnBeam(this.muzzle, end, '#ffd98a', 0.012, 70);
@@ -317,47 +353,47 @@
 
     <a-text id="scoreText" value="KILLS: 0" align="center" color="#e8e8e8" width="6" position="0 2.8 -4"></a-text>
 
+    <!-- ====================== START MENU ====================== -->
+    <a-entity id="menu" position="0 0 0">
+      <a-plane position="0 1.55 -2" width="1.7" height="1.25" material="color:#0c0e14;opacity:0.92;transparent:true"></a-plane>
+      <a-plane position="0 1.55 -2.01" width="1.78" height="1.33" material="color:#45e0ff;opacity:0.15;transparent:true"></a-plane>
+      <a-text value="DONKERE STRAAT" align="center" color="#e8e8e8" width="3" position="0 2.02 -1.98"></a-text>
+      <a-text value="Zombie Shooter" align="center" color="#8aa0b0" width="2" position="0 1.84 -1.98"></a-text>
+      <a-text value="Schiethand" align="center" color="#cfcfcf" width="2" position="0 1.62 -1.98"></a-text>
+
+      <a-plane id="btnLeft" class="menu-btn" position="-0.38 1.42 -1.98" width="0.6" height="0.18" material="color:#2a6f4a;opacity:0.95;transparent:true"></a-plane>
+      <a-text value="LINKS" align="center" color="#ffffff" width="2.2" position="-0.38 1.42 -1.97"></a-text>
+      <a-plane id="btnRight" class="menu-btn" position="0.38 1.42 -1.98" width="0.6" height="0.18" material="color:#1d2230;opacity:0.95;transparent:true"></a-plane>
+      <a-text value="RECHTS" align="center" color="#ffffff" width="2.2" position="0.38 1.42 -1.97"></a-text>
+
+      <a-plane id="btnStart" class="menu-btn" position="0 1.13 -1.98" width="0.95" height="0.26" material="color:#7a1f1f;opacity:0.97;transparent:true"></a-plane>
+      <a-text value="START" align="center" color="#ffffff" width="3" position="0 1.13 -1.97"></a-text>
+
+      <a-text value="Richt met de straal en knijp de trigger" align="center" color="#7c8794" width="1.7" position="0 0.93 -1.98"></a-text>
+    </a-entity>
+
+    <!-- ====================== SPELER ====================== -->
     <a-entity id="rig" position="0 0 0">
-      <a-camera wasd-controls-enabled="false"></a-camera>
+      <a-camera wasd-controls-enabled="false">
+        <a-cursor color="#45e0ff" fuse="false" raycaster="objects: .menu-btn"></a-cursor>
+      </a-camera>
 
-      <!-- LINKERHAND met nette handgun -->
-      <a-entity id="leftHand" gun meta-touch-controls="hand: left" oculus-touch-controls="hand: left">
-        <!-- frame onder de slede -->
-        <a-box position="0 -0.01 -0.1" width="0.04" height="0.035" depth="0.2"
-               material="color:#15171b;metalness:0.6;roughness:0.4"></a-box>
-        <!-- slede -->
-        <a-box position="0 0.03 -0.1" width="0.045" height="0.05" depth="0.22"
-               material="color:#2b2f36;metalness:0.8;roughness:0.3"></a-box>
-        <!-- loop-opening -->
-        <a-cylinder position="0 0.03 -0.23" radius="0.013" height="0.03" rotation="90 0 0"
-               material="color:#0a0a0a;metalness:0.9;roughness:0.2"></a-cylinder>
-        <!-- korrel + vizier (lichtgevend, zo zie je waar je richt) -->
-        <a-box position="0 0.06 -0.2" width="0.006" height="0.012" depth="0.006"
-               material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.9"></a-box>
-        <a-box position="0 0.06 0.0" width="0.02" height="0.012" depth="0.006"
-               material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.6"></a-box>
-        <!-- greep -->
-        <a-box position="0 -0.09 0.02" width="0.04" height="0.12" depth="0.05" rotation="18 0 0"
-               material="color:#1a1a1d;metalness:0.3;roughness:0.7"></a-box>
-        <!-- trekkerbeugel -->
-        <a-torus position="0 -0.05 -0.03" radius="0.028" radius-tubular="0.005" arc="220" rotation="90 0 0"
-               material="color:#15171b;metalness:0.6;roughness:0.4"></a-torus>
-
-        <!-- richtstraal uit de loop (zoals de demo-laser) -->
-        <a-cylinder position="0 0.03 -15.23" radius="0.004" height="30" rotation="90 0 0"
-               material="color:#45e0ff;emissive:#45e0ff;emissiveIntensity:0.8;transparent:true;opacity:0.32"></a-cylinder>
-
-        <!-- muzzle flash -->
-        <a-entity id="muzzleFlash" visible="false" position="0 0.03 -0.26">
-          <a-sphere radius="0.05" material="color:#ffd27a;emissive:#ffb44a;emissiveIntensity:2"></a-sphere>
-          <a-light type="point" color="#ffb44a" intensity="2" distance="6"></a-light>
-        </a-entity>
+      <!-- beide handen: in het menu zijn het pointers, bij START krijgt de gekozen hand het pistool -->
+      <a-entity id="leftHand" class="hand" meta-touch-controls="hand: left" oculus-touch-controls="hand: left"
+                raycaster="objects: .menu-btn; far: 12"
+                cursor="fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity">
+        <a-entity class="menu-laser" line="start: 0 0 0; end: 0 0 -12; color: #45e0ff; opacity: 0.5"></a-entity>
       </a-entity>
 
-      <a-entity meta-touch-controls="hand: right" oculus-touch-controls="hand: right"></a-entity>
+      <a-entity id="rightHand" class="hand" meta-touch-controls="hand: right" oculus-touch-controls="hand: right"
+                raycaster="objects: .menu-btn; far: 12"
+                cursor="fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity">
+        <a-entity class="menu-laser" line="start: 0 0 0; end: 0 0 -12; color: #45e0ff; opacity: 0.5"></a-entity>
+      </a-entity>
     </a-entity>
 
     <script>
+      // straat vullen
       (function () {
         const street = document.querySelector('#street');
         const colors = ['#15171c', '#1b1d24', '#121419', '#191b21'];
@@ -404,6 +440,17 @@
         for (let z = -3; z > -48; z -= 8) { lamp(-3.2, z); lamp(3.2, z); }
         car(-2.6, -7); car(2.6, -14); car(-2.6, -23); car(2.6, -30);
       })();
+
+      // menu-knoppen koppelen
+      window.addEventListener('load', function () {
+        const bl = document.querySelector('#btnLeft');
+        const br = document.querySelector('#btnRight');
+        const bs = document.querySelector('#btnStart');
+        if (bl) bl.addEventListener('click', function () { window.GUN_HAND = 'left'; updateHandUI(); });
+        if (br) br.addEventListener('click', function () { window.GUN_HAND = 'right'; updateHandUI(); });
+        if (bs) bs.addEventListener('click', function () { startGame(); });
+        updateHandUI();
+      });
     </script>
 
   </a-scene>
