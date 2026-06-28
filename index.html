@@ -3,75 +3,340 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>VR Starter — Schietspel</title>
+  <title>Donkere Straat — Zombie Shooter</title>
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
-</head>
-<body>
-  <a-scene background="color: #ECECEC">
+  <script>
+  // ===================================================================
+  //  GELUID — gunshot zonder los bestand (Web Audio)
+  // ===================================================================
+  let ACTX = null;
+  function bang() {
+    try {
+      if (!ACTX) ACTX = new (window.AudioContext || window.webkitAudioContext)();
+      const t = ACTX.currentTime;
+      const len = Math.floor(ACTX.sampleRate * 0.22);
+      const buf = ACTX.createBuffer(1, len, ACTX.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
+      const noise = ACTX.createBufferSource(); noise.buffer = buf;
+      const lp = ACTX.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+      const ng = ACTX.createGain();
+      ng.gain.setValueAtTime(0.9, t); ng.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+      noise.connect(lp).connect(ng).connect(ACTX.destination); noise.start(t);
+      const osc = ACTX.createOscillator(); osc.type = 'sine';
+      osc.frequency.setValueAtTime(130, t); osc.frequency.exponentialRampToValueAtTime(42, t + 0.16);
+      const og = ACTX.createGain();
+      og.gain.setValueAtTime(0.9, t); og.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+      osc.connect(og).connect(ACTX.destination); osc.start(t); osc.stop(t + 0.22);
+    } catch (e) {}
+  }
+  function addScore(n) {
+    const el = document.querySelector('#scoreText'); if (!el) return;
+    const cur = parseInt((el.getAttribute('value') || '').replace(/\D/g, '')) || 0;
+    el.setAttribute('value', 'KILLS: ' + (cur + n));
+  }
+  window.ZOMBIES = [];
 
-    <!-- ============================================================
-         COMPONENT: maak van een entity een aanklikbaar doelwit.
-         Klik (muis) of trigger (VR-controller) geeft +1 punt,
-         daarna verspringt het doelwit naar een willekeurige plek.
-         ============================================================ -->
-    <script>
-      AFRAME.registerComponent('target', {
-        init: function () {
-          var el = this.el;
-          el.addEventListener('click', function () {
-            // punt scoren
-            var scoreEl = document.querySelector('#scoreText');
-            var score = (parseInt(scoreEl.getAttribute('value').replace(/\D/g, '')) || 0) + 1;
-            scoreEl.setAttribute('value', 'Score: ' + score);
+  // onderdeel-specs (ook gebruikt om losse stukken te spawnen)
+  const PART = {
+    head:  { tag: 'a-sphere', attrs: { radius: 0.17, color: '#5a6b4a' }, pos: '0 1.5 0',  rot: '0 0 0' },
+    torso: { tag: 'a-box', attrs: { depth: 0.28, width: 0.5, height: 0.8, color: '#3c4a35' }, pos: '0 0.95 0', rot: '0 0 0' },
+    armL:  { tag: 'a-box', attrs: { depth: 0.4, width: 0.16, height: 0.13, color: '#46553a' }, pos: '-0.2 1.05 0.28', rot: '-70 0 0' },
+    armR:  { tag: 'a-box', attrs: { depth: 0.4, width: 0.16, height: 0.13, color: '#46553a' }, pos: '0.2 1.05 0.28',  rot: '-70 0 0' },
+    legL:  { tag: 'a-box', attrs: { depth: 0.2, width: 0.18, height: 0.6, color: '#2d3a28' }, pos: '-0.12 0.3 0', rot: '0 0 0' },
+    legR:  { tag: 'a-box', attrs: { depth: 0.2, width: 0.18, height: 0.6, color: '#2d3a28' }, pos: '0.12 0.3 0',  rot: '0 0 0' }
+  };
 
-            // korte "hit"-animatie + nieuwe positie
-            // raak = meteen verspringen, geen vertraging
-            el.setAttribute('position', {
-              x: (Math.random() - 0.5) * 6,
-              y: Math.random() * 2.5 + 0.8,
-              z: -(Math.random() * 4 + 2)
+  // ===================================================================
+  //  GIB — een afgeschoten stuk dat wegvliegt en blijft liggen
+  // ===================================================================
+  AFRAME.registerComponent('gib', {
+    init: function () {
+      this.vel = (this.el.object3D.userData.launchVel) || new THREE.Vector3(0, 1, 0);
+      this.spin = new THREE.Vector3((Math.random()-.5)*12, (Math.random()-.5)*12, (Math.random()-.5)*12);
+      this.life = 0; this.rest = false;
+    },
+    tick: function (t, dt) {
+      const s = (dt || 16) / 1000; const o = this.el.object3D;
+      if (this.el.object3D.userData.launchVel && this.vel.lengthSq() === 1) this.vel = this.el.object3D.userData.launchVel;
+      if (!this.rest) {
+        this.vel.y -= 9.8 * s;
+        o.position.addScaledVector(this.vel, s);
+        o.rotation.x += this.spin.x * s; o.rotation.y += this.spin.y * s; o.rotation.z += this.spin.z * s;
+        if (o.position.y <= 0.08) { o.position.y = 0.08; this.rest = true; }
+      }
+      this.life += s;
+      if (this.life > 6 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+    }
+  });
+
+  // ===================================================================
+  //  ZOMBIE — losse delen, dismemberment, loopgedrag
+  // ===================================================================
+  AFRAME.registerComponent('zombie', {
+    init: function () {
+      this.dead = false; this.crawler = false;
+      this.speed = 0.6 + Math.random() * 0.45;
+      this.sway = Math.random() * Math.PI * 2;
+      this.legs = 2; this.torsoHP = 3; this.dieTimer = 0;
+      this.knock = new THREE.Vector3();
+      this.fallAxis = (Math.random() < 0.5) ? 'x' : 'z';
+      this.fallDir = (Math.random() < 0.5) ? 1 : -1;
+      this.parts = {};
+      const self = this;
+
+      // bouw de delen
+      Object.keys(PART).forEach(function (name) {
+        const spec = PART[name];
+        const e = document.createElement(spec.tag);
+        Object.keys(spec.attrs).forEach(function (k) { e.setAttribute(k, spec.attrs[k]); });
+        e.setAttribute('position', spec.pos);
+        e.setAttribute('rotation', spec.rot);
+        self.el.appendChild(e);
+        self.parts[name] = e;
+        e.addEventListener('loaded', function () { e.object3D.userData.part = name; });
+        if (name === 'head') {
+          e.addEventListener('loaded', function () {
+            ['0.06 0.02 0.15', '-0.06 0.02 0.15'].forEach(function (p) {
+              const eye = document.createElement('a-sphere');
+              eye.setAttribute('radius', 0.03); eye.setAttribute('position', p);
+              eye.setAttribute('material', 'color:#ff2b2b;emissive:#ff2b2b;emissiveIntensity:1');
+              e.appendChild(eye);
             });
           });
         }
       });
-    </script>
 
-    <!-- Licht -->
-    <a-entity light="type: ambient; intensity: 0.7"></a-entity>
-    <a-entity light="type: directional; intensity: 0.6" position="1 3 1"></a-entity>
+      window.ZOMBIES.push(this.el);
+      this.el.object3D.userData.zombieComp = this;
+    },
 
-    <!-- Vloer en lucht -->
-    <a-plane rotation="-90 0 0" width="40" height="40" color="#5b6b5b"></a-plane>
-    <a-sky color="#88a0c0"></a-sky>
+    spawnGib: function (name, dir) {
+      const ref = this.parts[name]; if (!ref) return;
+      const spec = PART[name];
+      const wp = new THREE.Vector3(); ref.object3D.getWorldPosition(wp);
+      const g = document.createElement(spec.tag);
+      Object.keys(spec.attrs).forEach(function (k) { g.setAttribute(k, spec.attrs[k]); });
+      g.setAttribute('position', wp.x + ' ' + wp.y + ' ' + wp.z);
+      const v = new THREE.Vector3().copy(dir).setY(0).normalize().multiplyScalar(1.0 + Math.random() * 1.4);
+      v.y = 2.2 + Math.random() * 2;
+      g.addEventListener('loaded', function () { g.object3D.userData.launchVel = v; });
+      g.setAttribute('gib', '');
+      this.el.sceneEl.appendChild(g);
+      this.el.removeChild(ref);
+      this.parts[name] = null;
+    },
 
-    <!-- Score-bord, blijft voor je hangen -->
-    <a-entity position="0 2.6 -4">
-      <a-text id="scoreText" value="Score: 0" align="center"
-              color="#222" width="6" position="0 0 0"></a-text>
-    </a-entity>
+    hitPart: function (part, dir) {
+      if (this.dead) return;
+      if (part === 'head') { this.spawnGib('head', dir); this.kill(dir); return; }
+      if (part === 'armL' || part === 'armR') { this.spawnGib(part, dir); return; }
+      if (part === 'legL' || part === 'legR') {
+        this.spawnGib(part, dir); this.legs -= 1;
+        if (this.legs <= 0) { this.crawler = true; this.speed = 0.26; }
+        else { this.speed *= 0.55; }
+        return;
+      }
+      // romp: stukje eraf + schade
+      this.torsoHP -= 1;
+      // klein chunkje wegspatten
+      const ref = this.parts.torso;
+      if (ref) {
+        const wp = new THREE.Vector3(); ref.object3D.getWorldPosition(wp);
+        const chunk = document.createElement('a-box');
+        chunk.setAttribute('depth', 0.12); chunk.setAttribute('width', 0.12); chunk.setAttribute('height', 0.12);
+        chunk.setAttribute('color', '#5a2a2a');
+        chunk.setAttribute('position', wp.x + ' ' + (wp.y + (Math.random()-.5)*0.4) + ' ' + wp.z);
+        const v = new THREE.Vector3().copy(dir).setY(0).normalize().multiplyScalar(1.5 + Math.random());
+        v.y = 1.5 + Math.random() * 1.5;
+        chunk.addEventListener('loaded', function () { chunk.object3D.userData.launchVel = v; });
+        chunk.setAttribute('gib', '');
+        this.el.sceneEl.appendChild(chunk);
+        const sc = ref.getAttribute('scale') || { x: 1, y: 1, z: 1 };
+        ref.setAttribute('scale', (sc.x * 0.88) + ' ' + (sc.y * 0.92) + ' ' + (sc.z * 0.88));
+      }
+      if (this.torsoHP <= 0) this.kill(dir);
+    },
 
-    <!-- Doelwitten -->
-    <a-box class="clickable" target color="#EF2D5E" depth="0.4" height="0.4" width="0.4"
-           position="-1.5 1.6 -3"
-           animation__hit="property: scale; from: 1 1 1; to: 1.4 1.4 1.4; dur: 100; startEvents: hit; dir: alternate; loop: 1"></a-box>
-    <a-box class="clickable" target color="#EF2D5E" depth="0.4" height="0.4" width="0.4"
-           position="1.5 1.2 -3.5"
-           animation__hit="property: scale; from: 1 1 1; to: 1.4 1.4 1.4; dur: 100; startEvents: hit; dir: alternate; loop: 1"></a-box>
-    <a-box class="clickable" target color="#EF2D5E" depth="0.4" height="0.4" width="0.4"
-           position="0 2.2 -4"
-           animation__hit="property: scale; from: 1 1 1; to: 1.4 1.4 1.4; dur: 100; startEvents: hit; dir: alternate; loop: 1"></a-box>
+    kill: function (dir) {
+      if (this.dead) return;
+      this.dead = true; addScore(1);
+      this.knock.copy(dir || new THREE.Vector3(0,0,1)).setY(0).normalize().multiplyScalar(2.0);
+      const i = window.ZOMBIES.indexOf(this.el);
+      if (i > -1) window.ZOMBIES.splice(i, 1);
+    },
 
-    <!-- Speler: camera + besturing -->
+    tick: function (time, dt) {
+      const s = (dt || 16) / 1000; const o = this.el.object3D;
+      if (!this.dead) {
+        const p = o.position;
+        const dx = -p.x, dz = -p.z;
+        const dist = Math.hypot(dx, dz) || 1;
+        this.sway += s * 5;
+        p.x += (dx / dist) * this.speed * s + Math.cos(this.sway) * 0.004;
+        p.z += (dz / dist) * this.speed * s;
+        const faceY = Math.atan2(dx, dz);
+        if (this.crawler) { o.rotation.set(1.25, faceY, 0); o.position.y = 0; }
+        else if (this.legs === 1) { o.rotation.set(0, faceY, 0.25); o.position.y = 0.02 * Math.sin(this.sway * 2); }
+        else { o.rotation.set(0, faceY, 0); o.position.y = 0.02 * Math.sin(this.sway * 2); }
+      } else {
+        this.dieTimer += s;
+        o.position.x += this.knock.x * s; o.position.z += this.knock.z * s;
+        this.knock.multiplyScalar(0.86);
+        const target = Math.PI / 2 * this.fallDir;
+        if (this.fallAxis === 'x') o.rotation.x += (target - o.rotation.x) * Math.min(1, s * 8);
+        else o.rotation.z += (target - o.rotation.z) * Math.min(1, s * 8);
+        o.position.y = Math.max(0, 0.2 - this.dieTimer * 0.4);
+        const op = Math.max(0, 1 - this.dieTimer / 1.6);
+        o.traverse(function (m) { if (m.material) { m.material.transparent = true; m.material.opacity = op; } });
+        if (this.dieTimer > 1.7 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+      }
+    }
+  });
+
+  // ===================================================================
+  //  SPAWNER
+  // ===================================================================
+  AFRAME.registerComponent('zombie-spawner', {
+    schema: { interval: { default: 2000 }, max: { default: 8 } },
+    init: function () { this.acc = 0; },
+    tick: function (time, dt) {
+      this.acc += (dt || 16);
+      if (this.acc < this.data.interval) return;
+      this.acc = 0;
+      if (window.ZOMBIES.length >= this.data.max) return;
+      const z = document.createElement('a-entity');
+      const x = (Math.random() - 0.5) * 5;
+      const zpos = -22 - Math.random() * 8;
+      z.setAttribute('position', x + ' 0 ' + zpos);
+      z.setAttribute('zombie', '');
+      this.el.sceneEl.appendChild(z);
+    }
+  });
+
+  // ===================================================================
+  //  GUN — linkerhand, trigger schiet, raakt het exacte onderdeel
+  // ===================================================================
+  AFRAME.registerComponent('gun', {
+    init: function () {
+      this.ray = new THREE.Raycaster(); this.ray.far = 60;
+      this.origin = new THREE.Vector3(); this.dir = new THREE.Vector3();
+      this.q = new THREE.Quaternion();
+      this.flash = this.el.querySelector('#muzzleFlash');
+      const self = this;
+      this.el.addEventListener('triggerdown', function () { self.shoot(false); });
+      window.addEventListener('mousedown', function () { self.shoot(true); });
+      window.addEventListener('keydown', function (e) { if (e.code === 'Space') self.shoot(true); });
+    },
+    shoot: function (fromCamera) {
+      bang();
+      if (this.flash) {
+        this.flash.setAttribute('visible', true);
+        const f = this.flash; setTimeout(function () { f.setAttribute('visible', false); }, 45);
+      }
+      let src = this.el.object3D;
+      if (fromCamera) { const cam = document.querySelector('a-camera') || document.querySelector('[camera]'); if (cam) src = cam.object3D; }
+      src.getWorldPosition(this.origin); src.getWorldQuaternion(this.q);
+      this.dir.set(0, 0, -1).applyQuaternion(this.q).normalize();
+      this.ray.set(this.origin, this.dir);
+
+      let best = null, bestDist = Infinity, bestObj = null;
+      for (let i = 0; i < window.ZOMBIES.length; i++) {
+        const el = window.ZOMBIES[i];
+        const hits = this.ray.intersectObject(el.object3D, true);
+        if (hits.length && hits[0].distance < bestDist) { bestDist = hits[0].distance; best = el; bestObj = hits[0].object; }
+      }
+      if (best) {
+        let o = bestObj, part = null;
+        while (o) { if (o.userData && o.userData.part) { part = o.userData.part; break; } o = o.parent; }
+        const comp = best.object3D.userData.zombieComp;
+        if (comp) comp.hitPart(part || 'torso', this.dir);
+      }
+    }
+  });
+  </script>
+</head>
+<body>
+  <a-scene background="color: #05060a" fog="type: exponential; color: #05060a; density: 0.045"
+           zombie-spawner="interval: 2000; max: 8"
+           renderer="colorManagement: true; antialias: true">
+
+    <a-entity light="type: ambient; color: #20222e; intensity: 0.5"></a-entity>
+    <a-entity light="type: directional; color: #3a4a6a; intensity: 0.25" position="-1 2 -1"></a-entity>
+
+    <a-plane rotation="-90 0 0" width="8" height="60" position="0 0 -20" color="#1a1c22"></a-plane>
+    <a-box position="3.7 0.1 -20" width="1" height="0.2" depth="60" color="#23262e"></a-box>
+    <a-box position="-3.7 0.1 -20" width="1" height="0.2" depth="60" color="#23262e"></a-box>
+    <a-sky color="#05060a"></a-sky>
+
+    <a-entity id="street"></a-entity>
+
+    <a-text id="scoreText" value="KILLS: 0" align="center" color="#e8e8e8" width="6" position="0 2.8 -4"></a-text>
+
     <a-entity id="rig" position="0 0 0">
-      <a-camera>
-        <!-- Desktop/mobiel: richtkruis dat klikt op .clickable objecten -->
-        <a-cursor color="#FFC65D" raycaster="objects: .clickable"></a-cursor>
-      </a-camera>
+      <a-camera wasd-controls-enabled="false"></a-camera>
 
-      <!-- VR-controllers: laserstraal om mee te richten en te triggeren -->
-      <a-entity laser-controls="hand: left"  raycaster="objects: .clickable; lineColor: #FFC65D"></a-entity>
-      <a-entity laser-controls="hand: right" raycaster="objects: .clickable; lineColor: #FFC65D"></a-entity>
+      <a-entity id="leftHand" gun meta-touch-controls="hand: left" oculus-touch-controls="hand: left">
+        <a-box position="0 -0.02 -0.02" width="0.04" height="0.09" depth="0.06" color="#161616"></a-box>
+        <a-box position="0 0.01 -0.14" width="0.035" height="0.04" depth="0.18" color="#222"></a-box>
+        <a-box position="0 -0.06 0" width="0.035" height="0.08" depth="0.05" rotation="20 0 0" color="#111"></a-box>
+        <a-entity id="muzzleFlash" visible="false" position="0 0.01 -0.24">
+          <a-sphere radius="0.05" color="#ffd27a" material="emissive:#ffb44a;emissiveIntensity:2"></a-sphere>
+          <a-light type="point" color="#ffb44a" intensity="2" distance="6"></a-light>
+        </a-entity>
+      </a-entity>
+
+      <a-entity meta-touch-controls="hand: right" oculus-touch-controls="hand: right"></a-entity>
     </a-entity>
+
+    <script>
+      (function () {
+        const street = document.querySelector('#street');
+        const colors = ['#15171c', '#1b1d24', '#121419', '#191b21'];
+        function building(x, z, w, h, d) {
+          const b = document.createElement('a-entity');
+          const c = colors[Math.floor(Math.random() * colors.length)];
+          b.innerHTML = '<a-box position="' + x + ' ' + (h/2) + ' ' + z + '" width="' + w + '" height="' + h + '" depth="' + d + '" color="' + c + '"></a-box>';
+          const side = x < 0 ? 1 : -1;
+          for (let k = 0; k < 4; k++) {
+            if (Math.random() < 0.45) {
+              const wy = 1 + Math.random() * (h - 1.5);
+              const wz = z + (Math.random() - 0.5) * (d - 1);
+              b.innerHTML += '<a-plane position="' + (x + side * (w/2 + 0.01)) + ' ' + wy + ' ' + wz + '" rotation="0 ' + (side * 90) + ' 0" width="0.4" height="0.5" color="#ffcf6e" material="emissive:#ffcf6e;emissiveIntensity:0.8"></a-plane>';
+            }
+          }
+          street.appendChild(b);
+        }
+        function lamp(x, z) {
+          const l = document.createElement('a-entity');
+          l.innerHTML =
+            '<a-cylinder position="' + x + ' 1.6 ' + z + '" radius="0.05" height="3.2" color="#0d0d10"></a-cylinder>' +
+            '<a-sphere position="' + x + ' 3.2 ' + z + '" radius="0.13" color="#fff1c0" material="emissive:#ffdf94;emissiveIntensity:1.4"></a-sphere>' +
+            '<a-light type="point" position="' + x + ' 3.1 ' + z + '" color="#ffcf7a" intensity="0.9" distance="9" decay="2"></a-light>';
+          street.appendChild(l);
+        }
+        function car(x, z) {
+          const cc = ['#2a1f1f', '#1f2a26', '#26222f', '#202020'][Math.floor(Math.random()*4)];
+          const c = document.createElement('a-entity');
+          c.setAttribute('rotation', '0 ' + ((Math.random() < 0.5) ? 0 : 180) + ' 0');
+          c.setAttribute('position', x + ' 0 ' + z);
+          c.innerHTML =
+            '<a-box position="0 0.35 0" width="0.95" height="0.45" depth="2.0" color="' + cc + '"></a-box>' +
+            '<a-box position="0 0.72 -0.1" width="0.85" height="0.4" depth="1.1" color="' + cc + '"></a-box>' +
+            '<a-cylinder position="0.5 0.22 0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#0a0a0a"></a-cylinder>' +
+            '<a-cylinder position="-0.5 0.22 0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#0a0a0a"></a-cylinder>' +
+            '<a-cylinder position="0.5 0.22 -0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#0a0a0a"></a-cylinder>' +
+            '<a-cylinder position="-0.5 0.22 -0.6" radius="0.22" height="0.16" rotation="0 0 90" color="#0a0a0a"></a-cylinder>';
+          street.appendChild(c);
+        }
+        for (let z = -4; z > -50; z -= 6) {
+          building(-6 + (Math.random() * 0.6), z, 3 + Math.random(), 4 + Math.random() * 6, 5);
+          building(6 - (Math.random() * 0.6), z, 3 + Math.random(), 4 + Math.random() * 6, 5);
+        }
+        for (let z = -3; z > -48; z -= 8) { lamp(-3.2, z); lamp(3.2, z); }
+        car(-2.6, -7); car(2.6, -14); car(-2.6, -23); car(2.6, -30);
+      })();
+    </script>
 
   </a-scene>
 </body>
