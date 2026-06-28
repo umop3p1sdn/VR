@@ -8,7 +8,7 @@
   <script>
   window.GAME_STARTED = false; window.GAME_OVER = false;
   window.GUN_HAND = 'left'; window.HEALTH = 100; window.DAYTIME = true;
-  window.WAVE = 1; window.SPAWN_INTERVAL = 1800; window.SPAWN_MAX = 7; window.SPEEDMULT = 1;
+  window.WAVE = 1; window.SPAWN_INTERVAL = 1300; window.SPAWN_MAX = 14; window.SPEEDMULT = 1;
   window.ZOMBIES = [];
 
   // losse-blokjes pistool als terugval als models/gun.glb ontbreekt
@@ -52,15 +52,15 @@
       if (sky) sky.setAttribute('color', '#8fb6dd');
       if (scene) scene.setAttribute('fog', 'type: exponential; color: #c2d2de; density: 0.013');
       if (amb) amb.setAttribute('light', 'color', '#ffffff');
-      if (dir) { dir.setAttribute('light', 'type: directional; color: #fff3df; intensity: 1.0'); dir.object3D.position.set(6, 10, 2); }
+      if (dir) { dir.setAttribute('light', 'type: directional; color: #fff3df; intensity: 1.0; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraLeft: -22; shadowCameraRight: 22; shadowCameraTop: 22; shadowCameraBottom: -22; shadowCameraNear: 0.5; shadowCameraFar: 70'); dir.object3D.position.set(6, 12, 2); }
       if (moon) moon.setAttribute('visible', false);
       if (stars) stars.setAttribute('visible', false);
       if (sun) sun.setAttribute('visible', true);
     } else {
       if (sky) sky.setAttribute('color', '#04050a');
-      if (scene) scene.setAttribute('fog', 'type: exponential; color: #060810; density: 0.05');
+      if (scene) scene.setAttribute('fog', 'type: exponential; color: #060810; density: 0.032');
       if (amb) amb.setAttribute('light', 'color', '#1a1f2e');
-      if (dir) { dir.setAttribute('light', 'type: directional; color: #2a3a5a; intensity: 0.2'); dir.object3D.position.set(-1, 3, -1); }
+      if (dir) { dir.setAttribute('light', 'type: directional; color: #5566aa; intensity: 0.45; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraLeft: -22; shadowCameraRight: 22; shadowCameraTop: 22; shadowCameraBottom: -22; shadowCameraNear: 0.5; shadowCameraFar: 70'); dir.object3D.position.set(-6, 12, 4); }
       if (moon) moon.setAttribute('visible', true);
       if (stars) stars.setAttribute('visible', true);
       if (sun) sun.setAttribute('visible', false);
@@ -200,7 +200,7 @@
     f.setAttribute('position', point.x + ' ' + point.y + ' ' + point.z);
     scene.appendChild(f);
     setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 130);
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 12; i++) {
       const dpl = document.createElement('a-sphere');
       dpl.setAttribute('radius', 0.02 + Math.random() * 0.02);
       dpl.setAttribute('color', '#6e0d0d');
@@ -318,7 +318,7 @@
         Object.keys(spec.attrs).forEach(function (k) { e.setAttribute(k, spec.attrs[k]); });
         e.setAttribute('color', sk[spec.slot]);
         e.setAttribute('position', spec.pos); e.setAttribute('rotation', spec.rot);
-        self.el.appendChild(e); self.parts[name] = e;
+        self.el.appendChild(e); self.parts[name] = e; e.setAttribute('shadow', 'cast: true');
         e.addEventListener('loaded', function () { e.object3D.userData.part = name; });
         if (name === 'head') {
           e.addEventListener('loaded', function () {
@@ -448,8 +448,8 @@
     init: function () { this.acc = 0; this.apply(); },
     apply: function () {
       const w = window.WAVE;
-      window.SPAWN_INTERVAL = Math.max(650, 1800 - (w - 1) * 160);
-      window.SPAWN_MAX = Math.min(18, 6 + w);
+      window.SPAWN_INTERVAL = Math.max(350, 1300 - (w - 1) * 150);
+      window.SPAWN_MAX = Math.min(40, 12 + w * 2);
       window.SPEEDMULT = 1 + (w - 1) * 0.12;
       const t = document.querySelector('#waveText'); if (t) t.setAttribute('value', 'GOLF ' + w);
     },
@@ -519,14 +519,14 @@
 </head>
 <body>
   <a-scene background="color: #8fb6dd" fog="type: exponential; color: #c2d2de; density: 0.013"
-           zombie-spawner wave-director renderer="colorManagement: true; antialias: true">
+           zombie-spawner wave-director renderer="colorManagement: true; antialias: true; highRefreshRate: true; foveationLevel: 0; physicallyCorrectLights: false">
 
     <a-entity id="ambLight" light="type: ambient; color: #ffffff; intensity: 0.85" proximity-light></a-entity>
-    <a-entity id="dirLight" light="type: directional; color: #fff3df; intensity: 1.0" position="6 10 2"></a-entity>
+    <a-entity id="dirLight" light="type: directional; color: #fff3df; intensity: 1.0; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraLeft: -22; shadowCameraRight: 22; shadowCameraTop: 22; shadowCameraBottom: -22; shadowCameraNear: 0.5; shadowCameraFar: 70" position="6 12 2"></a-entity>
 
-    <a-plane rotation="-90 0 0" width="8" height="60" position="0 0 -20" color="#3a3d42"></a-plane>
-    <a-box position="3.7 0.1 -20" width="1" height="0.2" depth="60" color="#52555c"></a-box>
-    <a-box position="-3.7 0.1 -20" width="1" height="0.2" depth="60" color="#52555c"></a-box>
+    <a-plane rotation="-90 0 0" width="9" height="80" position="0 0 -28" color="#3a3d42" shadow="receive: true"></a-plane>
+    <a-box position="3.9 0.1 -28" width="1" height="0.2" depth="80" color="#52555c" shadow="receive: true"></a-box>
+    <a-box position="-3.9 0.1 -28" width="1" height="0.2" depth="80" color="#52555c" shadow="receive: true"></a-box>
     <a-sky id="sky" color="#8fb6dd"></a-sky>
     <a-sphere id="sun" position="10 15 -30" radius="2.2" material="color:#fff6d0;emissive:#fff0b0;emissiveIntensity:0.8;shader:flat"></a-sphere>
     <a-sphere id="moon" visible="false" position="14 16 -34" radius="2.2" material="color:#cdd6e0;emissive:#aab4c4;emissiveIntensity:0.6;shader:flat"></a-sphere>
@@ -594,7 +594,7 @@
         const street = document.querySelector('#street');
         const sky = document.querySelector('#sky-extra');
         const colors = ['#3a3f46', '#434952', '#33373e', '#3f444c'];
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 120; i++) {
           const st = document.createElement('a-sphere');
           const a = Math.random() * Math.PI * 2, r = 40, h = 8 + Math.random() * 22;
           st.setAttribute('radius', 0.05 + Math.random() * 0.06);
@@ -605,7 +605,7 @@
         function building(x, z, w, h, d) {
           const b = document.createElement('a-entity');
           const c = colors[Math.floor(Math.random() * colors.length)];
-          b.innerHTML = '<a-box position="' + x + ' ' + (h/2) + ' ' + z + '" width="' + w + '" height="' + h + '" depth="' + d + '" color="' + c + '"></a-box>';
+          b.innerHTML = '<a-box position="' + x + ' ' + (h/2) + ' ' + z + '" width="' + w + '" height="' + h + '" depth="' + d + '" color="' + c + '" shadow="cast: true"></a-box>';
           const side = x < 0 ? 1 : -1;
           for (let k = 0; k < 5; k++) {
             if (Math.random() < 0.4) {
@@ -625,8 +625,8 @@
           if (real) {
             const li = document.createElement('a-entity');
             li.setAttribute('position', x + ' 3.1 ' + z);
-            li.setAttribute('light', 'type: point; color: #ffcf7a; intensity: 0; distance: 10; decay: 2');
-            li.setAttribute('flicker', 'base: 0.9');
+            li.setAttribute('light', 'type: point; color: #ffcf7a; intensity: 0; distance: 12; decay: 2');
+            li.setAttribute('flicker', 'base: 1.25');
             street.appendChild(li);
           }
         }
@@ -634,6 +634,7 @@
           const b = document.createElement('a-entity');
           b.setAttribute('position', x + ' 0 ' + z);
           b.setAttribute('gltf-fallback', 'src: models/barrel.glb; fb: barrel; scale: 1 1 1; rot: 0 0 0');
+          b.setAttribute('shadow', 'cast: true');
           street.appendChild(b);
           const flame = document.createElement('a-cone');
           flame.setAttribute('position', x + ' 1.05 ' + z);
@@ -650,6 +651,7 @@
           const c = document.createElement('a-entity');
           c.setAttribute('position', x + ' ' + (wreck ? 0.1 : 0) + ' ' + z);
           c.setAttribute('gltf-fallback', 'src: models/car.glb; fb: car; scale: 1 1 1; rot: 0 ' + ((Math.random() < 0.5) ? 0 : 180) + ' ' + (wreck ? 18 : 0));
+          c.setAttribute('shadow', 'cast: true');
           street.appendChild(c);
         }
         function debris(x, z) {
@@ -671,17 +673,16 @@
           d.setAttribute('width', 1.0); d.setAttribute('height', 0.7); d.setAttribute('depth', 0.6);
           d.setAttribute('position', x + ' 0.35 ' + z); d.setAttribute('color', '#2f5340'); street.appendChild(d);
         }
-        for (let z = -4; z > -52; z -= 6) {
-          building(-6 + (Math.random() * 0.6), z, 3 + Math.random(), 4 + Math.random() * 7, 5);
-          building(6 - (Math.random() * 0.6), z, 3 + Math.random(), 4 + Math.random() * 7, 5);
+        for (let z = -4; z > -66; z -= 5) {
+          building(-6 + (Math.random() * 0.6), z, 3 + Math.random(), 4 + Math.random() * 9, 5);
+          building(6 - (Math.random() * 0.6), z, 3 + Math.random(), 4 + Math.random() * 9, 5);
         }
-        let li = 0;
-        for (let z = -3; z > -48; z -= 8) { lamp(-3.2, z, li % 2 === 0); lamp(3.2, z, li % 2 === 1); li++; }
-        fireBarrel(-2.7, -9); fireBarrel(2.7, -20); fireBarrel(-2.6, -34);
-        car(-2.6, -7); car(2.6, -14); car(-2.5, -23, true); car(2.6, -30);
+        for (let z = -3; z > -62; z -= 7) { lamp(-3.2, z, true); lamp(3.2, z, true); }
+        fireBarrel(-2.7, -9); fireBarrel(2.7, -20); fireBarrel(-2.6, -34); fireBarrel(2.7, -48); fireBarrel(-2.7, -58);
+        car(-2.6, -7); car(2.6, -14); car(-2.5, -23, true); car(2.6, -30); car(-2.6, -42); car(2.6, -52, true); car(-2.6, -60);
         dumpster(2.9, -11); dumpster(-2.9, -26);
-        for (let i = 0; i < 14; i++) debris((Math.random() - 0.5) * 6, -3 - Math.random() * 45);
-        for (let i = 0; i < 8; i++) bloodStain((Math.random() - 0.5) * 6, -3 - Math.random() * 42);
+        for (let i = 0; i < 30; i++) debris((Math.random() - 0.5) * 6, -3 - Math.random() * 58);
+        for (let i = 0; i < 20; i++) bloodStain((Math.random() - 0.5) * 6, -3 - Math.random() * 55);
       })();
 
       window.addEventListener('load', function () {
