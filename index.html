@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Donkere Straat — Zombie Shooter</title>
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.5.4/dist/aframe-extras.min.js"></script>
   <script>
   window.GAME_STARTED = false; window.GAME_OVER = false;
   window.GUN_HAND = 'left'; window.HEALTH = 100; window.DAYTIME = true;
@@ -13,17 +14,19 @@
 
   // losse-blokjes pistool als terugval als models/gun.glb ontbreekt
   const GUN_FB = `
-    <a-box position="0 -0.01 -0.1" width="0.04" height="0.035" depth="0.2" material="color:#15171b;metalness:0.6;roughness:0.4"></a-box>
-    <a-box position="0 0.03 -0.1" width="0.045" height="0.05" depth="0.22" material="color:#2b2f36;metalness:0.8;roughness:0.3"></a-box>
-    <a-cylinder position="0 0.03 -0.23" radius="0.013" height="0.03" rotation="90 0 0" material="color:#0a0a0a;metalness:0.9;roughness:0.2"></a-cylinder>
-    <a-box position="0 0.06 -0.2" width="0.006" height="0.012" depth="0.006" material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.9"></a-box>
-    <a-box position="0 0.06 0.0" width="0.02" height="0.012" depth="0.006" material="color:#9fe8ff;emissive:#9fe8ff;emissiveIntensity:0.6"></a-box>
-    <a-box position="0 -0.09 0.02" width="0.04" height="0.12" depth="0.05" rotation="18 0 0" material="color:#1a1a1d;metalness:0.3;roughness:0.7"></a-box>
-    <a-torus position="0 -0.05 -0.03" radius="0.028" radius-tubular="0.005" arc="220" rotation="90 0 0" material="color:#15171b;metalness:0.6;roughness:0.4"></a-torus>`;
+    <a-box position="0 0.02 -0.08" width="0.05" height="0.06" depth="0.26" material="color:#3a3f47;metalness:0.85;roughness:0.28"></a-box>
+    <a-box position="0 0.055 -0.09" width="0.048" height="0.02" depth="0.24" material="color:#23272e;metalness:0.9;roughness:0.22"></a-box>
+    <a-box position="0 -0.008 -0.1" width="0.05" height="0.03" depth="0.24" material="color:#1b1e23;metalness:0.7;roughness:0.4"></a-box>
+    <a-cylinder position="0 0.02 -0.225" radius="0.016" height="0.04" rotation="90 0 0" material="color:#0a0a0a;metalness:0.95;roughness:0.15"></a-cylinder>
+    <a-box position="0 0.075 -0.19" width="0.008" height="0.014" depth="0.008" material="color:#e8f4ff;emissive:#bfe6ff;emissiveIntensity:0.9"></a-box>
+    <a-box position="0 0.075 0.02" width="0.02" height="0.014" depth="0.008" material="color:#e8f4ff;emissive:#bfe6ff;emissiveIntensity:0.7"></a-box>
+    <a-box position="0 -0.1 0.03" width="0.048" height="0.15" depth="0.06" rotation="20 0 0" material="color:#20232a;metalness:0.3;roughness:0.75"></a-box>
+    <a-box position="0 -0.178 0.05" width="0.05" height="0.03" depth="0.066" rotation="20 0 0" material="color:#12141a;metalness:0.4;roughness:0.7"></a-box>
+    <a-torus position="0 -0.055 -0.02" radius="0.032" radius-tubular="0.006" arc="230" rotation="90 0 0" material="color:#20232a;metalness:0.6;roughness:0.4"></a-torus>`;
   const GUN_MODEL_HTML = `
     <a-entity id="gunVisual" gltf-fallback="src: models/gun.glb; fb: gun; scale: 0.2 0.2 0.2; rot: 0 0 0"></a-entity>
-    <a-entity id="aimGroup" position="0 0.02 0" rotation="-45 0 0">
-      <a-cylinder position="0 0 -15" radius="0.004" height="30" rotation="90 0 0" material="color:#45e0ff;emissive:#45e0ff;emissiveIntensity:0.9;transparent:true;opacity:0.5;shader:flat"></a-cylinder>
+    <a-entity id="aimGroup" position="0 0.02 0" rotation="0 0 0">
+      <a-cylinder position="0 0 -15" radius="0.005" height="30" rotation="90 0 0" material="color:#45e0ff;emissive:#45e0ff;emissiveIntensity:1;transparent:true;opacity:0.7;shader:flat"></a-cylinder>
     </a-entity>
     <a-entity id="muzzleFlash" visible="false" position="0 0.03 -0.26">
       <a-sphere radius="0.05" material="color:#ffd27a;emissive:#ffb44a;emissiveIntensity:2"></a-sphere>
@@ -42,6 +45,17 @@
     if (b) b.setAttribute('material', 'color:' + (window.DAYTIME ? '#3a6ea5' : '#23304a') + ';opacity:0.95;transparent:true');
     if (t) t.setAttribute('value', window.DAYTIME ? 'DAG' : 'NACHT');
   }
+  function applySkyGradient(topCol, botCol) {
+    const sky = document.querySelector('#sky'); if (!sky) return;
+    const cvs = document.createElement('canvas'); cvs.width = 16; cvs.height = 256;
+    const ctx = cvs.getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, topCol); g.addColorStop(1, botCol);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 16, 256);
+    const tex = new THREE.CanvasTexture(cvs);
+    const apply = function () { const m = sky.getObject3D('mesh'); if (m) { m.material.map = tex; m.material.color && m.material.color.set('#ffffff'); m.material.needsUpdate = true; } };
+    if (sky.getObject3D('mesh')) apply(); else sky.addEventListener('loaded', apply);
+  }
   function applyTimeOfDay() {
     const day = window.DAYTIME;
     const scene = document.querySelector('a-scene');
@@ -49,7 +63,7 @@
     const stars = document.querySelector('#sky-extra'), sun = document.querySelector('#sun');
     const amb = document.querySelector('#ambLight'), dir = document.querySelector('#dirLight');
     if (day) {
-      if (sky) sky.setAttribute('color', '#8fb6dd');
+      applySkyGradient('#4f86c8', '#cfe2ee');
       if (scene) scene.setAttribute('fog', 'type: exponential; color: #c2d2de; density: 0.013');
       if (amb) amb.setAttribute('light', 'color', '#ffffff');
       if (dir) { dir.setAttribute('light', 'type: directional; color: #fff3df; intensity: 1.0; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraLeft: -22; shadowCameraRight: 22; shadowCameraTop: 22; shadowCameraBottom: -22; shadowCameraNear: 0.5; shadowCameraFar: 70'); dir.object3D.position.set(6, 12, 2); }
@@ -57,7 +71,7 @@
       if (stars) stars.setAttribute('visible', false);
       if (sun) sun.setAttribute('visible', true);
     } else {
-      if (sky) sky.setAttribute('color', '#04050a');
+      applySkyGradient('#05070f', '#161d2e');
       if (scene) scene.setAttribute('fog', 'type: exponential; color: #060810; density: 0.032');
       if (amb) amb.setAttribute('light', 'color', '#1a1f2e');
       if (dir) { dir.setAttribute('light', 'type: directional; color: #5566aa; intensity: 0.45; castShadow: true; shadowMapWidth: 2048; shadowMapHeight: 2048; shadowCameraLeft: -22; shadowCameraRight: 22; shadowCameraTop: 22; shadowCameraBottom: -22; shadowCameraNear: 0.5; shadowCameraFar: 70'); dir.object3D.position.set(-6, 12, 4); }
@@ -229,6 +243,30 @@
   ];
   const ARM_BASE = -1.221; // -70 graden in radialen
 
+  // ---- GLB-zombie config (pas aan als nodig) ----
+  var GLB_SRC = 'models/zombie.glb';
+  var GLB_SCALE = 1.0;   // groter/kleiner als de zombie verkeerd schaalt
+  var GLB_FACING = 0;    // zet op 3.14159 als de zombie van je weg kijkt
+  function findClip(clips, keys){
+    if(!clips) return null;
+    for(var i=0;i<clips.length;i++){ var n=(clips[i].name||'').toLowerCase(); for(var k=0;k<keys.length;k++){ if(n.indexOf(keys[k])>=0) return clips[i]; } }
+    return null;
+  }
+  function goreBurst(wp, n){
+    var scene=document.querySelector('a-scene');
+    for(let i=0;i<(n||10);i++){
+      const g=document.createElement('a-box');
+      const sz=0.05+Math.random()*0.1;
+      g.setAttribute('width',sz); g.setAttribute('height',sz); g.setAttribute('depth',sz);
+      g.setAttribute('color', Math.random()<0.5?'#6e0d0d':'#4a1d1d');
+      g.setAttribute('position', wp.x+' '+(wp.y+0.4)+' '+wp.z);
+      const v=new THREE.Vector3((Math.random()-.5)*3, 2+Math.random()*2.5, (Math.random()-.5)*3);
+      g.addEventListener('loaded', function(){ g.object3D.userData.launchVel=v; });
+      g.setAttribute('gib','');
+      scene.appendChild(g);
+    }
+  }
+
   // ---- losse-blokjes terugval per modeltype ----
   const FB = {
     gun: GUN_FB,
@@ -294,27 +332,50 @@
   AFRAME.registerComponent('zombie', {
     init: function () {
       this.dead = false; this.crawler = false; this.phase = Math.random() * 6;
-      const r = Math.random();
-      let type = 'normal';
+      this.glbMode = false; this.glbReady = false; this.built = false; this.dieTimer = 0;
+      var r = Math.random(), type = 'normal';
       if (r < 0.13) type = 'runner'; else if (r < 0.25) type = 'brute'; else if (r < 0.32) type = 'crawler';
-      this.type = type; this.runner = (type === 'runner');
-      let sk, sc;
-      if (type === 'runner') { this.speed = 1.7 + Math.random() * 0.5; sk = { skin: '#9a5a5a', cloth: '#5a2f2f', pants: '#412424' }; sc = 0.85 + Math.random() * 0.15; this.torsoHP = 2; this.touchDmg = 28; }
-      else if (type === 'brute') { this.speed = 0.55 + Math.random() * 0.2; sk = { skin: '#6b7a55', cloth: '#3a4630', pants: '#2c3626' }; sc = 1.35 + Math.random() * 0.2; this.torsoHP = 6; this.touchDmg = 36; }
-      else if (type === 'crawler') { this.speed = 0.55 + Math.random() * 0.2; sk = SKINS[Math.floor(Math.random() * SKINS.length)]; sc = 0.95 + Math.random() * 0.15; this.torsoHP = 2; this.touchDmg = 15; this.crawler = true; this.legs = 0; }
-      else { this.speed = 0.9 + Math.random() * 0.45; sk = SKINS[Math.floor(Math.random() * SKINS.length)]; sc = 0.9 + Math.random() * 0.2; this.torsoHP = 3; this.touchDmg = 18; }
+      this._type = type; this.runner = (type === 'runner');
+      var sk, sc;
+      if (type === 'runner') { this.speed = 1.7 + Math.random()*0.5; sk={skin:'#9a5a5a',cloth:'#5a2f2f',pants:'#412424'}; sc=0.85+Math.random()*0.15; this.torsoHP=2; this.touchDmg=28; }
+      else if (type === 'brute') { this.speed = 0.55 + Math.random()*0.2; sk={skin:'#6b7a55',cloth:'#3a4630',pants:'#2c3626'}; sc=1.35+Math.random()*0.2; this.torsoHP=6; this.touchDmg=36; }
+      else if (type === 'crawler') { this.speed = 0.55 + Math.random()*0.2; sk=SKINS[Math.floor(Math.random()*SKINS.length)]; sc=0.95+Math.random()*0.15; this.torsoHP=2; this.touchDmg=15; this.crawler=true; this.legs=0; }
+      else { this.speed = 0.9 + Math.random()*0.45; sk=SKINS[Math.floor(Math.random()*SKINS.length)]; sc=0.9+Math.random()*0.2; this.torsoHP=3; this.touchDmg=18; }
       if (type !== 'crawler') this.legs = 2;
       this.speed *= (window.SPEEDMULT || 1);
+      this._sk = sk; this._sc = sc;
       this.knock = new THREE.Vector3();
-      this.fallAxis = (Math.random() < 0.5) ? 'x' : 'z';
-      this.fallDir = (Math.random() < 0.5) ? 1 : -1;
+      this.fallAxis = (Math.random()<0.5)?'x':'z'; this.fallDir=(Math.random()<0.5)?1:-1;
       this.parts = {};
-      const self = this;
+      window.ZOMBIES.push(this.el);
+      this.el.object3D.userData.zombieComp = this;
+      var self = this;
+      this.el.addEventListener('model-loaded', function () { self.onGLB(); });
+      this.el.addEventListener('model-error', function () { self.buildPrimitive(); });
+      this.el.setAttribute('gltf-model', GLB_SRC);
+      setTimeout(function () { if (!self.glbReady && !self.built) self.buildPrimitive(); }, 4500);
+    },
+    onGLB: function () {
+      if (this.built) return;
+      this.glbReady = true; this.glbMode = true;
+      var typeScale = (this._type === 'brute') ? 1.4 : (this._type === 'runner') ? 0.9 : 1;
+      var sc = GLB_SCALE * typeScale; this._glbScale = sc;
+      this.el.setAttribute('scale', sc + ' ' + sc + ' ' + sc);
+      var gm = this.el.components['gltf-model'];
+      var clips = (gm && gm.model && gm.model.animations) ? gm.model.animations : [];
+      this.deathClip = findClip(clips, ['death','die','dead','fall']);
+      var walk = findClip(clips, ['walk','run','move','crawl','zombie']) || (clips[0] || null);
+      if (walk) this.el.setAttribute('animation-mixer', 'clip: ' + walk.name + '; loop: repeat; timeScale: ' + (0.7 + this.speed * 0.4).toFixed(2));
+    },
+    buildPrimitive: function () {
+      if (this.built || this.glbReady) return; this.built = true;
+      this.el.removeAttribute('gltf-model');
+      var self = this, sk = this._sk, type = this._type, sc = this._sc;
       this.el.setAttribute('scale', sc + ' ' + sc + ' ' + sc);
       Object.keys(PART).forEach(function (name) {
         if (self.crawler && (name === 'legL' || name === 'legR')) return;
-        const spec = PART[name];
-        const e = document.createElement(spec.tag);
+        var spec = PART[name];
+        var e = document.createElement(spec.tag);
         Object.keys(spec.attrs).forEach(function (k) { e.setAttribute(k, spec.attrs[k]); });
         e.setAttribute('color', sk[spec.slot]);
         e.setAttribute('position', spec.pos); e.setAttribute('rotation', spec.rot);
@@ -322,36 +383,42 @@
         e.addEventListener('loaded', function () { e.object3D.userData.part = name; });
         if (name === 'head') {
           e.addEventListener('loaded', function () {
-            ['0.06 0.02 0.15', '-0.06 0.02 0.15'].forEach(function (p) {
-              const eye = document.createElement('a-sphere');
+            ['0.06 0.02 0.15','-0.06 0.02 0.15'].forEach(function (p) {
+              var eye = document.createElement('a-sphere');
               eye.setAttribute('radius', 0.03); eye.setAttribute('position', p);
-              eye.setAttribute('material', 'color:#ff2b2b;emissive:#ff2b2b;emissiveIntensity:' + (self.runner ? 1.7 : 1) + ';shader:flat');
+              eye.setAttribute('material', 'color:#ff2b2b;emissive:#ff2b2b;emissiveIntensity:' + (self.runner?1.7:1) + ';shader:flat');
               e.appendChild(eye);
             });
           });
         }
       });
       if (type === 'brute' && this.parts.torso) this.parts.torso.setAttribute('scale', '1.45 1.1 1.35');
-      window.ZOMBIES.push(this.el);
-      this.el.object3D.userData.zombieComp = this;
     },
     spawnGib: function (name, dir) {
-      const ref = this.parts[name]; if (!ref) return;
-      const spec = PART[name];
-      const wp = new THREE.Vector3(); ref.object3D.getWorldPosition(wp);
-      const g = document.createElement(spec.tag);
+      var ref = this.parts[name]; if (!ref) return;
+      var spec = PART[name];
+      var wp = new THREE.Vector3(); ref.object3D.getWorldPosition(wp);
+      var g = document.createElement(spec.tag);
       Object.keys(spec.attrs).forEach(function (k) { g.setAttribute(k, spec.attrs[k]); });
       g.setAttribute('color', ref.getAttribute('color'));
       g.setAttribute('position', wp.x + ' ' + wp.y + ' ' + wp.z);
-      const v = new THREE.Vector3().copy(dir).setY(0).normalize().multiplyScalar(1.0 + Math.random() * 1.4);
+      var v = new THREE.Vector3().copy(dir).setY(0).normalize().multiplyScalar(1.0 + Math.random() * 1.4);
       v.y = 2.2 + Math.random() * 2;
       g.addEventListener('loaded', function () { g.object3D.userData.launchVel = v; });
       g.setAttribute('gib', '');
       this.el.sceneEl.appendChild(g);
       this.el.removeChild(ref); this.parts[name] = null;
     },
-    hitPart: function (part, dir) {
+    hitPart: function (part, dir, point) {
       if (this.dead) return;
+      if (this.glbMode) {
+        var headY = 1.45 * (this._glbScale || 1);
+        if (point && point.y > headY) { this.killGLB(dir); return; }
+        this.torsoHP -= 1;
+        if (point) goreBurst(point, 6);
+        if (this.torsoHP <= 0) this.killGLB(dir);
+        return;
+      }
       if (part === 'head') { this.spawnGib('head', dir); this.kill(dir); return; }
       if (part === 'armL' || part === 'armR') { this.spawnGib(part, dir); return; }
       if (part === 'legL' || part === 'legR') {
@@ -360,14 +427,14 @@
         return;
       }
       this.torsoHP -= 1;
-      const ref = this.parts.torso;
+      var ref = this.parts.torso;
       if (ref) {
-        const wp = new THREE.Vector3(); ref.object3D.getWorldPosition(wp);
-        const chunk = document.createElement('a-box');
+        var wp = new THREE.Vector3(); ref.object3D.getWorldPosition(wp);
+        var chunk = document.createElement('a-box');
         chunk.setAttribute('depth', 0.12); chunk.setAttribute('width', 0.12); chunk.setAttribute('height', 0.12);
         chunk.setAttribute('color', '#5a2a2a');
         chunk.setAttribute('position', wp.x + ' ' + (wp.y + (Math.random()-.5)*0.4) + ' ' + wp.z);
-        const v = new THREE.Vector3().copy(dir).setY(0).normalize().multiplyScalar(1.5 + Math.random());
+        var v = new THREE.Vector3().copy(dir).setY(0).normalize().multiplyScalar(1.5 + Math.random());
         v.y = 1.5 + Math.random() * 1.5;
         chunk.addEventListener('loaded', function () { chunk.object3D.userData.launchVel = v; });
         chunk.setAttribute('gib', '');
@@ -375,55 +442,74 @@
       }
       if (this.torsoHP <= 0) this.kill(dir);
     },
+    killGLB: function (dir) {
+      if (this.dead) return; this.dead = true; addScore(1);
+      var i = window.ZOMBIES.indexOf(this.el); if (i > -1) window.ZOMBIES.splice(i, 1);
+      var wp = new THREE.Vector3(); this.el.object3D.getWorldPosition(wp);
+      goreBurst(wp, 12);
+      if (this.deathClip) this.el.setAttribute('animation-mixer', 'clip: ' + this.deathClip.name + '; loop: once; clampWhenFinished: true');
+      this.dieTimer = 0;
+    },
     kill: function (dir) {
       if (this.dead) return;
       this.dead = true; addScore(1);
       this.knock.copy(dir || new THREE.Vector3(0,0,1)).setY(0).normalize().multiplyScalar(2.0);
-      const i = window.ZOMBIES.indexOf(this.el); if (i > -1) window.ZOMBIES.splice(i, 1);
+      var i = window.ZOMBIES.indexOf(this.el); if (i > -1) window.ZOMBIES.splice(i, 1);
     },
     remove0: function () {
-      const i = window.ZOMBIES.indexOf(this.el); if (i > -1) window.ZOMBIES.splice(i, 1);
+      var i = window.ZOMBIES.indexOf(this.el); if (i > -1) window.ZOMBIES.splice(i, 1);
       if (this.el.parentNode) this.el.parentNode.removeChild(this.el);
     },
     tick: function (time, dt) {
       if (window.GAME_OVER) return;
-      const s = (dt || 16) / 1000; const o = this.el.object3D;
+      var s = (dt || 16) / 1000; var o = this.el.object3D;
       if (!this.dead) {
-        const p = o.position;
-        const dx = -p.x, dz = -p.z;
-        const dist = Math.hypot(dx, dz) || 1;
+        var p = o.position; var dx = -p.x, dz = -p.z; var dist = Math.hypot(dx, dz) || 1;
         if (dist < 1.1) { damagePlayer(this.touchDmg || 18); this.remove0(); return; }
-        const faceY = Math.atan2(dx, dz);
+        var faceY = Math.atan2(dx, dz);
         this.phase += s * (2.5 + this.speed * 3.5);
-        const swing = Math.sin(this.phase), swing2 = Math.sin(this.phase + Math.PI);
         p.x += (dx / dist) * this.speed * s + Math.cos(this.phase) * 0.003;
         p.z += (dz / dist) * this.speed * s;
-        if (this.crawler) {
-          o.rotation.set(1.25, faceY, 0); o.position.y = 0;
-          if (this.parts.armL) this.parts.armL.object3D.rotation.x = -1.0 + Math.sin(this.phase) * 0.45;
-          if (this.parts.armR) this.parts.armR.object3D.rotation.x = -1.0 + Math.sin(this.phase + Math.PI) * 0.45;
-        } else {
-          const lurch = Math.sin(this.phase) * 0.05;
-          const lean = (this.legs === 1) ? 0.25 : 0;
-          o.rotation.set(0.12, faceY, lurch + lean);
-          o.position.y = 0.02 + 0.02 * Math.abs(Math.sin(this.phase));
-          if (this.parts.legL) this.parts.legL.object3D.rotation.x = swing * 0.55;
-          if (this.parts.legR) this.parts.legR.object3D.rotation.x = swing2 * 0.55;
-          if (this.parts.armL) this.parts.armL.object3D.rotation.x = ARM_BASE + Math.sin(this.phase * 0.5) * 0.22;
-          if (this.parts.armR) this.parts.armR.object3D.rotation.x = ARM_BASE + Math.sin(this.phase * 0.5 + 1) * 0.22;
-          if (this.parts.head) this.parts.head.object3D.rotation.z = Math.sin(this.phase * 0.5) * 0.12;
+        if (this.glbMode) {
+          o.rotation.set(0, faceY + GLB_FACING, 0);
+        } else if (this.built) {
+          var swing = Math.sin(this.phase), swing2 = Math.sin(this.phase + Math.PI);
+          if (this.crawler) {
+            o.rotation.set(1.25, faceY, 0); o.position.y = 0;
+            if (this.parts.armL) this.parts.armL.object3D.rotation.x = -1.0 + Math.sin(this.phase) * 0.45;
+            if (this.parts.armR) this.parts.armR.object3D.rotation.x = -1.0 + Math.sin(this.phase + Math.PI) * 0.45;
+          } else {
+            var lurch = Math.sin(this.phase) * 0.05;
+            var lean = (this.legs === 1) ? 0.25 : 0;
+            o.rotation.set(0.12, faceY, lurch + lean);
+            o.position.y = 0.02 + 0.02 * Math.abs(Math.sin(this.phase));
+            if (this.parts.legL) this.parts.legL.object3D.rotation.x = swing * 0.55;
+            if (this.parts.legR) this.parts.legR.object3D.rotation.x = swing2 * 0.55;
+            if (this.parts.armL) this.parts.armL.object3D.rotation.x = ARM_BASE + Math.sin(this.phase * 0.5) * 0.22;
+            if (this.parts.armR) this.parts.armR.object3D.rotation.x = ARM_BASE + Math.sin(this.phase * 0.5 + 1) * 0.22;
+            if (this.parts.head) this.parts.head.object3D.rotation.z = Math.sin(this.phase * 0.5) * 0.12;
+          }
         }
       } else {
-        this.dieTimer = (this.dieTimer || 0) + s;
-        o.position.x += this.knock.x * s; o.position.z += this.knock.z * s;
-        this.knock.multiplyScalar(0.86);
-        const target = Math.PI / 2 * this.fallDir;
-        if (this.fallAxis === 'x') o.rotation.x += (target - o.rotation.x) * Math.min(1, s * 8);
-        else o.rotation.z += (target - o.rotation.z) * Math.min(1, s * 8);
-        o.position.y = Math.max(0, 0.2 - this.dieTimer * 0.4);
-        const op = Math.max(0, 1 - this.dieTimer / 1.6);
-        o.traverse(function (m) { if (m.material) { m.material.transparent = true; m.material.opacity = op; } });
-        if (this.dieTimer > 1.7 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+        if (this.glbMode) {
+          this.dieTimer += s;
+          if (this.dieTimer > 1.2) {
+            var op = Math.max(0, 1 - (this.dieTimer - 1.2) / 1.2);
+            o.traverse(function (m) { if (m.material) { m.material.transparent = true; m.material.opacity = op; } });
+          }
+          if (this.dieTimer > 2.6 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+        } else {
+          this.dieTimer = (this.dieTimer || 0) + s;
+          o.position.x += this.knock.x * s; o.position.z += this.knock.z * s;
+          this.knock.multiplyScalar(0.86);
+          var target = Math.PI / 2 * this.fallDir;
+          if (this.fallAxis === 'x') o.rotation.x += (target - o.rotation.x) * Math.min(1, s * 8);
+          else o.rotation.z += (target - o.rotation.z) * Math.min(1, s * 8);
+          o.position.y = Math.max(0, 0.2 - this.dieTimer * 0.4);
+          var op2 = Math.max(0, 1 - this.dieTimer / 1.6);
+          o.traverse(function (m) { if (m.material) { m.material.transparent = true; m.material.opacity = op2; } });
+          if (this.dieTimer > 1.7 && this.el.parentNode) this.el.parentNode.removeChild(this.el);
+        }
       }
     }
   });
@@ -511,7 +597,7 @@
         let o = bestObj, part = null;
         while (o) { if (o.userData && o.userData.part) { part = o.userData.part; break; } o = o.parent; }
         const comp = best.object3D.userData.zombieComp;
-        if (comp) comp.hitPart(part || 'torso', this.dir);
+        if (comp) comp.hitPart(part || 'torso', this.dir, bestPoint);
       }
     }
   });
@@ -601,6 +687,18 @@
           st.setAttribute('position', (Math.cos(a) * r) + ' ' + h + ' ' + (-20 + Math.sin(a) * r));
           st.setAttribute('material', 'color:#dfe6f0;emissive:#dfe6f0;emissiveIntensity:0.7;shader:flat');
           sky.appendChild(st);
+        }
+        // verre skyline op de horizon
+        for (let i = 0; i < 30; i++) {
+          const a = (i / 30) * Math.PI * 2;
+          const rr = 46 + Math.random() * 12;
+          const bh = 6 + Math.random() * 18;
+          const bx = Math.cos(a) * rr, bz = -22 + Math.sin(a) * rr;
+          const sb = document.createElement('a-box');
+          sb.setAttribute('width', 3 + Math.random() * 5); sb.setAttribute('depth', 3 + Math.random() * 5); sb.setAttribute('height', bh);
+          sb.setAttribute('position', bx + ' ' + (bh / 2) + ' ' + bz);
+          sb.setAttribute('material', 'color:#2c333d;shader:flat');
+          sky.appendChild(sb);
         }
         function building(x, z, w, h, d) {
           const b = document.createElement('a-entity');
