@@ -14,7 +14,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v6.0 — sneller, wilder, Thumper-energie
+  //  DIEPE TRIP v7.0 — sneller, wilder, Thumper-energie
   // =========================================================
   window.PHASE='menu'; window.RIG=null; window.CAM=null;
   window.DIST=0; window.SPEED=0; window.SCENE=-1; window.BEAT=0;
@@ -34,6 +34,7 @@
     {name:'grot',     len:230, sp:4.5,          bg:'#030204', fogD:0.045, mus:{root:82.4,  mode:[0,1,3,6,8],     bpm:56,  four:0, arp:0.25, bright:500,  pad:1}},
     {name:'licht',    len:1000, sp:22, spEnd:52, bg:'#2a1a0a', fogD:0.007, mus:{root:174.6, mode:[0,2,4,5,7,9,11],bpm:136, four:1, trance:1, arp:0.6, bright:3000}}
   ];
+  SCENES.forEach(s=>{ s.len*=3; s.sp*=3; if(s.spEnd)s.spEnd*=3; });
   let TOTAL=0; SCENES.forEach(s=>{ s.z0=-TOTAL; TOTAL+=s.len; s.z1=-TOTAL; });
   const SKYH={ontwaken:[230,300],mandala:[270,330],sterren:[200,260],kristal:[180,230],diepzee:[180,215],tempel:[165,205],puls:[335,365],stad:[285,335],chaos:[280,360],storm:[205,235],vortex:[250,320],grot:[255,290],licht:[28,55]};
   SCENES.forEach(s=>{ s.skyH=SKYH[s.name]; });
@@ -306,12 +307,12 @@
     const p={x:side*rand(2.0,3.2), y:rand(0.8,3.4), z:z};
     const el=E('a-octahedron',{radius:size||rand(0.12,0.3),position:p.x+' '+p.y+' '+p.z,material:glow(color),
       spin:'x:'+sgn()*rand(1,3)+'; y:'+sgn()*rand(1,3),
-      approach:'ox: '+(below?side*rand(10,25):side*rand(40,90))+'; oy: '+(below?-rand(25,50):rand(-8,8))+'; reach: '+rand(120,260)});
+      approach:'ox: '+(below?side*rand(10,25):side*rand(40,90))+'; oy: '+(below?-rand(25,50):rand(-8,8))+'; reach: '+rand(200,420)});
     halo(el,(size||0.2)*3.2,color,0.18); }
 
   // ---------- scene-bouwers (generators) ----------
   function* bOntwaken(z0,z1){ planet(55,10,(z0+z1)/2,12,260); yield;
-    for(let z=z0;z>z1;z-=7){
+    for(let z=z0;z>z1;z-=21){
       for(let k=0;k<3;k++){ const p=around(z-rand(0,6),2.4,10,-4,6); const cc=hsl(rand(190,300),80,65);
         const orb=E(pick(['a-sphere','a-octahedron','a-sphere']),{radius:rand(0.15,0.55),position:p.x+' '+p.y+' '+p.z,
           material:glow(cc), pulse:'amp:0.25; sp:'+rand(0.4,1.1)+'; ph:'+rand(0,6)});
@@ -327,7 +328,7 @@
     E('a-torus',{radius:24,'radius-tubular':0.8,position:'0 1.6 '+zm,material:glow('#7a3aff')+';transparent:true;opacity:0.5',spin:'z:0.02'});
     E('a-torus',{radius:29,'radius-tubular':0.5,position:'0 1.6 '+zm,material:glow('#ff5ad0')+';transparent:true;opacity:0.4',spin:'z:-0.015'});
     yield; let hue=280;
-    for(let z=z0;z>z1;z-=13){ hue=(hue+26)%360; const kind=Math.floor(Math.random()*3);
+    for(let z=z0;z>z1;z-=39){ hue=(hue+26)%360; const kind=Math.floor(Math.random()*3);
       if(kind===0){ const d1=sgn();
         const ring=E('a-entity',{position:'0 1.6 '+z, spin:'z:'+d1*rand(0.2,0.5)});
         for(let i=0;i<8;i++){ const a=i/8*Math.PI*2;
@@ -348,7 +349,7 @@
       if(Math.random()<0.5) comet(z-rand(3,9),hsl(hue+60,90,70));
       yield; } }
   function* bSterren(z0,z1){ planet(-80,22,(z0+z1)/2,30,210); planet(95,10,z0-160,22,30); yield;
-    for(let z=z0;z>z1;z-=6){
+    for(let z=z0;z>z1;z-=18){
       for(let k=0;k<2;k++){ const p=around(z,2.4,10,-5,8);
         E('a-box',{position:p.x+' '+p.y+' '+p.z,width:0.05,height:0.05,depth:rand(7,20),
           material:glow(pick(['#bfe6ff','#8affd9','#ff9af0','#ffffff']))}); }
@@ -360,7 +361,7 @@
       if(Math.random()<0.4) comet(z,pick(['#ffffff','#8affd9']),rand(0.08,0.18));
       yield; } }
   function* bKristal(z0,z1){ planet(-70,18,(z0+z1)/2,20,185); yield;
-    for(let z=z0;z>z1;z-=13){
+    for(let z=z0;z>z1;z-=39){
       for(let k=0;k<2;k++){ const p=around(z-rand(0,8),14,38,-26,-5);
         E('a-cone',{position:p.x+' '+p.y+' '+p.z,'radius-bottom':rand(3,7),'radius-top':0.3,height:rand(16,44),rotation:rand(-14,14)+' 0 '+rand(-14,14),
           material:glow(pick(['#2affc9','#7a5aff','#5ad0ff','#b28aff']))+';opacity:0.85;transparent:true'}); }
@@ -377,8 +378,8 @@
     E('a-torus',{radius:30,'radius-tubular':2.6,position:'0 1.6 '+zp,material:'color:#151517;metalness:0.9;roughness:0.25',spin:'z:0.01'});
     E('a-torus',{radius:30,'radius-tubular':0.5,position:'0 1.6 '+zp,material:glow('#ff1a2a')+';transparent:true;opacity:0.6',spin:'z:0.01'});
     yield; let g=0;
-    for(let z=z0;z>z1;z-=8){ g++;
-      for(const sx of [-1,1]) E('a-box',{position:(sx*2.6)+' 0.4 '+(z-4),width:0.5,height:0.25,depth:8.2,
+    for(let z=z0;z>z1;z-=24){ g++;
+      for(const sx of [-1,1]) E('a-box',{position:(sx*2.6)+' 0.4 '+(z-12),width:0.5,height:0.25,depth:24.6,
         material:'color:#8f939f;metalness:0.4;roughness:0.5',dtex:'k:panel; h:350; rx:1; ry:3'});
       if(g%2===0){ const gate=E('a-entity',{position:'0 1.6 '+z,beatpulse:'amp:0.28'});
         E('a-box',{position:'0 2.3 0',width:5.4,height:0.28,depth:0.28,material:glow('#ff1a2a')},gate);
@@ -399,7 +400,7 @@
   function* bChaos(z0,z1){ const meg=E('a-entity',{position:'55 12 '+((z0+z1)/2),spin:'y:0.05; x:0.02'});
     E('a-icosahedron',{radius:24,material:'color:#a08ac0;roughness:0.9',dtex:'k:panel; h:300; rx:2; ry:2'},meg);
     E('a-icosahedron',{radius:24.3,material:'color:#ff2ad0;shader:flat;wireframe:true'},meg);
-    yield; for(let z=z0;z>z1;z-=9){
+    yield; for(let z=z0;z>z1;z-=27){
       const sw=E('a-entity',{position:'0 1.6 '+z,spin:'z:'+sgn()*rand(0.9,2.4)+'; y:'+rand(-0.6,0.6)});
       for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const r=rand(3.2,8);
         E(pick(['a-box','a-tetrahedron','a-octahedron']),{position:(Math.cos(a)*r)+' '+(Math.sin(a)*r)+' 0',
@@ -412,9 +413,9 @@
       if(Math.random()<0.3){ const p=around(z,3,7,-2,5);
         const g2=gem(p,rand(0.45,0.85),hsl(rand(0,360),95,62)); g2.setAttribute('beatpulse','amp:0.3'); }
       yield; } }
-  function* bGrot(z0,z1){ for(let z=z0;z>z1;z-=6){
-      E('a-box',{position:'0 -2.8 '+z,width:22,height:1.4,depth:6.4,material:'color:#8a7aa2;roughness:0.95',dtex:'k:rock; h:275; rx:3; ry:1'});
-      E('a-box',{position:'0 11 '+z,width:22,height:1.6,depth:6.4,material:'color:#7a6a92;roughness:0.95',dtex:'k:rock; h:275; rx:3; ry:1'});
+  function* bGrot(z0,z1){ for(let z=z0;z>z1;z-=18){
+      E('a-box',{position:'0 -2.8 '+z,width:22,height:1.4,depth:19.2,material:'color:#8a7aa2;roughness:0.95',dtex:'k:rock; h:275; rx:3; ry:1'});
+      E('a-box',{position:'0 11 '+z,width:22,height:1.6,depth:19.2,material:'color:#7a6a92;roughness:0.95',dtex:'k:rock; h:275; rx:3; ry:1'});
       for(const sx of [-1,1]) E('a-cone',{position:(sx*rand(8,13))+' '+rand(-3,3)+' '+z,'radius-bottom':rand(5,9),'radius-top':rand(1,3),height:rand(12,20),material:'color:#84739c;roughness:0.95',dtex:'k:rock; h:275; rx:2; ry:2'});
       E('a-cone',{position:rand(-7,7)+' '+rand(9,10.5)+' '+z,'radius-bottom':rand(1,2.5),'radius-top':0.05,height:rand(2.5,5),rotation:'180 0 0',material:'color:#8a7aa2;roughness:0.95'});
       if(Math.random()<0.3) E('a-torus',{radius:13,'radius-tubular':1.1,arc:200,rotation:'0 0 -10',position:'0 0.5 '+z,material:'color:#cfc8b4;roughness:0.9'});
@@ -440,7 +441,7 @@
         E('a-sphere',{radius:0.08*big,position:p.x+' '+p.y+' '+p.z,material:glow('#b04aff'),pulse:'amp:0.4; sp:1; ph:'+rand(0,6)},wez); }
       yield; } }
   function* bLicht(z0,z1){ let g=0;
-    for(let z=z0;z>z1;z-=9){ g++;
+    for(let z=z0;z>z1;z-=27){ g++;
       if(g%3===0){ const rr=rand(4,6.5); const cc=pick(['#ffd98a','#fff0c0','#ffb35a']);
         E('a-torus',{radius:rr,'radius-tubular':0.1,position:'0 1.6 '+z,material:glow(cc),spin:'z:'+sgn()*rand(0.3,0.8),beatpulse:'amp:0.2'});
         E('a-torus',{radius:rr,'radius-tubular':0.34,position:'0 1.6 '+z,material:'color:'+cc+';shader:flat;transparent:true;opacity:0.12;blending:additive',nodw:''}); }
@@ -454,7 +455,7 @@
         E('a-torus',{radius:34,'radius-tubular':0.35,rotation:'70 0 -14',material:glow('#ffb35a')+';transparent:true;opacity:0.4',spin:'z:-0.02'},sun); }
       yield; } }
   function* bDiepzee(z0,z1){ for(const sx of [-1,1]) E('a-plane',{position:(sx*45)+' 0 '+((z0+z1)/2),rotation:'0 '+(sx<0?90:-90)+' 0',width:(z0-z1)+80,height:70,material:'color:#0a3a4a;shader:flat;transparent:true;opacity:0.35'});
-    yield; for(let z=z0;z>z1;z-=8){
+    yield; for(let z=z0;z>z1;z-=24){
       if(Math.random()<0.6){ const p=around(z,3,9,0,6); const sc=rand(0.6,1.4);
         const jf=E('a-entity',{position:p.x+' '+p.y+' '+p.z, scale:sc+' '+sc+' '+sc, spin:'y:'+sgn()*rand(0.1,0.3), pulse:'amp:0.12; sp:'+rand(0.5,0.9)+'; ph:'+rand(0,6)});
         E('a-sphere',{radius:0.7,scale:'1 0.65 1',material:'color:#3adfff;shader:flat;transparent:true;opacity:0.28;blending:additive',nodw:''},jf);
@@ -471,9 +472,9 @@
         E('a-sphere',{radius:rand(0.03,0.08),position:p.x+' '+p.y+' '+p.z,material:glow('#aef8ff')}); }
       yield; } }
   function* bVortex(z0,z1){ let th=0;
-    for(let z=z0;z>z1;z-=5){ th+=0.42; const hue=((z0-z)*0.5)%360;
+    for(let z=z0;z>z1;z-=15){ th+=0.42; const hue=((z0-z)*0.5)%360;
       for(const off of [0,Math.PI]){ const a=th+off;
-        E('a-box',{position:(Math.cos(a)*3.3)+' '+(1.6+Math.sin(a)*3.3)+' '+z,width:0.25,height:0.25,depth:5.6,
+        E('a-box',{position:(Math.cos(a)*3.3)+' '+(1.6+Math.sin(a)*3.3)+' '+z,width:0.25,height:0.25,depth:12,
           rotation:'0 0 '+(a*180/Math.PI),material:glow(hsl(hue,95,60))}); }
       if(Math.random()<0.08) E('a-torus',{radius:3.3,'radius-tubular':0.12,position:'0 1.6 '+z,
         material:glow(hsl(hue+120,95,65))+';transparent:true;opacity:0.55;blending:additive',nodw:'',spin:'z:'+sgn()*rand(1,2.5),beatpulse:'amp:0.25'});
@@ -487,7 +488,7 @@
     for(let i2=0;i2<5;i2++) E('a-box',{position:'0 '+(i2*6+3)+' 0',width:(34-i2*6),height:6,depth:(34-i2*6),material:'color:#aeb6c6;roughness:0.95',dtex:'k:rock; h:215; rx:4; ry:1'},far);
     E('a-cone',{position:'0 34 0','radius-bottom':3,'radius-top':0.2,height:8,material:glow('#ffd98a')+';opacity:0.8;transparent:true'},far);
     yield; let g=0;
-    for(let z=z0;z>z1;z-=12){ g++;
+    for(let z=z0;z>z1;z-=36){ g++;
       if(g%3===0){
         for(const sx of [-1,1]) E('a-box',{position:(sx*3.4)+' 4 '+z,width:1.6,height:8,depth:1.6,material:'color:#b2bacb;roughness:0.95',dtex:'k:rock; h:215; rx:1; ry:4'});
         E('a-box',{position:'0 8.4 '+z,width:9.2,height:1.2,depth:1.8,material:'color:#b8c0d0;roughness:0.95',dtex:'k:rock; h:215; rx:4; ry:1'});
@@ -507,9 +508,9 @@
     E('a-box',{position:'0 30 0',width:16,height:60,depth:16,material:'color:#b8bec8;roughness:0.9',btex:'h:300; rx:3; ry:8'},mt);
     E('a-box',{position:'0 62 0',width:0.5,height:6,depth:0.5,material:glow('#ff2ad0')},mt);
     yield; let g=0;
-    for(let z=z0;z>z1;z-=10){ g++;
-      E('a-box',{position:'0 -2 '+z,width:7,height:0.3,depth:10.4,material:'color:#8a8f9c;roughness:0.95',dtex:'k:rock; h:220; rx:2; ry:2'});
-      for(const sx of [-1,1]) E('a-box',{position:(sx*5.6)+' -1.85 '+z,width:2.4,height:0.3,depth:10.4,material:'color:#a8adb8;roughness:0.95'});
+    for(let z=z0;z>z1;z-=30){ g++;
+      E('a-box',{position:'0 -2 '+z,width:7,height:0.3,depth:31.2,material:'color:#8a8f9c;roughness:0.95',dtex:'k:rock; h:220; rx:2; ry:2'});
+      for(const sx of [-1,1]) E('a-box',{position:(sx*5.6)+' -1.85 '+z,width:2.4,height:0.3,depth:31.2,material:'color:#a8adb8;roughness:0.95'});
       E('a-box',{position:'0 -1.82 '+z,width:0.18,height:0.05,depth:3,material:glow('#ffd98a')});
       for(const sx of [-1,1]){ const h2=rand(18,42); const bx=sx*rand(9.5,14);
         E('a-box',{position:bx+' '+(h2/2-2)+' '+z,width:rand(5,8),height:h2,depth:8,material:'color:#b0b6c4;roughness:0.9',btex:'h:'+pick([300,190,330,210])+'; rx:2; ry:'+Math.round(h2/6)});
@@ -522,7 +523,7 @@
         E('a-box',{position:(side*rand(3,7))+' '+rand(0.4,3.5)+' '+z,width:0.05,height:0.05,depth:rand(4,10),material:glow(pick(['#ff2ad0','#2affc9','#ffd98a']))}); }
       if(Math.random()<0.4) comet(z,pick(['#ff2ad0','#2affc9']));
       yield; } }
-  function* bStorm(z0,z1){ for(let z=z0;z>z1;z-=12){
+  function* bStorm(z0,z1){ for(let z=z0;z>z1;z-=36){
       for(let c2=0;c2<2;c2++){ const p=around(z-rand(0,8),10,26,-8,14);
         const cl=E('a-entity',{position:p.x+' '+p.y+' '+p.z,spin:'y:'+sgn()*rand(0.02,0.06)});
         for(let s2=0;s2<4;s2++) E('a-sphere',{radius:rand(2.5,5),position:rand(-3,3)+' '+rand(-1,1)+' '+rand(-3,3),
@@ -534,15 +535,21 @@
       for(let k=0;k<2;k++){ const p=around(z,2,10,-4,8);
         E('a-sphere',{radius:rand(0.03,0.07),position:p.x+' '+p.y+' '+p.z,material:glow('#8ab0ff')}); }
       yield; } }
-  function* bMega(){ for(let z=-60; z>-TOTAL+30; z-=90){ const t=Math.random();
-    if(t<0.45){ const side=sgn(); const rr=rand(28,60);
+  const MEGAHUE={ontwaken:250,mandala:300,sterren:210,kristal:190,diepzee:195,tempel:45,puls:350,stad:310,chaos:330,storm:220,vortex:270,grot:275,licht:40};
+  function sceneAt(z){ for(const sc of SCENES){ if(z<=sc.z0 && z>sc.z1) return sc; } return SCENES[SCENES.length-1]; }
+  function* bMega(){ for(let z=-60; z>-TOTAL+30; z-=270){ const SC=sceneAt(z); const hue=MEGAHUE[SC.name]||240; const t=Math.random();
+    if(t<0.3){ const side=sgn(); const rr=rand(28,60);
       const mg=E('a-entity',{position:(side*rand(70,150))+' '+rand(-90,-25)+' '+(z-rand(0,40)),spin:'y:'+sgn()*rand(0.01,0.04)+'; x:'+sgn()*0.008});
-      E(pick(['a-icosahedron','a-dodecahedron','a-octahedron']),{radius:rr,material:'color:#9aa4ba;roughness:0.95',dtex:'k:rock; h:230; rx:4; ry:4'},mg);
-      E('a-icosahedron',{radius:rr*1.02,material:'color:'+hsl(rand(180,320),80,55)+';shader:flat;wireframe:true;opacity:0.35;transparent:true'},mg); }
-    else if(t<0.8){ const side=sgn();
-      E('a-box',{position:(side*rand(90,170))+' '+rand(-20,30)+' '+z,width:rand(14,24),height:rand(80,160),depth:rand(16,30),rotation:'0 '+rand(0,360)+' '+rand(-6,6),material:'color:#8e98ac;roughness:0.95',dtex:'k:rock; h:230; rx:2; ry:8'}); }
+      E(pick(['a-icosahedron','a-dodecahedron','a-octahedron']),{radius:rr,material:'color:#9aa4ba;roughness:0.95',dtex:'k:rock; h:'+hue+'; rx:4; ry:4'},mg);
+      E('a-icosahedron',{radius:rr*1.02,material:'color:'+hsl(hue+rand(-30,30),80,55)+';shader:flat;wireframe:true;opacity:0.35;transparent:true'},mg); }
+    else if(t<0.55){ const side=sgn();
+      E('a-box',{position:(side*rand(90,170))+' '+rand(-20,30)+' '+z,width:rand(14,24),height:rand(80,160),depth:rand(16,30),rotation:'0 '+rand(0,360)+' '+rand(-6,6),material:'color:#8e98ac;roughness:0.95',dtex:'k:rock; h:'+hue+'; rx:2; ry:8'}); }
+    else if(t<0.75){ const side=sgn(); const rt=E('a-entity',{position:(side*rand(80,150))+' '+rand(-30,10)+' '+z,spin:'y:'+sgn()*rand(0.02,0.05)});
+      for(let i=0;i<4;i++) E('a-torus',{radius:26-i*4,'radius-tubular':2.2,position:'0 '+(i*11)+' 0',rotation:'90 0 0',material:'color:'+hsl(hue,30,60)+';roughness:0.8'},rt); }
+    else if(t<0.9){ const side=sgn();
+      E('a-torus',{radius:rand(50,80),'radius-tubular':rand(4,7),arc:180,position:(side*rand(60,120))+' -10 '+z,rotation:'0 '+rand(0,360)+' 0',material:'color:#98a2b6;roughness:0.95',dtex:'k:rock; h:'+hue+'; rx:6; ry:1'}); }
     else { const p=around(z,45,90,-70,-25);
-      for(let k=0;k<4;k++) E('a-cone',{position:(p.x+rand(-12,12))+' '+(p.y+rand(-8,8))+' '+(p.z+rand(-12,12)),'radius-bottom':rand(5,10),'radius-top':0.6,height:rand(25,60),rotation:rand(-15,15)+' 0 '+rand(-15,15),material:glow(hsl(rand(170,300),80,55))+';opacity:0.45;transparent:true'}); }
+      for(let k=0;k<4;k++) E('a-cone',{position:(p.x+rand(-12,12))+' '+(p.y+rand(-8,8))+' '+(p.z+rand(-12,12)),'radius-bottom':rand(5,10),'radius-top':0.6,height:rand(25,60),rotation:rand(-15,15)+' 0 '+rand(-15,15),material:glow(hsl(hue+rand(-40,40),80,55))+';opacity:0.45;transparent:true'}); }
     yield; } }
   function whale(x,y,z,sc,bodyC,spotC,face){ const w=E('a-entity',{position:x+' '+y+' '+z,rotation:'0 '+face+' 0',sway:'amp:0.04; sp:0.22; ph:'+rand(0,6)});
     const R=[10,12,11,9,6.5,4.5,3];
@@ -603,6 +610,78 @@
         E('a-sphere',{radius:7,position:'0 64 0',material:glow('#ffffff')},se);
         for(const wx of [-1,1]) E('a-plane',{position:(wx*26)+' 44 0',rotation:'0 0 '+(wx*24),width:44,height:16,material:'color:#ffe8b0;shader:flat;transparent:true;opacity:0.28;blending:additive;side:double',nodw:''},se); }
       yield; } }
+  const DREAMS=[
+    function(z){ const side=sgn(); const d=E('a-entity',{position:(side*30)+' 0 '+z,rotation:'0 '+(side<0?70:-70)+' 0'}); // de eenzame deur
+      E('a-box',{position:'0 3 0',width:3.4,height:6,depth:0.5,material:'color:#6a5240;roughness:0.9'},d);
+      E('a-box',{position:'-0.2 2.9 0.3',width:2.6,height:5.4,depth:0.3,rotation:'0 -24 0',material:'color:#41301f;roughness:0.9'},d);
+      E('a-plane',{position:'0.7 2.9 0.32',width:0.5,height:5.2,material:glow('#fff2c0')+';opacity:0.85;transparent:true'},d);
+      E('a-plane',{position:'2.4 2.9 1.4',rotation:'0 40 0',width:3,height:5.6,material:'color:#fff2c0;shader:flat;transparent:true;opacity:0.12;blending:additive',nodw:''},d); },
+    function(z){ const side=sgn(); const st=E('a-entity',{position:(side*26)+' -6 '+z,spin:'y:'+sgn()*0.05}); // wenteltrap naar nergens
+      for(let i=0;i<26;i++){ const a=i*0.5; E('a-box',{position:(Math.cos(a)*7)+' '+(i*1.5)+' '+(Math.sin(a)*7),rotation:'0 '+(-a*57.3)+' 0',width:3.4,height:0.3,depth:1.5,material:'color:#b0a8c8;roughness:0.9',dtex:'k:rock; h:260; rx:1; ry:1'},st); } },
+    function(z){ for(let i=0;i<12;i++){ const side=sgn(); // zwevende lantaarns
+        E('a-box',{position:(side*rand(6,14))+' '+rand(2,9)+' '+(z-i*6),width:0.9,height:1.3,depth:0.9,material:glow('#ffb35a')+';opacity:0.85;transparent:true',pulse:'amp:0.12; sp:'+rand(0.5,1)+'; ph:'+rand(0,6),sway:'amp:0.06; sp:0.3; ph:'+rand(0,6)}); } },
+    function(z){ const side=sgn(); const ck=E('a-entity',{position:(side*44)+' 18 '+z,rotation:rand(-18,18)+' '+(side<0?55:-55)+' '+rand(-14,14)}); // de gekantelde klok
+      E('a-torus',{radius:16,'radius-tubular':1.2,material:'color:#c8b890;roughness:0.6;metalness:0.4'},ck);
+      for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; E('a-box',{position:(Math.cos(a)*13.4)+' '+(Math.sin(a)*13.4)+' 0',rotation:'0 0 '+(a*57.3),width:2.2,height:0.7,depth:0.4,material:glow('#fff0c0')},ck); }
+      E('a-box',{position:'0 3.5 0.4',width:0.8,height:9,depth:0.3,material:'color:#41362a;roughness:0.7',spin:'z:0.05'},ck);
+      E('a-box',{position:'0 5 0.6',width:0.5,height:12,depth:0.25,material:'color:#41362a;roughness:0.7',spin:'z:0.012'},ck); },
+    function(z){ const side=sgn(); const tr=E('a-entity',{position:(side*34)+' -4 '+z}); // de lichtboom
+      E('a-cylinder',{radius:1.6,height:22,position:'0 11 0',material:'color:#7a6a92;roughness:0.9',dtex:'k:rock; h:280; rx:2; ry:4'},tr);
+      for(let i=0;i<7;i++){ const a=i/7*Math.PI*2; E('a-cylinder',{radius:0.5,height:10,position:(Math.cos(a)*4)+' '+(22+Math.sin(i)*2)+' '+(Math.sin(a)*4),rotation:(Math.sin(a)*50)+' 0 '+(Math.cos(a)*50),material:'color:#7a6a92;roughness:0.9'},tr); }
+      for(let i=0;i<24;i++){ const a=rand(0,6.28), r=rand(3,10);
+        E('a-sphere',{radius:rand(0.5,1.3),position:(Math.cos(a)*r)+' '+(24+rand(0,9))+' '+(Math.sin(a)*r),material:glow(pick(['#ffd0f0','#d0a8ff','#ffe8a0']))+';opacity:0.8;transparent:true',pulse:'amp:0.2; sp:'+rand(0.4,1)+'; ph:'+rand(0,6)},tr); } },
+    function(z){ const side=sgn(); const sn=E('a-entity',{position:(side*38)+' 20 '+z,rotation:'0 '+(side<0?60:-60)+' 0',sway:'amp:0.05; sp:0.3; ph:0'}); // de luchtslang
+      for(let i=0;i<14;i++) E('a-sphere',{radius:2.6-i*0.13,position:'0 '+(Math.sin(i*0.7)*3)+' '+(-i*4),material:'color:#3a6a52;roughness:0.8'},sn);
+      E('a-sphere',{radius:2.8,position:'0 0 3',material:'color:#3a6a52;roughness:0.8'},sn);
+      for(const ex of [-1.2,1.2]) E('a-sphere',{radius:0.5,position:ex+' 0.8 5.4',material:glow('#ffd24a')},sn); },
+    function(z){ for(let i=0;i<16;i++) E('a-tetrahedron',{radius:rand(0.4,0.8),position:rand(-20,20)+' '+rand(12,22)+' '+(z-rand(0,30)),material:'color:#10141c;shader:flat',sway:'amp:0.5; sp:'+rand(2,4)+'; ph:'+rand(0,6)}); }, // vogelzwerm
+    function(z){ for(let i=0;i<10;i++){ const side=sgn(); const st2=E('a-box',{position:(side*rand(8,26))+' '+rand(8,26)+' '+(z-rand(0,40)),width:0.12,height:0.12,depth:rand(8,18),rotation:'-32 '+rand(-20,20)+' 0',material:glow('#fff8e0')}); halo(st2,0.9,'#fff8e0',0.2); } }, // sterrenregen
+    function(z){ const t=E('a-entity',{position:'0 0 '+z}); // kolossale torii-poort over je pad
+      for(const sx of [-14,14]) E('a-box',{position:sx+' 12 0',width:3,height:26,depth:3,rotation:'0 0 '+(sx<0?-3:3),material:'color:#c03a2a;roughness:0.8'},t);
+      E('a-box',{position:'0 26 0',width:40,height:2.4,depth:3.6,material:'color:#c03a2a;roughness:0.8'},t);
+      E('a-box',{position:'0 22 0',width:32,height:1.6,depth:3,material:'color:#a02a1e;roughness:0.8'},t);
+      E('a-box',{position:'0 28 0',width:44,height:1,depth:4,material:'color:#802018;roughness:0.8'},t); },
+    function(z){ const side=sgn(); const h=E('a-entity',{position:(side*36)+' 4 '+z,spin:'y:0.06'}); // de zandloper
+      E('a-cone',{position:'0 8 0','radius-bottom':7,'radius-top':0.4,height:9,rotation:'180 0 0',material:'color:#cfe0ea;roughness:0.1;metalness:0.2;opacity:0.35;transparent:true'},h);
+      E('a-cone',{position:'0 -1 0','radius-bottom':7,'radius-top':0.4,height:9,material:'color:#cfe0ea;roughness:0.1;metalness:0.2;opacity:0.35;transparent:true'},h);
+      E('a-cylinder',{radius:0.25,height:8,position:'0 3.4 0',material:glow('#ffd98a')+';opacity:0.8;transparent:true'},h);
+      E('a-cone',{position:'0 -3.5 0','radius-bottom':4,'radius-top':0.3,height:4,material:glow('#ffd98a')+';opacity:0.7;transparent:true'},h);
+      for(const yy of [12.6,-5.8]) E('a-cylinder',{radius:7.6,height:0.8,position:'0 '+yy+' 0',material:'color:#8a7a5a;roughness:0.7'},h); },
+    function(z){ const g=E('a-entity',{position:(sgn()*120)+' 45 '+z,rotation:'70 20 0',spin:'z:0.03'}); // spiraalstelsel
+      E('a-sphere',{radius:6,material:glow('#fff0d0')},g);
+      for(let i=0;i<4;i++) E('a-torus',{radius:12+i*9,'radius-tubular':(2.4-i*0.4),arc:rand(200,300),rotation:'0 0 '+rand(0,360),material:glow(pick(['#b0c8ff','#e8d0ff','#ffe0c0']))+';opacity:'+(0.4-i*0.07)+';transparent:true;blending:additive',nodw:''},g); },
+    function(z){ const side=sgn(); const il=E('a-entity',{position:(side*40)+' 26 '+z,sway:'amp:0.015; sp:0.2; ph:0'}); // zwevend eiland met lichtwaterval
+      E('a-cone',{position:'0 -7 0','radius-bottom':11,'radius-top':1,height:14,rotation:'180 0 0',material:'color:#9a8a6c;roughness:0.95',dtex:'k:rock; h:40; rx:3; ry:2'},il);
+      E('a-cylinder',{radius:11,height:2,position:'0 1 0',material:'color:#4a7a44;roughness:0.95'},il);
+      for(let i=0;i<5;i++){ const a=rand(0,6.28), r=rand(2,8);
+        E('a-cone',{position:(Math.cos(a)*r)+' 4 '+(Math.sin(a)*r),'radius-bottom':1.2,'radius-top':0.05,height:4,material:'color:#33562f;roughness:0.9'},il); }
+      E('a-cylinder',{radius:1.2,height:30,position:'3 -14 0',material:'color:#bfe6ff;shader:flat;transparent:true;opacity:0.3;blending:additive',nodw:''},il); },
+    function(z){ const side=sgn(); const eye=E('a-entity',{position:(side*48)+' 22 '+z}); // het grote oog
+      E('a-sphere',{radius:12,material:'color:#e8e4da;roughness:0.4'},eye);
+      const ir=E('a-entity',{position:'0 0 0','lookat-cam':''},eye);
+      E('a-sphere',{radius:5,position:'0 0 8.2',material:'color:#3a7a8a;roughness:0.3'},ir);
+      E('a-sphere',{radius:2.2,position:'0 0 10.4',material:'color:#08090c;shader:flat'},ir);
+      for(const yy of [1,-1]) E('a-torus',{radius:12.2,'radius-tubular':1.4,arc:120,rotation:'0 '+(side<0?90:-90)+' '+(yy<0?210:30),material:'color:#c8a890;roughness:0.8'},eye); },
+    function(z){ const side=sgn(); // reuzenschaakstukken
+      const pw=E('a-entity',{position:(side*30)+' -2 '+z});
+      E('a-cylinder',{radius:4,height:2,position:'0 1 0',material:'color:#e8e0d0;roughness:0.5'},pw);
+      E('a-cone',{position:'0 6 0','radius-bottom':3,'radius-top':1.4,height:8,material:'color:#e8e0d0;roughness:0.5'},pw);
+      E('a-sphere',{radius:2.4,position:'0 11.4 0',material:'color:#e8e0d0;roughness:0.5'},pw);
+      const rk=E('a-entity',{position:(side*44)+' -2 '+(z-24)});
+      E('a-cylinder',{radius:4.4,height:14,position:'0 7 0',material:'color:#2a3040;roughness:0.6'},rk);
+      for(let i=0;i<5;i++){ const a=i/5*6.28; E('a-box',{position:(Math.cos(a)*3.6)+' 15 '+(Math.sin(a)*3.6),width:1.8,height:2.2,depth:1.8,material:'color:#2a3040;roughness:0.6'},rk); } },
+    function(z){ const side=sgn(); const d=E('a-entity',{position:(side*32)+' 0 '+z,spin:'y:0.15'}); // dna-zuil
+      for(let i=0;i<30;i++){ const a=i*0.55, y2=i*1.6-6;
+        E('a-sphere',{radius:0.8,position:(Math.cos(a)*4)+' '+y2+' '+(Math.sin(a)*4),material:glow('#5ad0ff')},d);
+        E('a-sphere',{radius:0.8,position:(-Math.cos(a)*4)+' '+y2+' '+(-Math.sin(a)*4),material:glow('#ff7ac8')},d);
+        if(i%3===0) E('a-box',{position:'0 '+y2+' 0',width:8,height:0.25,depth:0.25,rotation:'0 '+(a*57.3)+' 0',material:'color:#cfd8e8;shader:flat;opacity:0.7;transparent:true'},d); } },
+    function(z){ const side=sgn(); const y2=rand(6,16); // de lichttrein
+      for(let i=0;i<9;i++) E('a-box',{position:(side*rand(50,56))+' '+y2+' '+(z-i*5),width:3.4,height:3,depth:4.4,material:glow(i===0?'#ffffff':'#ffb35a')+';opacity:0.85;transparent:true',pulse:'amp:0.1; sp:2; ph:'+(i*0.6)}); }
+  ];
+  function* bDream(){ const fns=DREAMS.slice();
+    for(let i=fns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const tmp=fns[i]; fns[i]=fns[j]; fns[j]=tmp; }
+    const span=(TOTAL-700)/fns.length;
+    for(let i=0;i<fns.length;i++){ const z=-(350+i*span+rand(-60,60)); try{ fns[i](z); }catch(e){} yield; } }
   const BUILDERS=[bOntwaken,bMandala,bSterren,bKristal,bDiepzee,bTempel,bPuls,bStad,bChaos,bStorm,bVortex,bGrot,bLicht];
 
   const BUILT=[], GENS=[];
@@ -705,7 +784,7 @@
         <a-text value="Zet je geluid aan." align="center" color="#7c8794" width="1.6" position="0 1.6 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v6.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v7.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
 
       <a-entity id="endscreen" visible="false">
@@ -742,7 +821,7 @@
                sc.addEventListener('renderstart',function(){ window.SCENE_LOADED=true; }); }
         setSkyTex(nebulaTex([230,300])); tryTrack();
         for(let i2=0;i2<SCENES.length;i2++) ensureBuilt(i2);
-        window.B_EXPECT+=100; GENS.push(bMega()); GENS.push(bLandmarks());
+        window.B_EXPECT+=120; GENS.push(bMega()); GENS.push(bLandmarks()); GENS.push(bDream());
         document.querySelector('#btnStart').addEventListener('click',function(){ startTrip(); });
         document.querySelector('#btnAgain').addEventListener('click',function(){ location.reload(); });
       }catch(e){ var el=document.getElementById('ldErr'); if(el) el.textContent+='FOUT: '+e.message+'\n'; } });
