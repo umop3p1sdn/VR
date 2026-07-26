@@ -14,29 +14,23 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v7.0 — sneller, wilder, Thumper-energie
+  //  DIEPE TRIP v8.0 — sneller, wilder, Thumper-energie
   // =========================================================
   window.PHASE='menu'; window.RIG=null; window.CAM=null;
   window.DIST=0; window.SPEED=0; window.SCENE=-1; window.BEAT=0;
 
   const SCENES=[
-    {name:'ontwaken', len:160, sp:5,            bg:'#070510', fogD:0.026, mus:{root:110.0, mode:[0,3,5,7,10],    bpm:72,  four:0, arp:0.4,  bright:1000, pad:1}},
-    {name:'mandala',  len:360, sp:8,            bg:'#12061e', fogD:0.018, mus:{root:130.8, mode:[0,2,4,7,9],     bpm:96,  four:0, arp:0.55, bright:1500, pad:1}},
-    {name:'sterren',  len:1100, sp:34,          bg:'#020208', fogD:0.009, mus:{root:110.0, mode:[0,2,4,7,9],     bpm:138, four:1, trance:1, arp:0.5, bright:2600}},
-    {name:'kristal',  len:360, sp:8,            bg:'#04101a', fogD:0.014, mus:{root:146.8, mode:[0,2,4,7,9,11],  bpm:90,  four:0, arp:0.5,  bright:1700, pad:1}},
-    {name:'diepzee',  len:340, sp:6.5,          bg:'#03202a', fogD:0.03,  mus:{root:98.0,  mode:[0,4,7,11],      bpm:66,  four:0, arp:0.3,  bright:1200, pad:1}},
-    {name:'tempel',   len:460, sp:9,            bg:'#0a1216', fogD:0.016, mus:{root:98.0,  mode:[0,2,4,7,9,11],  bpm:80,  four:0, arp:0.45, bright:1500, pad:1}},
-    {name:'puls',     len:520, sp:10,           bg:'#0a0406', fogD:0.028, mus:{root:87.3,  mode:[0,1,6,7],       bpm:112, pound:1, arp:0.15, bright:700}},
-    {name:'stad',     len:800, sp:16,           bg:'#0c0616', fogD:0.014, mus:{root:110.0, mode:[0,3,5,7,10],    bpm:126, four:1, trance:1, arp:0.55, bright:2200}},
-    {name:'chaos',    len:640, sp:14,           bg:'#140410', fogD:0.016, mus:{root:116.5, mode:[0,1,4,6,7,10],  bpm:140, four:1, trance:1, acid:1, arp:0.6, bright:2400}},
-    {name:'storm',    len:360, sp:7,            bg:'#0a0e18', fogD:0.03,  mus:{root:73.4,  mode:[0,1,3,7,8],     bpm:60,  four:0, arp:0.2,  bright:600,  pad:1}},
-    {name:'vortex',   len:1200, sp:40,          bg:'#0a0214', fogD:0.012, mus:{root:123.5, mode:[0,3,5,7,10],    bpm:150, four:1, trance:1, acid:1, arp:0.65, bright:2800}},
-    {name:'grot',     len:230, sp:4.5,          bg:'#030204', fogD:0.045, mus:{root:82.4,  mode:[0,1,3,6,8],     bpm:56,  four:0, arp:0.25, bright:500,  pad:1}},
-    {name:'licht',    len:1000, sp:22, spEnd:52, bg:'#2a1a0a', fogD:0.007, mus:{root:174.6, mode:[0,2,4,5,7,9,11],bpm:136, four:1, trance:1, arp:0.6, bright:3000}}
+    {name:'storm',  len:560,  sp:7,            bg:'#0a0e18', fogD:0.03,  mus:{root:92.5,  mode:[0,1,3,7,8],     bpm:142, four:1, trance:1, goa:1, arp:0.5,  bright:2400}},
+    {name:'ader',   len:720,  sp:8,            bg:'#180408', fogD:0.035, mus:{root:82.4,  mode:[0,2,3,7,10],    bpm:138, four:1, trance:1, goa:1, acid:1, arp:0.4, bright:2000}},
+    {name:'vortex', len:2000, sp:40,           bg:'#0a0214', fogD:0.012, mus:{root:123.5, mode:[0,3,5,7,10],    bpm:150, four:1, trance:1, goa:1, acid:1, arp:0.65, bright:2800}},
+    {name:'chaosx', len:1800, sp:20,           bg:'#140410', fogD:0.016, mus:{root:116.5, mode:[0,1,4,6,7,10],  bpm:148, four:1, trance:1, goa:1, acid:1, arp:0.6, bright:2600}},
+    {name:'strobo', len:980,  sp:14,           bg:'#0c0410', fogD:0.02,  mus:{root:110.0, mode:[0,3,5,7,10],    bpm:140, four:1, trance:1, goa:1, acid:1, arp:0.6, bright:2500}},
+    {name:'grot',   len:405,  sp:4.5,          bg:'#030204', fogD:0.045, mus:{root:82.4,  mode:[0,1,3,6,8],     bpm:100, pound:1, arp:0.2, bright:700}},
+    {name:'licht',  len:1470, sp:22, spEnd:52, bg:'#2a1a0a', fogD:0.007, mus:{root:174.6, mode:[0,2,4,5,7,9,11],bpm:145, four:1, trance:1, goa:1, arp:0.6, bright:3200}}
   ];
   SCENES.forEach(s=>{ s.len*=3; s.sp*=3; if(s.spEnd)s.spEnd*=3; });
   let TOTAL=0; SCENES.forEach(s=>{ s.z0=-TOTAL; TOTAL+=s.len; s.z1=-TOTAL; });
-  const SKYH={ontwaken:[230,300],mandala:[270,330],sterren:[200,260],kristal:[180,230],diepzee:[180,215],tempel:[165,205],puls:[335,365],stad:[285,335],chaos:[280,360],storm:[205,235],vortex:[250,320],grot:[255,290],licht:[28,55]};
+  const SKYH={storm:[205,235],ader:[340,365],vortex:[250,320],chaosx:[280,360],strobo:[180,330],grot:[255,290],licht:[28,55]};
   SCENES.forEach(s=>{ s.skyH=SKYH[s.name]; });
 
   const $=q=>document.querySelector(q);
@@ -113,8 +107,11 @@
     o1.connect(f); o2.connect(f); f.connect(g).connect(DUCK); o1.start(); o2.start();
     DRONE={o1:o1,o2:o2,f:f}; }
   const MUS={cfg:null, nextT:0, step:0, phrase:[]};
-  function makePhrase(c){ const ph=[]; for(let i=0;i<16;i++){
-      if(i===0){ ph.push(0); continue; }
+  function makePhrase(c){ const ph=[];
+    if(c.goa){ const off=Math.floor(Math.random()*c.mode.length);
+      for(let i=0;i<16;i++) ph.push(c.mode[(off+i*3)%c.mode.length]+(((i%8)>5)?12:0));
+      return ph; }
+    for(let i=0;i<16;i++){ if(i===0){ ph.push(0); continue; }
       ph.push(Math.random()<0.55 ? pick(c.mode)+12*Math.floor(Math.random()*2) : null); } return ph; }
   function setMusic(cfg){ const a=AC(); MUS.cfg=cfg; MUS.step=0;
     cfg.prog=(cfg.mode.indexOf(4)>=0)?[0,9,5,7]:[0,8,3,10]; // majeur- of mineur-schema
@@ -139,7 +136,8 @@
         else note(chord/2,t,0.12,0.17,'sawtooth',DUCK,0.004);                    // rollende bas
         if(sect>=2){ hatAt(t, pos%4===2?0.13:0.045); }
         if(pos===14 && Math.random()<0.4) hatAt(t,0.1,true);
-        if(sect>=1 && MUS.phrase[pos]!=null){                                     // melodie-hook
+        if(c.goa){ supersaw(c.root*2*Math.pow(2,MUS.phrase[pos]/12),t,0.14,0.055,DELAY,0.008,c.bright); }
+        else if(sect>=1 && MUS.phrase[pos]!=null){
           supersaw(c.root*2*Math.pow(2,MUS.phrase[pos]/12),t,0.24,0.06,DELAY,0.01,c.bright); }
         if(c.acid && sect>=6 && pos%2===0 && Math.random()<0.5){
           acidAt(c.root*Math.pow(2,pick(c.mode)/12)*(Math.random()<0.3?2:1),t); }
@@ -247,6 +245,61 @@
     init:function(){ const el=this.el,d=this.data; const base=detailTex(d.k,d.h);
       const ap=function(){ const m=el.getObject3D('mesh'); if(m){ const t=base.clone(); t.needsUpdate=true; t.repeat.set(d.rx,d.ry); m.material.map=t; m.material.needsUpdate=true; } };
       el.addEventListener('object3dset',ap); if(el.getObject3D('mesh'))ap(); } });
+
+  // ---- canvas-art: schedel en monster (gedetailleerde plaatjes op vlakken) ----
+  let SKT=null; function skullTex(){ if(SKT) return SKT;
+    const cv=document.createElement('canvas'); cv.width=512; cv.height=512; const x=cv.getContext('2d');
+    const g=x.createRadialGradient(256,210,40,256,210,240); g.addColorStop(0,'rgba(232,236,246,0.95)'); g.addColorStop(0.75,'rgba(178,188,208,0.85)'); g.addColorStop(1,'rgba(110,120,145,0)');
+    x.fillStyle=g; x.beginPath(); x.ellipse(256,200,172,152,0,0,6.283); x.fill();
+    x.beginPath(); x.ellipse(256,338,112,92,0,0,6.283); x.fill();
+    x.fillStyle='rgba(5,5,12,0.98)';
+    x.beginPath(); x.ellipse(185,212,52,64,0.15,0,6.283); x.fill();
+    x.beginPath(); x.ellipse(327,212,52,64,-0.15,0,6.283); x.fill();
+    const ge=x.createRadialGradient(185,218,2,185,218,28); ge.addColorStop(0,'rgba(130,245,255,1)'); ge.addColorStop(1,'rgba(130,245,255,0)'); x.fillStyle=ge; x.fillRect(140,172,92,92);
+    const ge2=x.createRadialGradient(327,218,2,327,218,28); ge2.addColorStop(0,'rgba(130,245,255,1)'); ge2.addColorStop(1,'rgba(130,245,255,0)'); x.fillStyle=ge2; x.fillRect(282,172,92,92);
+    x.fillStyle='rgba(5,5,12,0.95)'; x.beginPath(); x.moveTo(256,242); x.lineTo(232,302); x.lineTo(280,302); x.closePath(); x.fill();
+    x.fillStyle='rgba(212,218,228,0.92)'; for(let i=0;i<8;i++) x.fillRect(186+i*18,330,13,44);
+    x.strokeStyle='rgba(5,5,12,0.7)'; x.lineWidth=3; for(let i=0;i<=8;i++){ x.beginPath(); x.moveTo(186+i*18,328); x.lineTo(186+i*18,376); x.stroke(); }
+    x.strokeStyle='rgba(20,24,34,0.8)'; x.lineWidth=4;
+    x.beginPath(); x.moveTo(228,72); x.lineTo(246,128); x.lineTo(226,166); x.stroke();
+    x.beginPath(); x.moveTo(332,90); x.lineTo(318,142); x.stroke();
+    SKT=new THREE.CanvasTexture(cv); return SKT; }
+  let MOT=null; function monsterTex(){ if(MOT) return MOT;
+    const cv=document.createElement('canvas'); cv.width=512; cv.height=512; const x=cv.getContext('2d');
+    x.fillStyle='rgba(16,7,22,0.97)'; x.beginPath(); x.ellipse(256,268,236,232,0,0,6.283); x.fill();
+    x.strokeStyle='rgba(16,7,22,0.95)'; x.lineWidth=30; x.lineCap='round';
+    for(let i=0;i<5;i++){ x.beginPath(); const bx=70+i*90; x.moveTo(bx,120); x.quadraticCurveTo(bx+rand(-60,60),20,bx+rand(-40,40),-10); x.stroke(); }
+    const eyes=[[150,180,20],[240,150,26],[340,185,20],[190,250,13],[310,255,13],[256,205,10]];
+    for(const e2 of eyes){ const gg=x.createRadialGradient(e2[0],e2[1],1,e2[0],e2[1],e2[2]*2.2);
+      gg.addColorStop(0,'rgba(255,190,80,1)'); gg.addColorStop(0.45,'rgba(255,80,40,0.9)'); gg.addColorStop(1,'rgba(255,60,30,0)');
+      x.fillStyle=gg; x.fillRect(e2[0]-e2[2]*2.2,e2[1]-e2[2]*2.2,e2[2]*4.4,e2[2]*4.4);
+      x.fillStyle='rgba(10,2,4,1)'; x.beginPath(); x.ellipse(e2[0],e2[1],e2[2]*0.28,e2[2]*0.85,0,0,6.283); x.fill(); }
+    x.fillStyle='rgba(58,4,10,0.98)'; x.beginPath(); x.ellipse(256,372,152,84,0,0,6.283); x.fill();
+    x.fillStyle='rgba(228,224,214,0.95)';
+    for(let i=0;i<9;i++){ const tx=130+i*30; x.beginPath(); x.moveTo(tx,306); x.lineTo(tx+13,306); x.lineTo(tx+6,352); x.closePath(); x.fill(); }
+    for(let i=0;i<8;i++){ const tx=146+i*30; x.beginPath(); x.moveTo(tx,436); x.lineTo(tx+13,436); x.lineTo(tx+6,392); x.closePath(); x.fill(); }
+    x.strokeStyle='rgba(58,4,10,0.85)'; x.lineWidth=8;
+    for(let i=0;i<4;i++){ x.beginPath(); const dx=170+i*60; x.moveTo(dx,446); x.lineTo(dx+rand(-10,10),480+rand(0,26)); x.stroke(); }
+    MOT=new THREE.CanvasTexture(cv); return MOT; }
+  AFRAME.registerComponent('imgtex',{ schema:{kind:{default:'skull'}}, init:function(){ const el=this.el;
+    const t=(this.data.kind==='skull')?skullTex():monsterTex();
+    const ap=function(){ const m=el.getObject3D('mesh'); if(m){ m.material.map=t; m.material.transparent=true; m.material.fog=false; m.material.needsUpdate=true; } };
+    el.addEventListener('object3dset',ap); if(el.getObject3D('mesh'))ap(); } });
+  AFRAME.registerComponent('flicker',{ init:function(){ this.t=rand(5,10); this.seq=[]; this.s0=0; },
+    tick:function(t,dt){ const s=(dt||16)/1000;
+      if(window.PHASE!=='trip'){ this.el.object3D.visible=false; return; }
+      if(this.seq.length){ this.s0-=s; if(this.s0<=0){ const st=this.seq.shift(); this.el.object3D.visible=st.v; this.s0=st.d; } }
+      else { this.el.object3D.visible=false; this.t-=s;
+        if(this.t<=0){ this.t=rand(8,16); this.seq=[{v:true,d:0.14},{v:false,d:0.12},{v:true,d:0.22},{v:false,d:0.35},{v:true,d:0.1},{v:false,d:0.1}]; this.s0=0; } } } });
+  function growl(){ try{ const a=AC(); const t=a.currentTime;
+    const o=a.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(38,t+1.1);
+    const f2=a.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=420; f2.Q.value=6;
+    const g=a.createGain(); g.gain.setValueAtTime(0.6,t); g.gain.exponentialRampToValueAtTime(0.01,t+1.3);
+    o.connect(f2).connect(g).connect(MASTER); o.start(t); o.stop(t+1.4);
+    const len=Math.floor(a.sampleRate*0.9); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.1);
+    const n=a.createBufferSource(); n.buffer=b; const bf=a.createBiquadFilter(); bf.type='lowpass'; bf.frequency.value=300;
+    const ng=a.createGain(); ng.gain.value=0.4; n.connect(bf).connect(ng).connect(MASTER); n.start(t); }catch(e){} }
 
   // ---- glyphen-textuur voor tempelpoorten ----
   let GLY=null;
@@ -535,7 +588,7 @@
       for(let k=0;k<2;k++){ const p=around(z,2,10,-4,8);
         E('a-sphere',{radius:rand(0.03,0.07),position:p.x+' '+p.y+' '+p.z,material:glow('#8ab0ff')}); }
       yield; } }
-  const MEGAHUE={ontwaken:250,mandala:300,sterren:210,kristal:190,diepzee:195,tempel:45,puls:350,stad:310,chaos:330,storm:220,vortex:270,grot:275,licht:40};
+  const MEGAHUE={storm:220,ader:350,vortex:270,chaosx:330,strobo:290,grot:275,licht:40};
   function sceneAt(z){ for(const sc of SCENES){ if(z<=sc.z0 && z>sc.z1) return sc; } return SCENES[SCENES.length-1]; }
   function* bMega(){ for(let z=-60; z>-TOTAL+30; z-=270){ const SC=sceneAt(z); const hue=MEGAHUE[SC.name]||240; const t=Math.random();
     if(t<0.3){ const side=sgn(); const rr=rand(28,60);
@@ -594,7 +647,7 @@
       else if(SC.name==='tempel'){ colossus(-62,zm,90); }
       else if(SC.name==='stad'){ for(let i2=0;i2<12;i2++){ const side=sgn(); const hh=rand(110,200);
           E('a-box',{position:(side*rand(90,220))+' '+(hh/2-2)+' '+(SC.z0-rand(40,SC.len-40)),width:rand(22,40),height:hh,depth:rand(22,40),material:'color:#9aa2b4;roughness:0.9',btex:'h:'+pick([300,190,210])+'; rx:4; ry:'+Math.round(hh/10)}); } }
-      else if(SC.name==='chaos'){ const bh=E('a-entity',{position:'100 28 '+zm,spin:'y:0.12'});
+      else if(SC.name==='chaosx'){ const bh=E('a-entity',{position:'100 28 '+zm,spin:'y:0.12'});
         E('a-sphere',{radius:20,material:'color:#000000;shader:flat'},bh);
         E('a-torus',{radius:34,'radius-tubular':7,rotation:'80 0 0',scale:'1 1 0.16',material:glow('#ff8a2a')+';opacity:0.55;transparent:true;blending:additive',nodw:''},bh);
         E('a-torus',{radius:24,'radius-tubular':2,rotation:'80 0 0',scale:'1 1 0.2',material:glow('#fff0c0')+';opacity:0.7;transparent:true;blending:additive',nodw:''},bh); }
@@ -603,12 +656,55 @@
         E('a-box',{position:'0 52 0',width:24,height:28,depth:12,material:'color:#1c2434;roughness:0.95'},ti);
         for(const ax of [-16,16]) E('a-box',{position:ax+' 48 0',width:7,height:26,depth:9,rotation:'0 0 '+(ax<0?8:-8),material:'color:#1a2030;roughness:0.95'},ti);
         E('a-sphere',{radius:7,position:'0 72 0',material:'color:#1c2434;roughness:0.95'},ti);
-        for(const ex of [-2.6,2.6]) E('a-sphere',{radius:1,position:ex+' 73 6',material:glow('#ff4a3a')},ti); }
+        for(const ex of [-2.6,2.6]) E('a-sphere',{radius:1,position:ex+' 73 6',material:glow('#ff4a3a')},ti);
+        E('a-plane',{position:(sgn()*50)+' 75 '+(zm-250),width:430,height:430,material:'color:#ffffff;shader:flat;transparent:true;opacity:0.8',imgtex:'kind: skull',flicker:''}); }
+      else if(SC.name==='grot'){
+        E('a-plane',{position:(sgn()*40)+' 60 '+(zm-230),width:430,height:430,material:'color:#ffffff;shader:flat;transparent:true;opacity:0.85',imgtex:'kind: skull',flicker:''});
+        const mp=E('a-plane',{position:'0 2.5 '+z3,width:26,height:26,material:'color:#ffffff;shader:flat;transparent:true;opacity:0.98',imgtex:'kind: monster',visible:'false'});
+        window.MON={trig:(-z3)-45, el:mp, done:false}; }
+      else if(SC.name==='ader'){ const ht=E('a-entity',{position:(sgn()*55)+' 10 '+zm,pulse:'amp:0.1; sp:2.2; ph:0'});
+        E('a-sphere',{radius:11,scale:'1 1.2 0.9',material:'color:#7a1a2a;roughness:0.6'},ht);
+        E('a-sphere',{radius:8,position:'6 6 0',scale:'1 1.1 0.9',material:'color:#8a2434;roughness:0.6'},ht);
+        for(let i2=0;i2<3;i2++) E('a-cylinder',{radius:2.2-i2*0.4,height:10,position:(-4+i2*4)+' 15 0',rotation:rand(-20,20)+' 0 '+rand(-25,25),material:'color:#6a1424;roughness:0.65'},ht);
+        halo(ht,16,'#ff2a4a',0.12); }
       else if(SC.name==='vortex'){ for(const zz of [z3,z7]) E('a-torus',{radius:30,'radius-tubular':3,position:'0 1.6 '+zz,material:glow('#b06aff')+';opacity:0.5;transparent:true',spin:'z:'+sgn()*0.15}); }
       else if(SC.name==='licht'){ const se=E('a-entity',{position:'-85 6 '+zm,rotation:'0 75 0',pulse:'amp:0.02; sp:0.4; ph:0'});
         E('a-cylinder',{radius:4,height:60,position:'0 30 0',material:glow('#fff0c0')+';opacity:0.6;transparent:true;blending:additive',nodw:''},se);
         E('a-sphere',{radius:7,position:'0 64 0',material:glow('#ffffff')},se);
         for(const wx of [-1,1]) E('a-plane',{position:(wx*26)+' 44 0',rotation:'0 0 '+(wx*24),width:44,height:16,material:'color:#ffe8b0;shader:flat;transparent:true;opacity:0.28;blending:additive;side:double',nodw:''},se); }
+      yield; } }
+  function* bAder(z0,z1){ let ph=0;
+    for(let z=z0;z>z1;z-=30){ ph+=0.35;
+      const R=8+3.5*Math.sin(z*0.008)+1.5*Math.sin(z*0.021);
+      const ring=E('a-entity',{position:'0 1.6 '+z,rotation:'0 0 '+rand(0,360),beatpulse:'amp:0.05'});
+      for(let i=0;i<9;i++){ const a=i/9*Math.PI*2+ph;
+        E('a-sphere',{radius:R*0.42,position:(Math.cos(a)*R)+' '+(Math.sin(a)*R)+' 0',material:'color:#9a4050;roughness:0.6',dtex:'k:rock; h:350; rx:2; ry:2'},ring); }
+      if(Math.random()<0.5) E('a-sphere',{radius:rand(0.5,1.1),position:rand(-1.6,1.6)+' '+(1.6+rand(-1.4,1.8))+' '+(z-rand(0,20)),material:glow('#ff6a7a'),pulse:'amp:0.25; sp:'+rand(0.8,1.6)+'; ph:'+rand(0,6)});
+      if(Math.random()<0.35) E('a-cylinder',{radius:0.12,height:rand(6,14),position:(sgn()*R*0.8)+' '+(1.6+rand(-R*0.4,R*0.4))+' '+z,rotation:'90 0 0',material:glow('#ff2a4a')+';opacity:0.7;transparent:true'});
+      yield; } }
+  function* bChaosX(z0,z1){ for(let z=z0;z>z1;z-=45){
+      const sw=E('a-entity',{position:'0 1.6 '+z,spin:'z:'+sgn()*rand(1.2,3)+'; y:'+rand(-0.8,0.8)});
+      for(let i=0;i<8;i++){ const a=i/8*6.283; const r=rand(3.5,11);
+        E(pick(['a-box','a-tetrahedron','a-octahedron']),{position:(Math.cos(a)*r)+' '+(Math.sin(a)*r)+' 0',width:rand(0.5,1.2),height:rand(0.5,1.2),depth:rand(0.5,1.2),radius:rand(0.3,0.8),material:glow(hsl(rand(0,360),95,60)),beatpulse:'amp:0.5'},sw); }
+      const g2=gem({x:sgn()*rand(4,9),y:rand(0,4),z:z-15},rand(0.6,1.2),hsl(rand(0,360),95,62)); g2.setAttribute('beatpulse','amp:0.4');
+      if(Math.random()<0.5){ const p=around(z-22,14,34,-8,18);
+        const wf=E('a-entity',{position:p.x+' '+p.y+' '+p.z,spin:'x:'+sgn()*rand(0.2,0.6)+'; y:'+sgn()*rand(0.2,0.6)});
+        E(pick(['a-icosahedron','a-dodecahedron']),{radius:rand(6,14),material:'color:'+hsl(rand(0,360),90,55)+';shader:flat;wireframe:true'},wf); }
+      comet(z,hsl(rand(0,360),95,65)); comet(z-20,hsl(rand(0,360),95,65));
+      yield; } }
+  function* bStrobo(z0,z1){ const mid=z1;
+    const LA=E('a-entity',{position:'0 0 '+mid}), LB=E('a-entity',{position:'0 0 '+mid}), LC=E('a-entity',{position:'0 0 '+mid});
+    window.STROLAYERS=[LA,LB,LC]; LB.setAttribute('visible','false'); LC.setAttribute('visible','false');
+    for(let z=z0;z>z1;z-=90){ const rz=z-mid;
+      const a1=E('a-entity',{position:'0 1.6 '+rz,spin:'z:'+sgn()*rand(0.5,1.5)},LA);
+      for(let i=0;i<6;i++){ const a=i/6*6.283; const r=rand(3,8);
+        E('a-box',{position:(Math.cos(a)*r)+' '+(Math.sin(a)*r)+' 0',width:0.8,height:0.8,depth:0.8,material:glow(pick(['#2affc9','#ff2ad0','#5ad0ff']))},a1); }
+      const b1=E('a-entity',{position:'0 1.6 '+rz},LB);
+      for(let i=0;i<7;i++){ const a=rand(0,6.283), r=rand(3,9);
+        E('a-sphere',{radius:rand(0.6,1.4),position:(Math.cos(a)*r)+' '+(Math.sin(a)*r)+' 0',material:glow(pick(['#ff4a5a','#ff8a3a','#c02a6a']))},b1); }
+      const c1=E('a-entity',{position:'0 1.6 '+rz},LC);
+      for(let i=0;i<5;i++){ const a=rand(0,6.283), r=rand(3.5,9);
+        E('a-cone',{position:(Math.cos(a)*r)+' '+(Math.sin(a)*r)+' 0','radius-bottom':0.9,'radius-top':0.05,height:rand(1.6,3.2),material:glow(pick(['#ffd98a','#fff0c0']))},c1); }
       yield; } }
   const DREAMS=[
     function(z){ const side=sgn(); const d=E('a-entity',{position:(side*30)+' 0 '+z,rotation:'0 '+(side<0?70:-70)+' 0'}); // de eenzame deur
@@ -682,10 +778,10 @@
     for(let i=fns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const tmp=fns[i]; fns[i]=fns[j]; fns[j]=tmp; }
     const span=(TOTAL-700)/fns.length;
     for(let i=0;i<fns.length;i++){ const z=-(350+i*span+rand(-60,60)); try{ fns[i](z); }catch(e){} yield; } }
-  const BUILDERS=[bOntwaken,bMandala,bSterren,bKristal,bDiepzee,bTempel,bPuls,bStad,bChaos,bStorm,bVortex,bGrot,bLicht];
+  const BUILDERS=[bStorm,bAder,bVortex,bChaosX,bStrobo,bGrot,bLicht];
 
   const BUILT=[], GENS=[];
-  const STEPS=[23,28,184,28,43,39,65,80,72,30,240,42,112];
+  const STEPS=[47,72,400,120,99,71,163];
   window.B_EXPECT=0; window.B_DONE=0;
   function ensureBuilt(i){ if(i<0||i>=SCENES.length||BUILT[i])return; BUILT[i]=true; window.B_EXPECT+=STEPS[i]||20; GENS.push(BUILDERS[i](SCENES[i].z0,SCENES[i].z1)); }
   setInterval(function(){ if(!window.RIG)return; let n=0;
@@ -707,6 +803,16 @@
       if(idx!==window.SCENE){ window.SCENE=idx; this.enter(SC); }
       ensureBuilt(idx+1); ensureBuilt(idx+2);
       if(SC.name==='storm' && Math.random()<s*0.35) doLightning();
+      if(SC.name==='strobo' && window.STROLAYERS){ this.strT=(this.strT||0)+s;
+        const per=60/((MUS.cfg&&MUS.cfg.bpm)||140);
+        if(this.strT>=per){ this.strT=0; window.STRO=((window.STRO||0)+1)%3;
+          for(let i2=0;i2<3;i2++) window.STROLAYERS[i2].object3D.visible=(i2===window.STRO); } }
+      if(window.MON && !window.MON.done && window.DIST>window.MON.trig){ window.MON.done=true;
+        const ffl=$('#flash'); if(ffl&&ffl.components.flashfx) ffl.components.flashfx.hit(0.75);
+        growl(); window.MON.el.setAttribute('visible','true');
+        const mel=window.MON.el;
+        setTimeout(function(){ const f2=$('#flash'); if(f2&&f2.components.flashfx) f2.components.flashfx.hit(0.4); },1200);
+        setTimeout(function(){ mel.setAttribute('visible','false'); },1350); }
       let target=SC.sp;
       if(SC.spEnd){ const pr=(window.DIST-(-SC.z0))/SC.len; target=SC.sp+(SC.spEnd-SC.sp)*Math.min(1,Math.max(0,pr)); }
       window.SPEED+=(target-window.SPEED)*Math.min(1,s/1.6);
@@ -749,7 +855,7 @@
   </script>
 </head>
 <body>
-  <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
+  <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div><div style="font-size:16px;color:#5ad0ff;margin-top:6px">v8.0</div>
     <div id="ldPct">0%</div><div id="ldPhase">scene laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -781,10 +887,11 @@
         <a-plane position="0 1.55 -2.11" width="1.98" height="1.23" material="color:#b04aff;opacity:0.16;transparent:true"></a-plane>
         <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.2" position="0 1.95 -2.08"></a-text>
         <a-text value="Een reis. Kijk om je heen." align="center" color="#9aa8c0" width="1.8" position="0 1.74 -2.08"></a-text>
-        <a-text value="Zet je geluid aan." align="center" color="#7c8794" width="1.6" position="0 1.6 -2.08"></a-text>
+        <a-text value="Zet je geluid aan." align="center" color="#7c8794" width="1.6" position="0 1.62 -2.08"></a-text>
+        <a-text value="Let op: felle flitsen" align="center" color="#c05a5a" width="1.4" position="0 1.51 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v7.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v8.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
 
       <a-entity id="endscreen" visible="false">
@@ -819,7 +926,7 @@
         if(sc.hasLoaded) window.SCENE_LOADED=true;
         else { sc.addEventListener('loaded',function(){ window.SCENE_LOADED=true; });
                sc.addEventListener('renderstart',function(){ window.SCENE_LOADED=true; }); }
-        setSkyTex(nebulaTex([230,300])); tryTrack();
+        setSkyTex(nebulaTex([205,235])); tryTrack();
         for(let i2=0;i2<SCENES.length;i2++) ensureBuilt(i2);
         window.B_EXPECT+=120; GENS.push(bMega()); GENS.push(bLandmarks()); GENS.push(bDream());
         document.querySelector('#btnStart').addEventListener('click',function(){ startTrip(); });
