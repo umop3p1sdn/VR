@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v15.0
+  //  DIEPE TRIP v16.1
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -32,41 +32,41 @@
      A:[0.05,0.05,0.12],B:[0.50,0.50,0.90],D:[0.00,0.15,0.35], mus:{root:110.0,mode:[0,3,5,7,10],bpm:138,goa:1,bright:2000}},
     {n:'donker1', dur:26, ev:-1,orb:0,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[0,3,4], fold:[6,6], wave:[0.5,0.9], sp:[9,13], rip:0.10, white:0, light:1,
      A:[0.05,0.05,0.12],B:[0.55,0.55,0.90],D:[0.60,0.65,0.75], mus:{root:110.0,mode:[0,3,5,7,10],bpm:140,goa:1,bright:2200}},
-    {n:'lagen', yaw:180, roll:0, dur:28, ev:-1,orb:1,orbNear:0,dome:0.35,wall:0, tex:[0,0], md:[1,3,4], fold:[6,11],wave:[0.4,0.8], sp:[8,12], rip:0.08, white:0, light:0,
+    {n:'lagen', yaw:120, roll:0, back:1, dur:28, ev:-1,orb:1,orbNear:0,dome:0.35,wall:0, tex:[0,0], md:[1,3,4], fold:[6,11],wave:[0.4,0.8], sp:[8,12], rip:0.08, white:0, light:0,
      A:[0.10,0.05,0.14],B:[0.70,0.50,0.85],D:[0.00,0.30,0.60], mus:{root:123.5,mode:[0,3,5,7,10],bpm:142,goa:1,bright:2500}},
-    {n:'wandenZ', yaw:0, roll:120, dur:24, ev:-1,orb:1,orbNear:0,dome:0.12,wall:2, tex:[0,0], md:[4,3,4], fold:[8,8], wave:[0.3,0.5], sp:[10,14],rip:0.08, white:0, light:0,
+    {n:'wandenZ', yaw:0, roll:90, back:1, dur:24, ev:-1,orb:1,orbNear:0,dome:0.12,wall:2, tex:[0,0], md:[4,3,4], fold:[8,8], wave:[0.3,0.5], sp:[10,14],rip:0.08, white:0, light:0,
      A:[0.05,0.09,0.12],B:[0.40,0.65,0.80],D:[0.15,0.35,0.55], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,acid:1,bright:2500}},
     {n:'bolbij',  dur:24, ev:-1,orb:1,orbNear:1,dome:0.0, wall:0, tex:[0,0], md:[0,0,2], fold:[6,6], wave:[0.5,0.9], sp:[7,11], rip:0.12, white:0, light:0,
      A:[0.12,0.04,0.10],B:[0.80,0.45,0.75],D:[0.40,0.20,0.75], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,bright:2600}},
-    {n:'moire1', yaw:360, roll:0, dur:24, ev:-1,orb:1,orbNear:0,dome:0.10,wall:0, tex:[0.85,0],md:[3,3,3],fold:[6,6], wave:[0.2,0.4], sp:[9,13], rip:0.06, white:0, light:0,
+    {n:'moire1', yaw:360, roll:0, back:0, dur:24, ev:-1,orb:1,orbNear:0,dome:0.10,wall:0, tex:[0.85,0],md:[3,3,3],fold:[6,6], wave:[0.2,0.4], sp:[9,13], rip:0.06, white:0, light:0,
      A:[0.08,0.08,0.10],B:[0.60,0.60,0.70],D:[0.10,0.30,0.55], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:148,goa:1,bright:2700}},
     {n:'donker2', dur:22, ev:-1,orb:0,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[3,0,4], fold:[6,6], wave:[0.6,1.0], sp:[11,15],rip:0.12, white:0, light:1,
      A:[0.06,0.05,0.10],B:[0.60,0.50,0.85],D:[0.55,0.60,0.70], mus:{root:82.4,mode:[0,1,3,7,8],bpm:140,goa:1,bright:2200}},
-    {n:'slang', yaw:-140, roll:0, dur:24, ev:3, orb:1,orbNear:0,dome:0.25,wall:0, tex:[0,0], md:[4,4,1], fold:[7,7], wave:[0.3,0.6], sp:[8,12], rip:0.08, white:0, light:0,
+    {n:'slang', yaw:-90, roll:0, back:1, dur:24, ev:3, orb:1,orbNear:0,dome:0.25,wall:0, tex:[0,0], md:[4,4,1], fold:[7,7], wave:[0.3,0.6], sp:[8,12], rip:0.08, white:0, light:0,
      A:[0.04,0.10,0.09],B:[0.35,0.70,0.60],D:[0.20,0.45,0.60], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,bright:2500}},
-    {n:'caleido', yaw:0, roll:220, dur:26, ev:4, orb:1,orbNear:0,dome:0.40,wall:0, tex:[0,0], md:[1,1,4], fold:[6,14],wave:[0.4,0.9], sp:[9,13], rip:0.07, white:0, light:0,
+    {n:'caleido', yaw:0, roll:180, back:0, dur:26, ev:4, orb:1,orbNear:0,dome:0.40,wall:0, tex:[0,0], md:[1,1,4], fold:[6,14],wave:[0.4,0.9], sp:[9,13], rip:0.07, white:0, light:0,
      A:[0.12,0.05,0.14],B:[0.80,0.50,0.70],D:[0.00,0.33,0.67], mus:{root:123.5,mode:[0,3,5,7,10],bpm:144,goa:1,acid:1,bright:2600}},
-    {n:'poorten', yaw:-360, roll:0, dur:26, ev:1, orb:1,orbNear:0,dome:0.20,wall:0, tex:[0,0], md:[3,4,3], fold:[6,10],wave:[0.3,0.6], sp:[11,16],rip:0.10, white:0, light:0,
+    {n:'poorten', yaw:-360, roll:0, back:0, dur:26, ev:1, orb:1,orbNear:0,dome:0.20,wall:0, tex:[0,0], md:[3,4,3], fold:[6,10],wave:[0.3,0.6], sp:[11,16],rip:0.10, white:0, light:0,
      A:[0.12,0.04,0.10],B:[0.80,0.45,0.70],D:[0.40,0.20,0.75], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,acid:1,bright:2800}},
     {n:'wandenV', dur:26, ev:-1,orb:1,orbNear:0,dome:0.10,wall:1, tex:[0,0], md:[4,3,4], fold:[8,6], wave:[0.3,0.5], sp:[10,15],rip:0.09, white:0, light:0,
      A:[0.06,0.10,0.08],B:[0.40,0.70,0.55],D:[0.20,0.40,0.60], mus:{root:98.0,mode:[0,2,3,7,10],bpm:148,goa:1,bright:2600}},
-    {n:'dans', yaw:200, roll:0, dur:26, ev:0, orb:1,orbNear:0,dome:0.30,wall:0, tex:[0,0], md:[1,4,3], fold:[12,4],wave:[0.5,1.0], sp:[10,15],rip:0.14, white:0, light:0,
+    {n:'dans', yaw:140, roll:0, back:1, dur:26, ev:0, orb:1,orbNear:0,dome:0.30,wall:0, tex:[0,0], md:[1,4,3], fold:[12,4],wave:[0.5,1.0], sp:[10,15],rip:0.14, white:0, light:0,
      A:[0.10,0.04,0.12],B:[0.85,0.55,0.75],D:[0.55,0.20,0.85], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,acid:1,bright:2900}},
     {n:'donker3', dur:20, ev:-1,orb:0,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[0,3,4], fold:[6,6], wave:[0.5,1.0], sp:[12,16],rip:0.10, white:0, light:1,
      A:[0.05,0.06,0.12],B:[0.50,0.55,0.85],D:[0.60,0.65,0.75], mus:{root:92.5,mode:[0,1,3,7,8],bpm:148,goa:1,bright:2400}},
-    {n:'rimpel', yaw:0, roll:-180, dur:24, ev:-1,orb:1,orbNear:1,dome:0.20,wall:0, tex:[0,0], md:[0,3,0], fold:[6,6], wave:[0.9,1.5], sp:[10,15],rip:0.45, white:0, light:0,
+    {n:'rimpel', yaw:0, roll:-120, back:1, dur:24, ev:-1,orb:1,orbNear:1,dome:0.20,wall:0, tex:[0,0], md:[0,3,0], fold:[6,6], wave:[0.9,1.5], sp:[10,15],rip:0.45, white:0, light:0,
      A:[0.15,0.03,0.05],B:[0.75,0.35,0.28],D:[0.00,0.10,0.20], mus:{root:82.4,mode:[0,1,3,7,8],bpm:142,goa:1,acid:1,bright:2300}},
-    {n:'moire2', yaw:-360, roll:0, dur:22, ev:-1,orb:1,orbNear:0,dome:0.08,wall:0, tex:[0.9,1],md:[3,3,3], fold:[6,6], wave:[0.3,0.5], sp:[11,15],rip:0.06, white:0, light:0,
+    {n:'moire2', yaw:-360, roll:0, back:0, dur:22, ev:-1,orb:1,orbNear:0,dome:0.08,wall:0, tex:[0.9,1],md:[3,3,3], fold:[6,6], wave:[0.3,0.5], sp:[11,15],rip:0.06, white:0, light:0,
      A:[0.10,0.06,0.06],B:[0.70,0.45,0.40],D:[0.05,0.25,0.50], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,bright:2800}},
-    {n:'inhalen', yaw:270, roll:0, dur:26, ev:2, orb:1,orbNear:0,dome:0.25,wall:0, tex:[0,0], md:[3,0,2], fold:[6,6], wave:[0.4,0.8], sp:[12,17],rip:0.10, white:0, light:0,
+    {n:'inhalen', yaw:180, roll:0, back:0, dur:26, ev:2, orb:1,orbNear:0,dome:0.25,wall:0, tex:[0,0], md:[3,0,2], fold:[6,6], wave:[0.4,0.8], sp:[12,17],rip:0.10, white:0, light:0,
      A:[0.07,0.06,0.16],B:[0.50,0.45,0.88],D:[0.00,0.15,0.35], mus:{root:110.0,mode:[0,2,4,7,9],bpm:150,goa:1,acid:1,bright:2800}},
-    {n:'chaos', yaw:360, roll:180, dur:24, ev:4, orb:1,orbNear:0,dome:0.35,wall:0, tex:[0,0], md:[1,4,3], fold:[14,3],wave:[0.7,1.3], sp:[13,19],rip:0.20, white:0, light:0,
+    {n:'chaos', yaw:360, roll:0, back:0, dur:24, ev:4, orb:1,orbNear:0,dome:0.35,wall:0, tex:[0,0], md:[1,4,3], fold:[14,3],wave:[0.7,1.3], sp:[13,19],rip:0.20, white:0, light:0,
      A:[0.10,0.04,0.12],B:[0.85,0.55,0.75],D:[0.55,0.20,0.85], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:152,goa:1,acid:1,bright:2950}},
-    {n:'wanden3', yaw:-200, roll:0, dur:24, ev:-1,orb:1,orbNear:0,dome:0.10,wall:3, tex:[0,0], md:[3,4,3], fold:[6,9], wave:[0.3,0.6], sp:[12,17],rip:0.10, white:0, light:0,
+    {n:'wanden3', yaw:-120, roll:0, back:1, dur:24, ev:-1,orb:1,orbNear:0,dome:0.10,wall:3, tex:[0,0], md:[3,4,3], fold:[6,9], wave:[0.3,0.6], sp:[12,17],rip:0.10, white:0, light:0,
      A:[0.09,0.09,0.05],B:[0.65,0.65,0.40],D:[0.10,0.25,0.45], mus:{root:123.5,mode:[0,3,5,7,10],bpm:150,goa:1,bright:2900}},
     {n:'donker4', dur:18, ev:-1,orb:0,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[0,3,4], fold:[6,6], wave:[0.6,1.1], sp:[13,18],rip:0.10, white:0, light:1,
      A:[0.06,0.06,0.10],B:[0.55,0.55,0.80],D:[0.60,0.65,0.75], mus:{root:174.6,mode:[0,2,4,5,7,9,11],bpm:150,goa:1,bright:2600}},
-    {n:'finale', yaw:540, roll:0, dur:32, ev:1, orb:1,orbNear:1,dome:0.30,wall:3, tex:[0,0], md:[3,0,2], fold:[6,6], wave:[0.5,0.9], sp:[14,30],rip:0.10, white:1, light:0,
+    {n:'finale', yaw:360, roll:0, back:0, dur:32, ev:1, orb:1,orbNear:1,dome:0.30,wall:3, tex:[0,0], md:[3,0,2], fold:[6,6], wave:[0.5,0.9], sp:[14,30],rip:0.10, white:1, light:0,
      A:[0.30,0.28,0.24],B:[0.70,0.70,0.66],D:[0.00,0.06,0.12], mus:{root:174.6,mode:[0,2,4,5,7,9,11],bpm:150,goa:1,bright:3200}}
   ];
   let TOTALT=0; SCENES.forEach(sc=>{ sc.t0=TOTALT; TOTALT+=sc.dur; });
@@ -99,18 +99,22 @@
   function tryTrack(){ TRACK_URLS.forEach(function(l,i){ probe(l,0,i); }); discover(); }
   // leest de muziekmap uit via GitHub en pakt gewoon wat er ligt
   function discover(){
-    const api=['https://api.github.com/repos/umop3p1sdn/vr/contents/Music',
-               'https://api.github.com/repos/umop3p1sdn/vr/contents/music'];
-    api.forEach(function(u){
-      fetch(u).then(function(r){ return r.ok?r.json():null; }).then(function(j){
+    let owner=(location.hostname||'').split('.')[0]||'umop3p1sdn';
+    let repo=(location.pathname||'/').split('/').filter(Boolean)[0]||'VR';
+    if(/\.html?$/i.test(repo)) repo='VR';
+    const repos=[repo,'VR','vr'], dirs=['Music','music',''], seen={};
+    repos.forEach(function(rp){ dirs.forEach(function(dir){
+      const key=rp+'|'+dir; if(seen[key]) return; seen[key]=1;
+      fetch('https://api.github.com/repos/'+owner+'/'+rp+'/contents/'+dir)
+        .then(function(r){ return r.ok?r.json():null; }).then(function(j){
         if(!j||!Array.isArray(j)) return;
-        const au2=j.filter(function(x){ return /\.(mp3|m4a|wav|ogg)$/i.test(x.name||''); })
-                   .sort(function(a,b){ return a.name.localeCompare(b.name); });
-        if(!au2.length) return;
-        window.FOUND_LIST=au2.map(function(a){ return a.name; });
-        au2.slice(0,2).forEach(function(a,i){ if(TRACKS[i]) return;
+        const list=j.filter(function(x){ return /\.(mp3|m4a|wav|ogg)$/i.test(x.name||''); })
+                    .sort(function(a,b){ return a.name.localeCompare(b.name); });
+        if(!list.length) return;
+        window.FOUND_LIST=list.map(function(a){ return a.name; });
+        list.slice(0,2).forEach(function(a,i){ if(TRACKS[i]) return;
           const el=new Audio();
-          el.src=(a.path||('Music/'+a.name)).split('/').map(encodeURIComponent).join('/');
+          el.src=(a.path||a.name).split('/').map(encodeURIComponent).join('/');
           el.preload='metadata'; el.loop=false;
           const ok=function(){ if(!TRACKS[i]){ el._url=a.name; TRACKS[i]=el; markFound(); } };
           el.addEventListener('loadedmetadata',ok,{once:true});
@@ -118,7 +122,7 @@
           el.load(); });
         markFound();
       }).catch(function(){});
-    }); }
+    }); }); }
   function probe(list,k,i){ if(k>=list.length){ markFound(); return; }
     const au=new Audio(); au.src=list[k]; au.preload='metadata'; au.loop=false;
     const ok=function(){ if(!TRACKS[i]){ au._url=list[k]; TRACKS[i]=au; markFound(); } };
@@ -372,9 +376,13 @@
       const ou=shellU(); ou.uMode.value=2; ou.uSharp.value=1.0; ou.uCut.value=99999; ou.uSpeed.value=3;
       const orbMat=new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,uniforms:ou,side:THREE.FrontSide});
       const orbGeo=new THREE.SphereGeometry(1,34,24);
-      this.orbParts=[];
-      for(let i=0;i<16;i++){ const m=new THREE.Mesh(orbGeo,orbMat); m.visible=false; m.position.set(0,1.6,-90);
-        root.add(m); this.orbParts.push(m); }
+      const mkOrb=function(g,n){ const a=[]; for(let i=0;i<n;i++){ const m=new THREE.Mesh(g,orbMat);
+        m.visible=false; m.position.set(0,1.6,-90); root.add(m); a.push(m); } return a; };
+      this.orbParts=mkOrb(orbGeo,16);
+      this.oBox=mkOrb(new THREE.BoxGeometry(1,1,1),6);
+      this.oOct=mkOrb(new THREE.OctahedronGeometry(1,0),6);
+      this.oPan=mkOrb(new THREE.BoxGeometry(1,1,1),3);
+      this.orbAll=this.orbParts.concat(this.oBox,this.oOct,this.oPan);
       this.ou=ou; this.orbAmt=0; this.orbForm=0; this.orbSpin={x:0.05,y:0.08,z:0.02};
       // ---- wanden: vlak onder je en naast je, schuiven hard dichtbij en weer weg ----
       this.walls=[];
@@ -427,8 +435,9 @@
       this.ou.uTexAmt.value=(Math.random()<0.45)?rand(0.5,0.9):0;
       this.ou.uTex.value=getPrints()[Math.floor(rand(0,3))];
       this.ou.uTexRep.value=rand(2,6);
-      const FORMS=[0,0,0,1,1,2,2]; let nf=FORMS[Math.floor(Math.random()*FORMS.length)];
-      if(nf===this.orbForm&&Math.random()<0.75) nf=(nf+1+Math.floor(Math.random()*2))%3;
+      const FORMS=[0,1,1,2,4,4,5,5,6,6,7,7,3];
+      let nf=FORMS[Math.floor(Math.random()*FORMS.length)];
+      if(nf===this.orbForm) nf=FORMS[Math.floor(Math.random()*FORMS.length)];
       this.orbForm=nf;
       this.orbHue=rand(0,1); this.orbR=rand(0.8,1.3);
       this.orbSpin={x:rand(-0.18,0.18),y:rand(-0.25,0.25),z:rand(-0.12,0.12)};
@@ -493,7 +502,8 @@
 
       // ---- de tunnel draait: de opening zwaait weg, tot 360 graden ----
       if(!menu){ const r0=5.0, r1=Math.max(r0+8,this.scDur-3);
-        const ea=Math.min(1,Math.max(0,(tEl-r0)/(r1-r0))), ez=0.5-0.5*Math.cos(Math.PI*ea);
+        const ea=Math.min(1,Math.max(0,(tEl-r0)/(r1-r0)));
+        const ez=SC.back?Math.sin(Math.PI*ea):(0.5-0.5*Math.cos(Math.PI*ea));
         this.tube.rotation.y=this.yaw0+((SC.yaw||0)*Math.PI/180)*ez;
         this.tube.rotation.z=this.roll0+((SC.roll||0)*Math.PI/180)*ez; }
       // ---- tunnel ----
@@ -521,28 +531,59 @@
       if(!menu&&SC.intro){ const g=Math.min(1,Math.max(0,tEl/19)); osc=this.orbAmt*(0.10+0.90*g); oz=-155+58*g; }
       else if(SC.orbNear) oz=-(21+26*(0.5+0.5*Math.sin(this.elapsed*0.20)));
       else oz=-(34+80*(0.5+0.5*Math.sin(this.elapsed*0.115)));
-      const vis=osc>0.03, oR=(this.orbR||1), sp=this.orbSpin;
+      const vis=osc>0.03, oR=(this.orbR||1), sp=this.orbSpin, E=this.elapsed;
       const form=(menu||SC.intro)?0:this.orbForm;
-      if(form===0){
-        const p=this.orbParts[0]; p.visible=vis; p.position.set(0,1.6,oz);
-        p.scale.setScalar(15*osc*oR*(1+beat*0.08));
-        p.rotation.x+=sp.x*s; p.rotation.y+=sp.y*s; p.rotation.z+=sp.z*s;
-        for(let i=1;i<16;i++) this.orbParts[i].visible=false;
-      } else if(form===1){
-        const cz=oz*0.8;
-        for(let i=0;i<3;i++){ const p=this.orbParts[i]; p.visible=vis;
-          const a=this.elapsed*0.42+i*2.0944;
-          p.position.set(Math.cos(a)*13,1.6+Math.sin(a)*9.5,cz+Math.sin(a*2.0)*11);
-          p.scale.setScalar(7*osc*oR*(1+beat*0.11));
-          p.rotation.y+=sp.y*s*1.6; p.rotation.x+=sp.x*s; }
-        for(let i=3;i<16;i++) this.orbParts[i].visible=false;
-      } else {
-        for(let i=0;i<16;i++){ const p=this.orbParts[i]; p.visible=vis;
-          const T=this.elapsed*0.40-i*0.18;
-          p.position.set(Math.sin(T*0.9)*25,1.6+Math.sin(T*0.55+1.2)*9,-48+Math.cos(T*0.7)*26);
-          p.scale.setScalar(osc*oR*(5.4-i*0.21)*(1+beat*0.06));
-          p.rotation.z+=sp.z*s*2.0; p.rotation.y+=sp.y*s; }
+      for(let i=0;i<this.orbAll.length;i++) this.orbAll[i]._want=false;
+      const put=function(m,x,y,z,sc,sv,rt){ if(!vis) return m;
+        m._want=true; m._tx=x; m._ty=y; m._tz=z; m._ts=sc; m._tsv=sv||null; m._trot=rt||null; return m; };
+      if(form===0){                                    // een grote bal
+        put(this.orbParts[0],0,1.6,oz,15*osc*oR*(1+beat*0.08));
+      } else if(form===1){                             // twee tuimelende kubussen
+        for(let i=0;i<2;i++){ const a=E*0.33+i*Math.PI;
+          const m=put(this.oBox[i],Math.cos(a)*14,1.6+Math.sin(a)*6,oz*0.85+Math.sin(a*1.5)*13,9.5*osc*oR*(1+beat*0.09));
+          m.rotation.x+=sp.x*s*1.6; m.rotation.y+=sp.y*s*1.3; }
+      } else if(form===2){                             // drie ballen
+        for(let i=0;i<3;i++){ const a=E*0.42+i*2.0944;
+          put(this.orbParts[i],Math.cos(a)*13,1.6+Math.sin(a)*9.5,oz*0.8+Math.sin(a*2)*11,7*osc*oR*(1+beat*0.11)); }
+      } else if(form===3){                             // slang (zeldzaam)
+        for(let i=0;i<16;i++){ const T=E*0.40-i*0.18;
+          put(this.orbParts[i],Math.sin(T*0.9)*25,1.6+Math.sin(T*0.55+1.2)*9,-48+Math.cos(T*0.7)*26,
+              osc*oR*(5.4-i*0.21)*(1+beat*0.06)); }
+      } else if(form===4){                             // vier octaeders in een draaiend kruis
+        for(let i=0;i<4;i++){ const a=E*0.5+i*1.5708;
+          put(this.oOct[i],Math.cos(a)*11.5,1.6+Math.sin(a)*11.5,oz*0.8,6.2*osc*oR*(1+beat*0.12)); }
+      } else if(form===5){                             // twee reuzenplaten die langs elkaar schuiven
+        for(let i=0;i<2;i++){ const d2=i?1:-1, ph=Math.sin(E*0.24+i*Math.PI);
+          put(this.oPan[i],d2*17*ph,1.6+d2*3.5,oz*0.7,undefined,
+              {x:20*osc*oR,y:26*osc*oR,z:0.5},
+              {x:0,y:ph*0.45,z:d2*0.22+Math.sin(E*0.2)*0.14}); }
+      } else if(form===6){                             // ring van bollen om je heen
+        for(let i=0;i<8;i++){ const a=E*0.34+i*0.7854;
+          put(this.orbParts[i],Math.cos(a)*16,1.6+Math.sin(a)*16,oz*0.55,3.6*osc*oR*(1+beat*0.14)); }
+      } else {                                         // uiteenvallen en weer samenkomen
+        const b2=0.5-0.5*Math.cos(E*0.34);
+        for(let i=0;i<12;i++){ const a=i*2.3999, r2=2+b2*17;
+          put(this.orbParts[i],Math.cos(a)*r2,1.6+Math.sin(a*1.7)*r2*0.6,oz+Math.cos(a*0.9)*r2*0.7,
+              (7.5-b2*4.2)*osc*oR*(1+beat*0.08)); }
       }
+      const kk=1-Math.exp(-s/0.85);
+      for(let i=0;i<this.orbAll.length;i++){ const m=this.orbAll[i];
+        if(m._want){
+          if(!m.visible){ m.position.set(0,1.6,oz); m.scale.setScalar(0.001); m.visible=true; }
+          m.position.x+=(m._tx-m.position.x)*kk;
+          m.position.y+=(m._ty-m.position.y)*kk;
+          m.position.z+=(m._tz-m.position.z)*kk;
+          if(m._tsv){ m.scale.x+=(m._tsv.x-m.scale.x)*kk; m.scale.y+=(m._tsv.y-m.scale.y)*kk; m.scale.z+=(m._tsv.z-m.scale.z)*kk; }
+          else if(m._ts!==undefined){ const q=m._ts;
+            m.scale.x+=(q-m.scale.x)*kk; m.scale.y+=(q-m.scale.y)*kk; m.scale.z+=(q-m.scale.z)*kk; }
+          if(m._trot){ m.rotation.x+=(m._trot.x-m.rotation.x)*kk;
+            m.rotation.y+=(m._trot.y-m.rotation.y)*kk; m.rotation.z+=(m._trot.z-m.rotation.z)*kk; }
+          else { m.rotation.x+=sp.x*s; m.rotation.y+=sp.y*s; m.rotation.z+=sp.z*s; }
+        } else if(m.visible){
+          m.position.x+=(0-m.position.x)*kk; m.position.y+=(1.6-m.position.y)*kk; m.position.z+=(oz-m.position.z)*kk;
+          m.scale.multiplyScalar(Math.max(0.1,1-kk*1.35));
+          if(m.scale.x<0.06){ m.visible=false; m.scale.setScalar(0.001); }
+        } }
       this.ou.uTime.value+=s*(0.7+this.cur.sp*0.1);
       this.ou.uBeat.value=beat; this.ou.uFlash.value=this.flash*0.8;
       this.ou.uWhite.value=(SC.white?pr*pr:0); this.ou.uDark.value=1;
@@ -638,7 +679,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v15.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v16.1</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -662,7 +703,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v15.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v16.1" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
