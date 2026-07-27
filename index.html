@@ -12,45 +12,46 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v10.0 — parallax-lagen, morphende figuren,
-  //  rimpel-schokgolf, tunnel uit/in, bliksem op de kick
+  //  DIEPE TRIP v11.0
+  //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
+  //  drie soorten verschijningen, elk kort en anders
+  //  duur = beide tracks (4:12 + 4:00)
   // =========================================================
   window.PHASE='menu'; window.BEAT=0; window.USE_TRACK=false;
   const $=q=>document.querySelector(q);
   const rand=(a,b)=>a+Math.random()*(b-a);
   const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const TRACK1_END=249;
 
-  // ---- het verhaal: 9 hoofdstukken, ~10 min ----
-  // tun: 1 = in een tunnel, 0 = open ruimte
-  // md: 0 plasma, 1 caleidoscoop, 2 fractal, 3 ringen, 4 cellen
+  // tun:1 = tunnel, 0 = zwarte leegte | ev: -1 geen, 0 dans, 1 poorten, 2 inhalen
+  // hole:1 = de tunnel eindigt in een zwart gat waar je doorheen vliegt
   const SCENES=[
-    {name:'vertrek',   dur:62, tun:1, md:[3,0,2], fold:[6,6],   wave:[0.3,0.7], sp:[7,9],   rip:0.05, light:0, white:0,
-     A:[0.08,0.06,0.18],B:[0.45,0.40,0.85],D:[0.00,0.15,0.35],
-     mus:{root:110.0,mode:[0,3,5,7,10],bpm:140,goa:1,bright:2400}},
-    {name:'uitbraak',  dur:66, tun:0, md:[2,4,2], fold:[6,9],   wave:[0.2,0.5], sp:[5,7],   rip:0.08, light:0, white:0,
-     A:[0.05,0.07,0.16],B:[0.50,0.45,0.80],D:[0.10,0.25,0.50],
-     mus:{root:123.5,mode:[0,3,5,7,10],bpm:142,goa:1,acid:1,bright:2500}},
-    {name:'caleido',   dur:66, tun:1, md:[1,1,4], fold:[6,14],  wave:[0.4,0.9], sp:[8,11],  rip:0.07, light:0, white:0,
-     A:[0.12,0.05,0.14],B:[0.80,0.50,0.70],D:[0.00,0.33,0.67],
-     mus:{root:116.5,mode:[0,2,4,7,9],bpm:144,goa:1,bright:2600}},
-    {name:'cellen',    dur:64, tun:0, md:[4,4,1], fold:[8,5],   wave:[0.3,0.6], sp:[6,9],   rip:0.10, light:0, white:0,
-     A:[0.04,0.10,0.09],B:[0.35,0.70,0.60],D:[0.20,0.45,0.60],
-     mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,acid:1,bright:2500}},
-    {name:'de rimpel', dur:64, tun:1, md:[0,3,0], fold:[6,6],   wave:[0.8,1.4], sp:[9,13],  rip:0.42, light:0, white:0,
-     A:[0.16,0.03,0.05],B:[0.75,0.35,0.28],D:[0.00,0.10,0.20],
-     mus:{root:82.4,mode:[0,1,3,7,8],bpm:140,goa:1,acid:1,bright:2200}},
-    {name:'fractaldiep',dur:68,tun:0, md:[2,2,4], fold:[6,6],   wave:[0.2,0.4], sp:[4,6],   rip:0.06, light:0, white:0,
-     A:[0.06,0.05,0.12],B:[0.55,0.50,0.85],D:[0.30,0.20,0.55],
-     mus:{root:110.0,mode:[0,2,4,7,9],bpm:145,goa:1,bright:2700}},
-    {name:'chaos',     dur:66, tun:1, md:[1,4,3], fold:[14,3],  wave:[0.6,1.2], sp:[12,17], rip:0.20, light:0, white:0,
-     A:[0.10,0.04,0.12],B:[0.85,0.55,0.75],D:[0.55,0.20,0.85],
-     mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,acid:1,bright:2900}},
-    {name:'storm',     dur:62, tun:0, md:[2,3,4], fold:[6,10],  wave:[0.3,0.8], sp:[7,10],  rip:0.15, light:1, white:0,
-     A:[0.05,0.07,0.14],B:[0.40,0.50,0.75],D:[0.60,0.65,0.75],
-     mus:{root:92.5,mode:[0,1,3,7,8],bpm:148,goa:1,acid:1,bright:2600}},
-    {name:'wit licht', dur:72, tun:1, md:[3,0,2], fold:[6,6],   wave:[0.5,0.9], sp:[13,26], rip:0.10, light:0, white:1,
-     A:[0.30,0.28,0.24],B:[0.70,0.70,0.66],D:[0.00,0.06,0.12],
-     mus:{root:174.6,mode:[0,2,4,5,7,9,11],bpm:150,goa:1,bright:3200}}
+    {n:'vertrek', dur:55, tun:1, ev:2, hole:1, md:[3,0,2], fold:[6,6],  wave:[0.3,0.7], sp:[7,10], rip:0.05, white:0, light:0,
+     A:[0.07,0.06,0.16],B:[0.45,0.40,0.85],D:[0.00,0.15,0.35], mus:{root:110.0,mode:[0,3,5,7,10],bpm:140,goa:1,bright:2400}},
+    {n:'leegte',  dur:10, tun:0, ev:-1,hole:0, md:[4,4,4], fold:[6,6],  wave:[0.2,0.2], sp:[6,8],  rip:0.0,  white:0, light:0,
+     A:[0.03,0.03,0.06],B:[0.25,0.25,0.40],D:[0.00,0.20,0.40], mus:{root:110.0,mode:[0,3,5,7,10],bpm:140,goa:1,bright:1800}},
+    {n:'caleido', dur:55, tun:1, ev:0, hole:0, md:[1,1,4], fold:[6,14], wave:[0.4,0.9], sp:[8,12], rip:0.07, white:0, light:0,
+     A:[0.12,0.05,0.14],B:[0.80,0.50,0.70],D:[0.00,0.33,0.67], mus:{root:123.5,mode:[0,3,5,7,10],bpm:142,goa:1,acid:1,bright:2600}},
+    {n:'leegte',  dur:10, tun:0, ev:-1,hole:0, md:[4,4,4], fold:[6,6],  wave:[0.2,0.2], sp:[6,8],  rip:0.0,  white:0, light:0,
+     A:[0.03,0.03,0.06],B:[0.25,0.25,0.40],D:[0.00,0.20,0.40], mus:{root:123.5,mode:[0,3,5,7,10],bpm:142,goa:1,bright:1800}},
+    {n:'cellen',  dur:55, tun:1, ev:1, hole:1, md:[4,4,1], fold:[8,5],  wave:[0.3,0.6], sp:[7,11], rip:0.09, white:0, light:0,
+     A:[0.04,0.10,0.09],B:[0.35,0.70,0.60],D:[0.20,0.45,0.60], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,acid:1,bright:2500}},
+    {n:'leegte',  dur:10, tun:0, ev:-1,hole:0, md:[4,4,4], fold:[6,6],  wave:[0.2,0.2], sp:[6,8],  rip:0.0,  white:0, light:0,
+     A:[0.03,0.05,0.05],B:[0.25,0.35,0.35],D:[0.20,0.30,0.40], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,bright:1800}},
+    {n:'rimpel',  dur:55, tun:1, ev:2, hole:0, md:[0,3,0], fold:[6,6],  wave:[0.8,1.4], sp:[9,14], rip:0.40, white:0, light:0,
+     A:[0.15,0.03,0.05],B:[0.75,0.35,0.28],D:[0.00,0.10,0.20], mus:{root:82.4,mode:[0,1,3,7,8],bpm:140,goa:1,acid:1,bright:2200}},
+    {n:'leegte',  dur:10, tun:0, ev:-1,hole:0, md:[4,4,4], fold:[6,6],  wave:[0.2,0.2], sp:[6,8],  rip:0.0,  white:0, light:0,
+     A:[0.05,0.03,0.03],B:[0.35,0.25,0.25],D:[0.00,0.10,0.20], mus:{root:82.4,mode:[0,1,3,7,8],bpm:140,goa:1,bright:1800}},
+    {n:'chaos',   dur:55, tun:1, ev:0, hole:1, md:[1,4,3], fold:[14,3], wave:[0.6,1.2], sp:[12,18],rip:0.18, white:0, light:0,
+     A:[0.10,0.04,0.12],B:[0.85,0.55,0.75],D:[0.55,0.20,0.85], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,acid:1,bright:2900}},
+    {n:'leegte',  dur:10, tun:0, ev:-1,hole:0, md:[4,4,4], fold:[6,6],  wave:[0.2,0.2], sp:[6,8],  rip:0.0,  white:0, light:1,
+     A:[0.05,0.05,0.09],B:[0.35,0.35,0.55],D:[0.60,0.65,0.75], mus:{root:92.5,mode:[0,1,3,7,8],bpm:148,goa:1,bright:1800}},
+    {n:'storm',   dur:55, tun:1, ev:1, hole:1, md:[2,3,4], fold:[6,10], wave:[0.3,0.8], sp:[8,12], rip:0.14, white:0, light:1,
+     A:[0.05,0.07,0.14],B:[0.40,0.50,0.75],D:[0.60,0.65,0.75], mus:{root:92.5,mode:[0,1,3,7,8],bpm:148,goa:1,acid:1,bright:2600}},
+    {n:'leegte',  dur:10, tun:0, ev:-1,hole:0, md:[4,4,4], fold:[6,6],  wave:[0.2,0.2], sp:[6,8],  rip:0.0,  white:0, light:0,
+     A:[0.06,0.05,0.04],B:[0.40,0.35,0.30],D:[0.00,0.08,0.16], mus:{root:174.6,mode:[0,2,4,5,7,9,11],bpm:150,goa:1,bright:1800}},
+    {n:'wit licht',dur:100,tun:1, ev:1, hole:0, md:[3,0,2], fold:[6,6],  wave:[0.5,0.9], sp:[13,28],rip:0.10, white:1, light:0,
+     A:[0.30,0.28,0.24],B:[0.70,0.70,0.66],D:[0.00,0.06,0.12], mus:{root:174.6,mode:[0,2,4,5,7,9,11],bpm:150,goa:1,bright:3200}}
   ];
   let TOTALT=0; SCENES.forEach(sc=>{ sc.t0=TOTALT; TOTALT+=sc.dur; });
 
@@ -78,9 +79,9 @@
     au.addEventListener('error',function(){ probe(list,k+1,i); }); au.load(); }
   function switchTrack(){ if(SWITCHED||!TRACKS[1]||!TGAIN[1]) return; SWITCHED=true;
     const t=A.currentTime; try{ TRACKS[1].play(); }catch(e){}
-    if(TGAIN[0]) TGAIN[0].gain.linearRampToValueAtTime(0,t+4);
-    TGAIN[1].gain.setValueAtTime(0,t); TGAIN[1].gain.linearRampToValueAtTime(1,t+4);
-    setTimeout(function(){ try{ if(TRACKS[0]) TRACKS[0].pause(); }catch(e){} },4500); }
+    if(TGAIN[0]) TGAIN[0].gain.linearRampToValueAtTime(0,t+3);
+    TGAIN[1].gain.setValueAtTime(0,t); TGAIN[1].gain.linearRampToValueAtTime(1,t+3);
+    setTimeout(function(){ try{ if(TRACKS[0]) TRACKS[0].pause(); }catch(e){} },3500); }
   function duckNow(t){ if(!DUCK)return; DUCK.gain.cancelScheduledValues(t);
     DUCK.gain.setValueAtTime(0.32,t); DUCK.gain.linearRampToValueAtTime(1.0,t+0.22); }
   function supersaw(f,t,dur,vol,dest,att,bright){ const a=AC(); const g=a.createGain();
@@ -146,32 +147,28 @@
         supersaw(chord*1.4983,t,4.6,0.05,DUCK,2.0,1300); }
       if(pos%4===0) kickAt(t,0.9); else note(chord/2,t,0.12,0.17,'sawtooth',DUCK,0.004);
       if(sect>=2) hatAt(t,pos%4===2?0.13:0.045);
-      if(pos===14&&Math.random()<0.4) hatAt(t,0.1,true);
       supersaw(c.root*2*Math.pow(2,MUS.phrase[pos]/12),t,0.14,0.055,DELAY,0.008,c.bright);
       if(c.acid&&sect>=6&&pos%2===0&&Math.random()<0.5) acidAt(c.root*Math.pow(2,pick(c.mode)/12)*(Math.random()<0.3?2:1),t);
-      if(sect===15) hatAt(t,0.04+pos*0.007);
       MUS.nextT+=stepDur; MUS.step++; } }
   setInterval(musTick,85);
 
   // =========================================================
   //  SHADERS
   // =========================================================
+  const TUBE_LEN=320;
   const SHELL_VS=[
    'uniform float uTime,uWave,uRipZ,uRipAmp,uScale;',
-   'varying vec2 vUv;',
-   'void main(){ vUv=uv; vec3 p=position;',
-   '  float az=p.y;',
-   '  float w=1.0+uWave*0.28*sin(az*0.055+uTime*0.9)+uWave*0.16*sin(az*0.14-uTime*0.65);',
-   '  float dd=az-uRipZ;',
-   '  w+=uRipAmp*exp(-dd*dd*0.0035);',
+   'varying vec2 vUv; varying float vAxis;',
+   'void main(){ vUv=uv; vec3 p=position; float az=p.y; vAxis=az;',
+   '  float w=1.0+uWave*0.26*sin(az*0.055+uTime*0.9)+uWave*0.15*sin(az*0.14-uTime*0.65);',
+   '  float dd=az-uRipZ; w+=uRipAmp*exp(-dd*dd*0.0035);',
    '  p.x*=w*uScale; p.z*=w*uScale;',
    '  gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0); }'].join('\n');
-
   const SHELL_FS=[
    'precision highp float;',
-   'uniform float uTime,uBeat,uMode,uFold,uSpeed,uAlpha,uGain,uWhite,uSharp,uFlash;',
+   'uniform float uTime,uBeat,uMode,uFold,uSpeed,uAlpha,uGain,uWhite,uSharp,uFlash,uDark,uCut,uCutDir;',
    'uniform vec3 uColA,uColB,uColD;',
-   'varying vec2 vUv;',
+   'varying vec2 vUv; varying float vAxis;',
    'vec3 pal(float t){ return uColA+uColB*cos(6.28318*(t+uColD)); }',
    'void main(){',
    '  float ang=vUv.x*6.28318;',
@@ -206,51 +203,60 @@
    '    t=m*1.7;',
    '  }',
    '  t*=uGain;',
-   '  vec3 col=pal(t+uTime*0.02)*(0.7+0.6*uBeat);',
+   '  vec3 col=pal(t+uTime*0.02)*(0.7+0.6*uBeat)*uDark;',
    '  col=mix(col,vec3(1.0),clamp(uWhite+uFlash,0.0,1.0));',
    '  float a=uAlpha*clamp(pow(clamp(t,0.0,1.4),uSharp),0.0,1.0);',
-   '  a*=smoothstep(0.0,0.06,vUv.y)*smoothstep(1.0,0.94,vUv.y);',
+   '  a*=smoothstep(0.0,0.05,vUv.y)*smoothstep(1.0,0.95,vUv.y);',
+   '  float s1=smoothstep(uCut,uCut+24.0,vAxis);',
+   '  a*=mix(1.0-s1,s1,step(0.0,uCutDir));',
    '  gl_FragColor=vec4(col,a); }'].join('\n');
 
   const OBJ_VS=[
-   'uniform float uTime,uMorph,uRipZ,uRipAmp,uSeed;',
+   'uniform float uTime,uRipZ,uRipAmp,uSeed,uBreath;',
    'varying vec3 vP;',
-   'void main(){',
-   '  vec3 n=normalize(position);',
-   '  float sp=sin(n.x*4.0+uTime+uSeed)*sin(n.y*4.0+uTime*1.3)*sin(n.z*4.0+uTime*0.7);',
-   '  float ring=1.0-abs(n.y);',
-   '  float r=1.0+uMorph*0.5*sp+(1.0-uMorph)*0.35*ring;',
-   '  vec3 p=n*r; vP=p;',
+   'void main(){ vec3 p=position;',
+   '  p*=1.0+uBreath*0.12*sin(uTime*2.0+uSeed);',
+   '  vP=p;',
    '  vec4 wp=modelMatrix*vec4(p,1.0);',
    '  float dd=wp.z-uRipZ;',
-   '  wp.xyz+=n*uRipAmp*2.0*exp(-dd*dd*0.0035);',
+   '  wp.xyz+=normalize(p+vec3(0.001))*uRipAmp*1.6*exp(-dd*dd*0.0035);',
    '  gl_Position=projectionMatrix*viewMatrix*wp; }'].join('\n');
-
   const OBJ_FS=[
    'precision highp float;',
-   'uniform float uTime,uBeat,uWhite,uFlash,uSeed;',
+   'uniform float uTime,uBeat,uWhite,uFlash,uSeed,uPat,uDark;',
    'uniform vec3 uColA,uColB,uColD;',
    'varying vec3 vP;',
    'vec3 pal(float t){ return uColA+uColB*cos(6.28318*(t+uColD)); }',
    'void main(){',
-   '  float t=sin(vP.x*7.0+uTime*2.0+uSeed)+sin(vP.y*7.0-uTime*1.5)+sin(vP.z*7.0+uTime);',
-   '  t=t*0.18+0.5;',
-   '  float band=sin(atan(vP.z,vP.x)*8.0+uTime*3.0)*0.5+0.5;',
-   '  vec3 col=pal(t+band*0.12)*(0.75+0.7*uBeat);',
+   '  float t;',
+   '  if(uPat<0.5){',
+   '    float rr=length(vP.xy);',
+   '    t=sin(rr*16.0-uTime*3.5+uSeed)*0.5+0.5;',
+   '    t*=0.6+0.4*(sin(atan(vP.y,vP.x)*12.0+uTime)*0.5+0.5);',
+   '  } else if(uPat<1.5){',
+   '    float a=atan(vP.y,vP.x);',
+   '    t=sin(a*14.0+uTime*2.2+uSeed)*0.5+0.5;',
+   '    t*=0.5+0.5*(sin(vP.z*20.0-uTime*3.0)*0.5+0.5);',
+   '  } else {',
+   '    t=sin(vP.z*6.0+uTime*5.0+uSeed)*0.5+0.5;',
+   '    t*=0.55+0.45*(sin(vP.x*14.0+vP.y*14.0-uTime*2.0)*0.5+0.5);',
+   '  }',
+   '  vec3 col=pal(t*1.1+uTime*0.03)*(0.8+0.7*uBeat)*uDark;',
    '  col=mix(col,vec3(1.0),clamp(uWhite+uFlash,0.0,1.0));',
    '  gl_FragColor=vec4(col,1.0); }'].join('\n');
 
-  function shellUniforms(){ return {
+  function shellU(){ return {
     uTime:{value:0},uBeat:{value:0},uMode:{value:0},uFold:{value:6},uSpeed:{value:8},
-    uAlpha:{value:1},uGain:{value:1},uWhite:{value:0},uSharp:{value:1.4},uFlash:{value:0},
-    uWave:{value:0.4},uRipZ:{value:9999},uRipAmp:{value:0},uScale:{value:1},
-    uColA:{value:new THREE.Vector3(0.08,0.06,0.18)},
+    uAlpha:{value:0.7},uGain:{value:1},uWhite:{value:0},uSharp:{value:2.0},uFlash:{value:0},
+    uWave:{value:0.4},uRipZ:{value:9999},uRipAmp:{value:0},uScale:{value:1},uDark:{value:1},
+    uCut:{value:9999},uCutDir:{value:-1},
+    uColA:{value:new THREE.Vector3(0.07,0.06,0.16)},
     uColB:{value:new THREE.Vector3(0.45,0.40,0.85)},
     uColD:{value:new THREE.Vector3(0.00,0.15,0.35)} }; }
-  function objUniforms(seed){ return {
-    uTime:{value:0},uBeat:{value:0},uWhite:{value:0},uFlash:{value:0},uMorph:{value:0.5},
-    uRipZ:{value:9999},uRipAmp:{value:0},uSeed:{value:seed},
-    uColA:{value:new THREE.Vector3(0.08,0.06,0.18)},
+  function objU(seed,pat){ return {
+    uTime:{value:0},uBeat:{value:0},uWhite:{value:0},uFlash:{value:0},uSeed:{value:seed},
+    uPat:{value:pat},uDark:{value:1},uBreath:{value:1},uRipZ:{value:9999},uRipAmp:{value:0},
+    uColA:{value:new THREE.Vector3(0.07,0.06,0.16)},
     uColB:{value:new THREE.Vector3(0.45,0.40,0.85)},
     uColD:{value:new THREE.Vector3(0.00,0.15,0.35)} }; }
 
@@ -260,75 +266,75 @@
   AFRAME.registerComponent('shaderworld',{
     init:function(){
       const root=this.el.object3D;
-      this.shells=[]; this.objs=[];
-      // drie schillen op verschillende diepte -> parallax
-      const SPEC=[{r:6,seg:56,so:-6,sharp:1.5,gain:1.0},
-                  {r:15,seg:44,so:-5,sharp:1.1,gain:0.9},
-                  {r:30,seg:36,so:-4,sharp:0.9,gain:0.8}];
-      for(let i=0;i<SPEC.length;i++){ const S=SPEC[i];
-        const u=shellUniforms(); u.uSharp.value=S.sharp; u.uGain.value=S.gain;
-        const geo=new THREE.CylinderGeometry(S.r,S.r,400,S.seg,80,true);
+      this.shells=[];
+      const SPEC=[{r:6,seg:56,ro:-6,sharp:2.2,gain:1.0,al:0.70},
+                  {r:15,seg:44,ro:-5,sharp:1.7,gain:0.9,al:0.45},
+                  {r:30,seg:36,ro:-4,sharp:1.3,gain:0.8,al:0.32}];
+      for(let i=0;i<SPEC.length;i++){ const S=SPEC[i]; const u=shellU();
+        u.uSharp.value=S.sharp; u.uGain.value=S.gain; u.uAlpha.value=S.al;
+        const geo=new THREE.CylinderGeometry(S.r,S.r,TUBE_LEN,S.seg,70,true);
         const mat=new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,uniforms:u,
           side:THREE.BackSide,transparent:true,depthWrite:false});
-        const m=new THREE.Mesh(geo,mat); m.rotation.x=Math.PI/2; m.position.set(0,1.6,0); m.renderOrder=S.so;
-        root.add(m); this.shells.push({m:m,u:u,i:i}); }
+        const m=new THREE.Mesh(geo,mat); m.rotation.x=Math.PI/2; m.position.set(0,1.6,0); m.renderOrder=S.ro;
+        root.add(m); this.shells.push({m:m,u:u,base:S.al}); }
       // verre koepel
-      const du=shellUniforms(); du.uMode.value=2; du.uSharp.value=1.0; du.uGain.value=0.9; du.uSpeed.value=1.2;
-      const dgeo=new THREE.SphereGeometry(110,40,26);
+      const du=shellU(); du.uMode.value=2; du.uSharp.value=1.0; du.uGain.value=0.9; du.uSpeed.value=1.2; du.uCut.value=99999;
       const dmat=new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,uniforms:du,side:THREE.BackSide});
-      this.dome=new THREE.Mesh(dgeo,dmat); this.dome.position.set(0,1.6,0); this.dome.renderOrder=-20;
-      root.add(this.dome); this.du=du;
-      // morphende figuren die op je afkomen
-      const ogeo=new THREE.IcosahedronGeometry(1,3);
-      for(let i=0;i<9;i++){ const u=objUniforms(i*1.7);
-        const mat=new THREE.ShaderMaterial({vertexShader:OBJ_VS,fragmentShader:OBJ_FS,uniforms:u});
-        const m=new THREE.Mesh(ogeo,mat); root.add(m);
-        const o={m:m,u:u,sc:1,orb:0,orbR:0,orbSp:0}; this.objs.push(o); this.respawn(o,true); }
+      this.dome=new THREE.Mesh(new THREE.SphereGeometry(110,40,26),dmat);
+      this.dome.position.set(0,1.6,0); this.dome.renderOrder=-20; root.add(this.dome); this.du=du;
+      // zwart gat
+      this.hole=new THREE.Mesh(new THREE.CircleGeometry(1,48),new THREE.MeshBasicMaterial({color:0x000000}));
+      this.hole.position.set(0,1.6,-55); this.hole.visible=false; root.add(this.hole);
+      // drie soorten verschijningen
+      const gDisc=new THREE.CylinderGeometry(1,1,0.12,30,1);
+      const gGate=new THREE.TorusGeometry(1,0.07,10,40);
+      const gShard=new THREE.IcosahedronGeometry(1,1);
+      this.pools=[[],[],[]];
+      const mk=(geo,pat,n,rotX)=>{ const arr=[];
+        for(let i=0;i<n;i++){ const u=objU(i*1.9,pat);
+          const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({vertexShader:OBJ_VS,fragmentShader:OBJ_FS,uniforms:u}));
+          if(rotX) m.rotation.x=rotX; m.visible=false; root.add(m); arr.push({m:m,u:u,i:i}); }
+        return arr; };
+      this.pools[0]=mk(gDisc,0,7,Math.PI/2);
+      this.pools[1]=mk(gGate,1,6,0);
+      this.pools[2]=mk(gShard,2,7,0);
+      this.pools[2].forEach(o=>o.m.scale.set(0.3,0.3,2.6));
       this.elapsed=0; this.scene=-1; this.ripZ=9999; this.ripAmp=0; this.flash=0;
-      this.tunAmt=1; this.tunTgt=1; this.prevBeat=0; this.lightT=0;
-      this.cur={sp:8,wave:0.4,fold:6,A:new THREE.Vector3(),B:new THREE.Vector3(),D:new THREE.Vector3()};
+      this.voidAmt=0; this.prevBeat=0; this.evPhase=0; this.evT=-1;
+      this.cur={sp:8,wave:0.4,fold:6,A:new THREE.Vector3(0.07,0.06,0.16),B:new THREE.Vector3(0.45,0.4,0.85),D:new THREE.Vector3(0,0.15,0.35)};
     },
-    respawn:function(o,init){
-      const ang=rand(0,6.283), r=rand(3.2,11);
-      o.orb=ang; o.orbR=r; o.orbSp=rand(-0.35,0.35);
-      o.m.position.set(Math.cos(ang)*r, 1.6+Math.sin(ang)*r*0.55, init?rand(-160,0):rand(-190,-150));
-      o.sc=rand(0.7,Math.max(0.9,Math.min(3.4,r*0.5))); o.m.scale.setScalar(o.sc);
-      o.spin=new THREE.Vector3(rand(-0.8,0.8),rand(-0.8,0.8),rand(-0.8,0.8));
-      o.u.uMorph.value=Math.random();
-    },
-    fireRipple:function(){ this.ripZ=-200; this.ripAmp=1; },
-    fireFlash:function(v){ this.flash=Math.max(this.flash,v); },
+    fireRipple:function(){ this.ripZ=-190; this.ripAmp=1; },
     enter:function(SC){
       if(!window.USE_TRACK){ riser(); setMusic(SC.mus); }
-      this.tunTgt=SC.tun; this.sc0=SC.t0; this.scDur=SC.dur; this.SC=SC;
+      this.SC=SC; this.sc0=SC.t0; this.scDur=SC.dur; this.evPhase=0; this.evT=-1;
       const self=this;
-      // patronen pas wisselen als de tunnel dicht/open is -> voelt als een doorgang
-      setTimeout(function(){
-        self.shells[0].u.uMode.value=SC.md[0];
-        self.shells[1].u.uMode.value=SC.md[1];
-        self.shells[2].u.uMode.value=SC.md[2];
+      setTimeout(function(){ for(let i=0;i<3;i++) self.shells[i].u.uMode.value=SC.md[i];
         self.du.uMode.value=SC.md[2]; },600);
-      this.fireRipple();
+      if(SC.tun) this.fireRipple();
+      // verschijningen klaarzetten
+      this.pools.forEach(p=>p.forEach(o=>{ o.m.visible=false; }));
+      if(SC.ev===1) this.pools[1].forEach((o,i)=>{ o.m.position.set(rand(-1.2,1.2),1.6+rand(-0.8,0.8),-150+i*26);
+        o.sc=6.5+rand(0,2.5); o.spin=rand(-0.7,0.7); o.m.scale.setScalar(o.sc); });
+      if(SC.ev===2) this.pools[2].forEach((o,i)=>{ o.ang=rand(0,6.283); o.rad=rand(2.8,9);
+        o.z=22+i*7; o.spin=rand(-1.2,1.2); });
     },
     tick:function(t,dt){ const s=Math.min(0.08,(dt||16)/1000);
-      // beat
       if(window.USE_TRACK&&ANA){ ANA.getByteFrequencyData(ANAD); let b=0; for(let k=1;k<7;k++)b+=ANAD[k]; b/=(6*255);
         window.BEAT=Math.max((window.BEAT||0)*0.82,Math.max(0,(b-0.52)*2.4)); }
       else window.BEAT=Math.max(0,(window.BEAT||0)-s*5);
-      const beat=window.BEAT;
-      const hit=(beat>0.6&&this.prevBeat<0.35); this.prevBeat=beat;
-
+      const beat=window.BEAT, hit=(beat>0.6&&this.prevBeat<0.35); this.prevBeat=beat;
       const menu=(window.PHASE!=='trip');
       if(!menu){ this.elapsed+=s;
         let idx=SCENES.length-1;
         for(let i=0;i<SCENES.length;i++){ if(this.elapsed<SCENES[i].t0+SCENES[i].dur){ idx=i; break; } }
         if(idx!==this.scene){ this.scene=idx; this.enter(SCENES[idx]); } }
       const SC=this.SC||SCENES[0];
-      const pr=menu?0:Math.min(1,Math.max(0,(this.elapsed-this.sc0)/this.scDur));
+      const tEl=menu?0:(this.elapsed-this.sc0);
+      const pr=menu?0:Math.min(1,Math.max(0,tEl/this.scDur));
 
-      // ---- drift: niets staat stil ----
+      // ---- drift ----
       const wob=Math.sin(this.elapsed*0.21)*0.5+0.5;
-      const tSp=(SC.sp[0]+(SC.sp[1]-SC.sp[0])*pr)*(0.82+0.36*wob)*(menu?0.35:1);
+      const tSp=(SC.sp[0]+(SC.sp[1]-SC.sp[0])*pr)*(0.85+0.3*wob)*(menu?0.4:1);
       const tWv=(SC.wave[0]+(SC.wave[1]-SC.wave[0])*pr)*(0.8+0.4*Math.sin(this.elapsed*0.13+1.2));
       const tFd=SC.fold[0]+(SC.fold[1]-SC.fold[0])*pr;
       const k=1-Math.exp(-s/0.7);
@@ -337,58 +343,92 @@
       this.cur.B.lerp(new THREE.Vector3().fromArray(SC.B),k*0.5);
       this.cur.D.lerp(new THREE.Vector3().fromArray(SC.D),k*0.5);
 
-      // ---- tunnel uit / in ----
-      this.tunAmt+=((menu?1:this.tunTgt)-this.tunAmt)*(1-Math.exp(-s/1.6));
-      const openAmt=1-this.tunAmt;
+      // ---- tunnelmond: eruit vliegen / erin vliegen ----
+      const inTun=menu?1:SC.tun;
+      let cut=99999, dir=-1;
+      if(inTun){ const T=5.0;
+        if(tEl<T){ cut=-210+(30+210)*(tEl/T); dir=-1; }                 // tunnel groeit naar je toe
+        else if(tEl>this.scDur-T){ cut=-190+(30+190)*((tEl-(this.scDur-T))/T); dir=1; } // mond schuift voorbij
+      }
+      this.voidAmt+=((inTun?0:1)-this.voidAmt)*(1-Math.exp(-s/1.1));
+      const vd=this.voidAmt;
+
+      // ---- zwart gat aan het einde ----
+      let holeAmt=0;
+      if(inTun&&SC.hole&&tEl>this.scDur-5.5) holeAmt=Math.min(1,(tEl-(this.scDur-5.5))/5.0);
+      if(!inTun&&this.elapsed-this.sc0<2.5&&this.prevHole) holeAmt=1;
+      this.prevHole=(inTun&&SC.hole)?true:(inTun?false:this.prevHole);
+      if(holeAmt>0.01){ this.hole.visible=true; this.hole.scale.setScalar(0.4+holeAmt*holeAmt*140); }
+      else this.hole.visible=false;
 
       // ---- rimpel ----
-      if(!menu&&Math.random()<s*SC.rip*0.5) this.fireRipple();
-      if(this.ripAmp>0){ this.ripZ+=s*260; this.ripAmp=Math.max(0,this.ripAmp-s*0.42);
+      if(!menu&&inTun&&Math.random()<s*SC.rip*0.5) this.fireRipple();
+      if(this.ripAmp>0){ this.ripZ+=s*250; this.ripAmp=Math.max(0,this.ripAmp-s*0.42);
         if(this.ripZ>60){ this.ripAmp=0; this.ripZ=9999; } }
-      // ---- bliksem op de kick ----
-      if(!menu&&SC.light&&hit&&Math.random()<0.3) this.fireFlash(0.8);
-      if(!menu&&hit&&Math.random()<0.03) this.fireFlash(0.35);
+      // ---- bliksem ----
+      if(!menu&&SC.light&&hit&&Math.random()<0.3) this.flash=Math.max(this.flash,0.8);
+      if(!menu&&hit&&Math.random()<0.02) this.flash=Math.max(this.flash,0.3);
       this.flash=Math.max(0,this.flash-s*3.2);
-      const fpl=$('#flash'); if(fpl) fpl.setAttribute('material','color:#dfe8ff;opacity:'+(this.flash*0.55).toFixed(3)+';transparent:true;shader:flat');
+      const fpl=$('#flash'); if(fpl) fpl.setAttribute('material','color:#dfe8ff;opacity:'+(this.flash*0.5).toFixed(3)+';transparent:true;shader:flat');
 
-      // ---- schillen bijwerken ----
-      for(let i=0;i<this.shells.length;i++){ const sh=this.shells[i], u=sh.u;
-        const par=[1.0,0.45,0.2][i];                       // parallax: dichtbij snel, ver traag
+      // ---- schillen ----
+      for(let i=0;i<3;i++){ const u=this.shells[i].u, par=[1.0,0.45,0.2][i];
         u.uTime.value+=s*(0.5+this.cur.sp*0.22*par);
         u.uSpeed.value=this.cur.sp*par*1.6;
         u.uWave.value=this.cur.wave*(i===0?1:0.6);
-        u.uFold.value=this.cur.fold;
-        u.uBeat.value=beat; u.uFlash.value=this.flash*0.5;
+        u.uFold.value=this.cur.fold; u.uBeat.value=beat; u.uFlash.value=this.flash*0.5;
         u.uWhite.value=(SC.white?pr*pr:0);
-        u.uAlpha.value=[1.0,0.75,0.55][i]*(0.25+0.75*this.tunAmt);
-        u.uScale.value=1+openAmt*(1.6+i*0.5);
+        // in de leegte: alleen de verste laag, heel zwak
+        u.uAlpha.value=this.shells[i].base*(i===2?(1-vd*0.55):(1-vd));
+        u.uDark.value=(i===2)?(1-vd*0.75):1;
+        u.uCut.value=cut; u.uCutDir.value=dir;
+        u.uScale.value=1;
         u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D);
         u.uRipZ.value=this.ripZ; u.uRipAmp.value=this.ripAmp*(i===0?0.9:0.5); }
-      // koepel
       this.du.uTime.value+=s*(0.35+this.cur.sp*0.05);
       this.du.uBeat.value=beat*0.7; this.du.uFlash.value=this.flash*0.7;
-      this.du.uWhite.value=(SC.white?pr*pr:0);
-      this.du.uFold.value=this.cur.fold; this.du.uWave.value=0;
-      this.du.uGain.value=0.55+0.55*openAmt;
+      this.du.uWhite.value=(SC.white?pr*pr:0); this.du.uFold.value=this.cur.fold;
+      this.du.uDark.value=1-vd*0.94;
       this.du.uColA.value.copy(this.cur.A); this.du.uColB.value.copy(this.cur.B); this.du.uColD.value.copy(this.cur.D);
 
-      // ---- figuren: naar je toe, langs je heen, draaiend ----
-      const fly=(6+this.cur.sp*3.4);
-      for(let i=0;i<this.objs.length;i++){ const o=this.objs[i], u=o.u;
-        o.m.position.z+=fly*s;
-        o.orb+=o.orbSp*s;
-        const rr=o.orbR*(1+openAmt*0.9);
-        o.m.position.x=Math.cos(o.orb)*rr; o.m.position.y=1.6+Math.sin(o.orb)*rr*0.55;
-        o.m.rotation.x+=o.spin.x*s; o.m.rotation.y+=o.spin.y*s; o.m.rotation.z+=o.spin.z*s;
-        u.uTime.value+=s*1.4; u.uBeat.value=beat; u.uFlash.value=this.flash;
-        u.uWhite.value=(SC.white?pr*pr:0);
-        u.uMorph.value=0.5+0.5*Math.sin(this.elapsed*0.35+i);
-        u.uRipZ.value=this.ripZ; u.uRipAmp.value=this.ripAmp;
-        u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D);
-        const sc=o.sc*(1+beat*0.12); o.m.scale.setScalar(sc);
-        if(o.m.position.z>10) this.respawn(o); }
+      // ---- verschijningen: kort, en elke keer anders ----
+      const evOn=(!menu&&SC.ev>=0&&tEl>12&&tEl<30);
+      const eu=evOn?(tEl-12)/18:0;
+      for(let p=0;p<3;p++){ const on=(evOn&&SC.ev===p);
+        for(let j=0;j<this.pools[p].length;j++){ const o=this.pools[p][j], u=o.u;
+          if(!on){ if(o.m.visible) o.m.visible=false; continue; }
+          o.m.visible=true;
+          u.uTime.value+=s*1.6; u.uBeat.value=beat; u.uFlash.value=this.flash;
+          u.uWhite.value=(SC.white?pr*pr:0); u.uDark.value=1;
+          u.uRipZ.value=this.ripZ; u.uRipAmp.value=this.ripAmp;
+          u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D);
+        }
+        if(!on) continue;
+        if(p===0){ // DANS: cirkel voor je neus, langzaam -> veel te snel, en heen en weer
+          this.evPhase+=s*(0.5+8.5*eu*eu);
+          const zc=-13-6.5*Math.sin(eu*Math.PI*2.2), rr=3.4;
+          for(let j=0;j<this.pools[0].length;j++){ const o=this.pools[0][j];
+            const a=this.evPhase+j/this.pools[0].length*6.283;
+            o.m.position.set(Math.cos(a)*rr,1.6+Math.sin(a)*rr,zc);
+            o.m.rotation.z=a; o.m.scale.setScalar(0.9+0.25*Math.sin(eu*9+j)); }
+        } else if(p===1){ // POORTEN: je vliegt er doorheen
+          const fly=26+this.cur.sp*3.2;
+          for(let j=0;j<this.pools[1].length;j++){ const o=this.pools[1][j];
+            o.m.position.z+=fly*s;
+            o.m.position.x=Math.sin(this.elapsed*0.5+j)*1.3; o.m.position.y=1.6+Math.cos(this.elapsed*0.4+j)*0.9;
+            o.m.rotation.z+=o.spin*s;
+            if(o.m.position.z>12) o.m.position.z-=6*26; }
+        } else { // INHALEN: van achter naar voren langs je heen
+          const fly=30+this.cur.sp*4.2;
+          for(let j=0;j<this.pools[2].length;j++){ const o=this.pools[2][j];
+            o.z-=fly*s; o.ang+=o.spin*0.25*s;
+            o.m.position.set(Math.cos(o.ang)*o.rad,1.6+Math.sin(o.ang)*o.rad*0.7,o.z);
+            o.m.rotation.z+=o.spin*s; o.m.rotation.y+=o.spin*0.5*s;
+            if(o.z<-170){ o.z=25+rand(0,20); o.rad=rand(2.8,9); o.ang=rand(0,6.283); } }
+        }
+      }
 
-      if(!menu){ if(this.elapsed>=TOTALT*0.5) switchTrack();
+      if(!menu){ if(this.elapsed>=TRACK1_END) switchTrack();
         if(this.elapsed>=TOTALT) endTrip(); } }
   });
 
@@ -421,7 +461,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v10.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v11.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -434,17 +474,17 @@
       setTimeout(poll,150); })();
   </script>
   <a-scene loading-screen="enabled: false" renderer="colorManagement: true; antialias: true; foveationLevel: 1"
-           background="color: #05040a">
+           background="color: #000000">
     <a-entity id="rig" position="0 0 0" shaderworld>
       <a-entity id="menu">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.15" material="color:#0a0714;opacity:0.93;transparent:true"></a-plane>
         <a-plane position="0 1.55 -2.11" width="1.98" height="1.23" material="color:#b04aff;opacity:0.16;transparent:true"></a-plane>
         <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.2" position="0 1.95 -2.08"></a-text>
-        <a-text value="Negen werelden. Tien minuten." align="center" color="#9aa8c0" width="1.8" position="0 1.74 -2.08"></a-text>
+        <a-text value="Acht minuten. Twee tracks." align="center" color="#9aa8c0" width="1.8" position="0 1.74 -2.08"></a-text>
         <a-text value="Zet je geluid aan." align="center" color="#7c8794" width="1.6" position="0 1.62 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v10.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v11.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
