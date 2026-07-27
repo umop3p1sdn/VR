@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v12.0
+  //  DIEPE TRIP v13.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -25,30 +25,48 @@
 
   // tun:1 = tunnel, 0 = zwarte leegte | ev: -1 geen, 0 dans, 1 poorten, 2 inhalen
   // hole:1 = de tunnel eindigt in een zwart gat waar je doorheen vliegt
-  // tun altijd aan | orb: bol aan het eind van de tunnel | dome: hoe aanwezig de bol om je heen is
-  // wall: wanden onder/naast je | ev: -1 geen, 0 dans, 1 poorten, 2 inhalen
+  // ev: -1 geen | 0 dans-schijven | 1 poorten | 2 inhalen | 3 slang | 4 dans-ringen
+  // wall: 0 geen, 1 vloer, 2 zijkanten, 3 alles | tex:[sterkte,print] = zelfde print op lagen -> moire
   const SCENES=[
-    {n:'vertrek', dur:55, ev:2, orb:1, dome:0.55, wall:0, md:[3,0,2], fold:[6,6],  wave:[0.3,0.7], sp:[7,10], rip:0.05, white:0, light:0,
-     A:[0.07,0.06,0.16],B:[0.45,0.40,0.85],D:[0.00,0.15,0.35], mus:{root:110.0,mode:[0,3,5,7,10],bpm:140,goa:1,bright:2400}},
-    {n:'donker1', dur:28, ev:-1,orb:0, dome:0.0,  wall:0, md:[0,3,4], fold:[6,6],  wave:[0.5,0.9], sp:[9,13], rip:0.10, white:0, light:1,
+    {n:'opening', dur:24, intro:1, ev:-1,orb:1,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[3,0,2], fold:[6,6], wave:[0.2,0.5], sp:[5,9],  rip:0.04, white:0, light:1,
+     A:[0.05,0.05,0.12],B:[0.50,0.50,0.90],D:[0.00,0.15,0.35], mus:{root:110.0,mode:[0,3,5,7,10],bpm:138,goa:1,bright:2000}},
+    {n:'donker1', dur:26, ev:-1,orb:0,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[0,3,4], fold:[6,6], wave:[0.5,0.9], sp:[9,13], rip:0.10, white:0, light:1,
      A:[0.05,0.05,0.12],B:[0.55,0.55,0.90],D:[0.60,0.65,0.75], mus:{root:110.0,mode:[0,3,5,7,10],bpm:140,goa:1,bright:2200}},
-    {n:'caleido', dur:55, ev:0, orb:1, dome:0.45, wall:0, md:[1,1,4], fold:[6,14], wave:[0.4,0.9], sp:[8,12], rip:0.07, white:0, light:0,
-     A:[0.12,0.05,0.14],B:[0.80,0.50,0.70],D:[0.00,0.33,0.67], mus:{root:123.5,mode:[0,3,5,7,10],bpm:142,goa:1,acid:1,bright:2600}},
-    {n:'wanden1', dur:40, ev:-1,orb:1, dome:0.15, wall:1, md:[4,3,4], fold:[8,8],  wave:[0.3,0.5], sp:[9,13], rip:0.08, white:0, light:0,
-     A:[0.05,0.09,0.12],B:[0.40,0.65,0.80],D:[0.15,0.35,0.55], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,bright:2500}},
-    {n:'cellen',  dur:55, ev:1, orb:1, dome:0.50, wall:0, md:[4,4,1], fold:[8,5],  wave:[0.3,0.6], sp:[7,11], rip:0.09, white:0, light:0,
-     A:[0.04,0.10,0.09],B:[0.35,0.70,0.60],D:[0.20,0.45,0.60], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,acid:1,bright:2500}},
-    {n:'donker2', dur:28, ev:-1,orb:0, dome:0.0,  wall:0, md:[3,0,4], fold:[6,6],  wave:[0.6,1.0], sp:[10,15],rip:0.12, white:0, light:1,
+    {n:'lagen',   dur:28, ev:-1,orb:1,orbNear:0,dome:0.35,wall:0, tex:[0,0], md:[1,3,4], fold:[6,11],wave:[0.4,0.8], sp:[8,12], rip:0.08, white:0, light:0,
+     A:[0.10,0.05,0.14],B:[0.70,0.50,0.85],D:[0.00,0.30,0.60], mus:{root:123.5,mode:[0,3,5,7,10],bpm:142,goa:1,bright:2500}},
+    {n:'wandenZ', dur:24, ev:-1,orb:1,orbNear:0,dome:0.12,wall:2, tex:[0,0], md:[4,3,4], fold:[8,8], wave:[0.3,0.5], sp:[10,14],rip:0.08, white:0, light:0,
+     A:[0.05,0.09,0.12],B:[0.40,0.65,0.80],D:[0.15,0.35,0.55], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,acid:1,bright:2500}},
+    {n:'bolbij',  dur:24, ev:-1,orb:1,orbNear:1,dome:0.0, wall:0, tex:[0,0], md:[0,0,2], fold:[6,6], wave:[0.5,0.9], sp:[7,11], rip:0.12, white:0, light:0,
+     A:[0.12,0.04,0.10],B:[0.80,0.45,0.75],D:[0.40,0.20,0.75], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,bright:2600}},
+    {n:'moire1',  dur:24, ev:-1,orb:1,orbNear:0,dome:0.10,wall:0, tex:[0.85,0],md:[3,3,3],fold:[6,6], wave:[0.2,0.4], sp:[9,13], rip:0.06, white:0, light:0,
+     A:[0.08,0.08,0.10],B:[0.60,0.60,0.70],D:[0.10,0.30,0.55], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:148,goa:1,bright:2700}},
+    {n:'donker2', dur:22, ev:-1,orb:0,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[3,0,4], fold:[6,6], wave:[0.6,1.0], sp:[11,15],rip:0.12, white:0, light:1,
      A:[0.06,0.05,0.10],B:[0.60,0.50,0.85],D:[0.55,0.60,0.70], mus:{root:82.4,mode:[0,1,3,7,8],bpm:140,goa:1,bright:2200}},
-    {n:'rimpel',  dur:55, ev:2, orb:1, dome:0.40, wall:0, md:[0,3,0], fold:[6,6],  wave:[0.8,1.4], sp:[9,14], rip:0.40, white:0, light:0,
-     A:[0.15,0.03,0.05],B:[0.75,0.35,0.28],D:[0.00,0.10,0.20], mus:{root:82.4,mode:[0,1,3,7,8],bpm:140,goa:1,acid:1,bright:2200}},
-    {n:'wanden2', dur:40, ev:-1,orb:1, dome:0.12, wall:1, md:[3,4,3], fold:[6,10], wave:[0.3,0.6], sp:[11,16],rip:0.10, white:0, light:0,
+    {n:'slang',   dur:24, ev:3, orb:1,orbNear:0,dome:0.25,wall:0, tex:[0,0], md:[4,4,1], fold:[7,7], wave:[0.3,0.6], sp:[8,12], rip:0.08, white:0, light:0,
+     A:[0.04,0.10,0.09],B:[0.35,0.70,0.60],D:[0.20,0.45,0.60], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,bright:2500}},
+    {n:'caleido', dur:26, ev:4, orb:1,orbNear:0,dome:0.40,wall:0, tex:[0,0], md:[1,1,4], fold:[6,14],wave:[0.4,0.9], sp:[9,13], rip:0.07, white:0, light:0,
+     A:[0.12,0.05,0.14],B:[0.80,0.50,0.70],D:[0.00,0.33,0.67], mus:{root:123.5,mode:[0,3,5,7,10],bpm:144,goa:1,acid:1,bright:2600}},
+    {n:'poorten', dur:26, ev:1, orb:1,orbNear:0,dome:0.20,wall:0, tex:[0,0], md:[3,4,3], fold:[6,10],wave:[0.3,0.6], sp:[11,16],rip:0.10, white:0, light:0,
      A:[0.12,0.04,0.10],B:[0.80,0.45,0.70],D:[0.40,0.20,0.75], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,acid:1,bright:2800}},
-    {n:'chaos',   dur:55, ev:0, orb:1, dome:0.45, wall:0, md:[1,4,3], fold:[14,3], wave:[0.6,1.2], sp:[12,18],rip:0.18, white:0, light:0,
+    {n:'wandenV', dur:26, ev:-1,orb:1,orbNear:0,dome:0.10,wall:1, tex:[0,0], md:[4,3,4], fold:[8,6], wave:[0.3,0.5], sp:[10,15],rip:0.09, white:0, light:0,
+     A:[0.06,0.10,0.08],B:[0.40,0.70,0.55],D:[0.20,0.40,0.60], mus:{root:98.0,mode:[0,2,3,7,10],bpm:148,goa:1,bright:2600}},
+    {n:'dans',    dur:26, ev:0, orb:1,orbNear:0,dome:0.30,wall:0, tex:[0,0], md:[1,4,3], fold:[12,4],wave:[0.5,1.0], sp:[10,15],rip:0.14, white:0, light:0,
      A:[0.10,0.04,0.12],B:[0.85,0.55,0.75],D:[0.55,0.20,0.85], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,acid:1,bright:2900}},
-    {n:'donker3', dur:24, ev:-1,orb:0, dome:0.0,  wall:0, md:[0,3,4], fold:[6,6],  wave:[0.5,1.0], sp:[11,16],rip:0.10, white:0, light:1,
+    {n:'donker3', dur:20, ev:-1,orb:0,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[0,3,4], fold:[6,6], wave:[0.5,1.0], sp:[12,16],rip:0.10, white:0, light:1,
      A:[0.05,0.06,0.12],B:[0.50,0.55,0.85],D:[0.60,0.65,0.75], mus:{root:92.5,mode:[0,1,3,7,8],bpm:148,goa:1,bright:2400}},
-    {n:'wit licht',dur:55,ev:1, orb:1, dome:0.35, wall:1, md:[3,0,2], fold:[6,6],  wave:[0.5,0.9], sp:[13,28],rip:0.10, white:1, light:0,
+    {n:'rimpel',  dur:24, ev:-1,orb:1,orbNear:1,dome:0.20,wall:0, tex:[0,0], md:[0,3,0], fold:[6,6], wave:[0.9,1.5], sp:[10,15],rip:0.45, white:0, light:0,
+     A:[0.15,0.03,0.05],B:[0.75,0.35,0.28],D:[0.00,0.10,0.20], mus:{root:82.4,mode:[0,1,3,7,8],bpm:142,goa:1,acid:1,bright:2300}},
+    {n:'moire2',  dur:22, ev:-1,orb:1,orbNear:0,dome:0.08,wall:0, tex:[0.9,1],md:[3,3,3], fold:[6,6], wave:[0.3,0.5], sp:[11,15],rip:0.06, white:0, light:0,
+     A:[0.10,0.06,0.06],B:[0.70,0.45,0.40],D:[0.05,0.25,0.50], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,bright:2800}},
+    {n:'inhalen', dur:26, ev:2, orb:1,orbNear:0,dome:0.25,wall:0, tex:[0,0], md:[3,0,2], fold:[6,6], wave:[0.4,0.8], sp:[12,17],rip:0.10, white:0, light:0,
+     A:[0.07,0.06,0.16],B:[0.50,0.45,0.88],D:[0.00,0.15,0.35], mus:{root:110.0,mode:[0,2,4,7,9],bpm:150,goa:1,acid:1,bright:2800}},
+    {n:'chaos',   dur:24, ev:4, orb:1,orbNear:0,dome:0.35,wall:0, tex:[0,0], md:[1,4,3], fold:[14,3],wave:[0.7,1.3], sp:[13,19],rip:0.20, white:0, light:0,
+     A:[0.10,0.04,0.12],B:[0.85,0.55,0.75],D:[0.55,0.20,0.85], mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:152,goa:1,acid:1,bright:2950}},
+    {n:'wanden3', dur:24, ev:-1,orb:1,orbNear:0,dome:0.10,wall:3, tex:[0,0], md:[3,4,3], fold:[6,9], wave:[0.3,0.6], sp:[12,17],rip:0.10, white:0, light:0,
+     A:[0.09,0.09,0.05],B:[0.65,0.65,0.40],D:[0.10,0.25,0.45], mus:{root:123.5,mode:[0,3,5,7,10],bpm:150,goa:1,bright:2900}},
+    {n:'donker4', dur:18, ev:-1,orb:0,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[0,3,4], fold:[6,6], wave:[0.6,1.1], sp:[13,18],rip:0.10, white:0, light:1,
+     A:[0.06,0.06,0.10],B:[0.55,0.55,0.80],D:[0.60,0.65,0.75], mus:{root:174.6,mode:[0,2,4,5,7,9,11],bpm:150,goa:1,bright:2600}},
+    {n:'finale',  dur:32, ev:1, orb:1,orbNear:1,dome:0.30,wall:3, tex:[0,0], md:[3,0,2], fold:[6,6], wave:[0.5,0.9], sp:[14,30],rip:0.10, white:1, light:0,
      A:[0.30,0.28,0.24],B:[0.70,0.70,0.66],D:[0.00,0.06,0.12], mus:{root:174.6,mode:[0,2,4,5,7,9,11],bpm:150,goa:1,bright:3200}}
   ];
   let TOTALT=0; SCENES.forEach(sc=>{ sc.t0=TOTALT; TOTALT+=sc.dur; });
@@ -70,13 +88,19 @@
     const dw=A.createGain(); dw.gain.value=0.5;
     DELAY.connect(fl).connect(fb).connect(DELAY); DELAY.connect(dw).connect(DUCK);
     return A; }
+  function markFound(){ const el=$('#trkInfo'); if(!el) return;
+    el.setAttribute('value','Track 1: '+(TRACKS[0]?'ok':'-')+'    Track 2: '+(TRACKS[1]?'ok':'-'));
+    el.setAttribute('color',(TRACKS[0]&&TRACKS[1])?'#6ad1a0':'#c08a5a'); }
   function tryTrack(){ TRACK_URLS.forEach(function(l,i){ probe(l,0,i); }); }
-  function probe(list,k,i){ if(k>=list.length) return;
-    const au=new Audio(); au.src=list[k]; au.loop=true; au.preload='auto';
-    au.addEventListener('canplaythrough',function(){ if(!TRACKS[i]) TRACKS[i]=au; },{once:true});
+  function probe(list,k,i){ if(k>=list.length){ markFound(); return; }
+    const au=new Audio(); au.src=list[k]; au.preload='auto'; au.loop=false;
+    const ok=function(){ if(!TRACKS[i]){ TRACKS[i]=au; markFound(); } };
+    au.addEventListener('loadedmetadata',ok,{once:true});
+    au.addEventListener('canplaythrough',ok,{once:true});
     au.addEventListener('error',function(){ probe(list,k+1,i); }); au.load(); }
-  function switchTrack(){ if(SWITCHED||!TRACKS[1]||!TGAIN[1]) return; SWITCHED=true;
-    const t=A.currentTime; try{ TRACKS[1].play(); }catch(e){}
+  function switchTrack(){ if(SWITCHED) return; SWITCHED=true;
+    if(!TRACKS[1]||!TGAIN[1]){ if(TRACKS[0]) TRACKS[0].loop=true; return; }  // geen 2e track: 1e blijft lopen
+    const t=A.currentTime; TRACKS[1].loop=true; try{ TRACKS[1].play(); }catch(e){}
     if(TGAIN[0]) TGAIN[0].gain.linearRampToValueAtTime(0,t+3);
     TGAIN[1].gain.setValueAtTime(0,t); TGAIN[1].gain.linearRampToValueAtTime(1,t+3);
     setTimeout(function(){ try{ if(TRACKS[0]) TRACKS[0].pause(); }catch(e){} },3500); }
@@ -164,7 +188,8 @@
    '  gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0); }'].join('\n');
   const SHELL_FS=[
    'precision highp float;',
-   'uniform float uTime,uBeat,uMode,uFold,uSpeed,uAlpha,uGain,uWhite,uSharp,uFlash,uDark,uCut,uCutDir,uSwap;',
+   'uniform float uTime,uBeat,uMode,uFold,uSpeed,uAlpha,uGain,uWhite,uSharp,uFlash,uDark,uCut,uCutDir,uSwap,uFreq,uTexAmt,uTexRep;',
+   'uniform sampler2D uTex;',
    'uniform vec3 uColA,uColB,uColD;',
    'varying vec2 vUv; varying float vAxis;',
    'vec3 pal(float t){ return uColA+uColB*cos(6.28318*(t+uColD)); }',
@@ -172,7 +197,7 @@
    '  float pu=mix(vUv.x,vUv.y,uSwap);',
    '  float pv=mix(vUv.y,vUv.x,uSwap);',
    '  float ang=pu*6.28318;',
-   '  float d=pv*60.0+uTime*uSpeed;',
+   '  float d=pv*60.0*uFreq+uTime*uSpeed;',
    '  float t=0.5;',
    '  if(uMode<0.5){',
    '    t=0.5+0.22*(sin(ang*3.0+uTime)+sin(d*0.6+uTime*1.2)+sin(ang*2.0+d*0.4)+sin(d*0.2-uTime));',
@@ -202,6 +227,8 @@
    '      m=min(m,length(g+o-fp)); } }',
    '    t=m*1.7;',
    '  }',
+   '  if(uTexAmt>0.001){ float px=texture2D(uTex,vec2(pu*uTexRep,pv*uTexRep*0.6+uTime*0.015)).r;',
+   '    t=mix(t,t*0.30+px*1.25,uTexAmt); }',
    '  t*=uGain;',
    '  vec3 col=pal(t+uTime*0.02)*(0.7+0.6*uBeat)*uDark;',
    '  col=mix(col,vec3(1.0),clamp(uWhite+uFlash,0.0,1.0));',
@@ -245,11 +272,24 @@
    '  col=mix(col,vec3(1.0),clamp(uWhite+uFlash,0.0,1.0));',
    '  gl_FragColor=vec4(col,1.0); }'].join('\n');
 
+  let PRINTS=null;
+  function printTex(kind){ const cv=document.createElement('canvas'); cv.width=512; cv.height=512; const x=cv.getContext('2d');
+    x.fillStyle='#000'; x.fillRect(0,0,512,512); x.strokeStyle='#fff'; x.fillStyle='#fff';
+    if(kind===0){ for(let r=5;r<380;r+=8){ x.lineWidth=3; x.beginPath(); x.arc(256,256,r,0,6.283); x.stroke(); } }
+    else if(kind===1){ for(let a=0;a<72;a++){ const th=a/72*6.283; x.lineWidth=4; x.beginPath();
+        x.moveTo(256,256); x.lineTo(256+Math.cos(th)*400,256+Math.sin(th)*400); x.stroke(); }
+      for(let r=40;r<380;r+=46){ x.lineWidth=5; x.beginPath(); x.arc(256,256,r,0,6.283); x.stroke(); } }
+    else { for(let gy=0;gy<8;gy++) for(let gx=0;gx<8;gx++){ const cx=32+gx*64, cy=32+gy*64;
+        x.lineWidth=3; x.beginPath(); x.ellipse(cx,cy,24,13,0,0,6.283); x.stroke();
+        x.beginPath(); x.arc(cx,cy,8,0,6.283); x.fill(); } }
+    const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
+  function getPrints(){ if(!PRINTS) PRINTS=[printTex(0),printTex(1),printTex(2)]; return PRINTS; }
   function shellU(){ return {
     uTime:{value:0},uBeat:{value:0},uMode:{value:0},uFold:{value:6},uSpeed:{value:8},
     uAlpha:{value:0.7},uGain:{value:1},uWhite:{value:0},uSharp:{value:2.0},uFlash:{value:0},
     uWave:{value:0.4},uRipZ:{value:9999},uRipAmp:{value:0},uScale:{value:1},uDark:{value:1},
-    uCut:{value:9999},uCutDir:{value:-1},uSwap:{value:0},
+    uCut:{value:9999},uCutDir:{value:-1},uSwap:{value:0},uFreq:{value:1},
+    uTexAmt:{value:0},uTexRep:{value:1},uTex:{value:null},
     uColA:{value:new THREE.Vector3(0.07,0.06,0.16)},
     uColB:{value:new THREE.Vector3(0.45,0.40,0.85)},
     uColD:{value:new THREE.Vector3(0.00,0.15,0.35)} }; }
@@ -301,23 +341,23 @@
       this.walls.push(mkWall(new THREE.PlaneGeometry(300,46),[0,-Math.PI/2,0],[42,4,-60],1));    // rechts
       // ---- verschijningen ----
       const gDisc=new THREE.CylinderGeometry(1,1,0.12,28,1);
-      const gBox=new THREE.BoxGeometry(1.5,1.5,0.3);
-      const gOct=new THREE.OctahedronGeometry(1.1,0);
-      const gRing=new THREE.TorusGeometry(0.9,0.2,10,26);
+      const gRing=new THREE.TorusGeometry(0.85,0.26,12,28);
       const gGate=new THREE.TorusGeometry(1,0.07,10,40);
       const gShard=new THREE.IcosahedronGeometry(1,1);
-      const mixG=[gDisc,gBox,gOct,gRing];
-      this.pools=[[],[],[]];
-      for(let i=0;i<8;i++){ const u=objU(i*1.9,i%3);
-        const m=new THREE.Mesh(mixG[i%4],new THREE.ShaderMaterial({vertexShader:OBJ_VS,fragmentShader:OBJ_FS,uniforms:u}));
-        if(i%4===0) m.rotation.x=Math.PI/2;
-        m.visible=false; root.add(m); this.pools[0].push({m:m,u:u,i:i}); }
-      for(let i=0;i<6;i++){ const u=objU(i*1.9,1);
-        const m=new THREE.Mesh(gGate,new THREE.ShaderMaterial({vertexShader:OBJ_VS,fragmentShader:OBJ_FS,uniforms:u}));
-        m.visible=false; root.add(m); this.pools[1].push({m:m,u:u,i:i}); }
-      for(let i=0;i<7;i++){ const u=objU(i*1.9,2);
-        const m=new THREE.Mesh(gShard,new THREE.ShaderMaterial({vertexShader:OBJ_VS,fragmentShader:OBJ_FS,uniforms:u}));
-        m.scale.set(0.3,0.3,2.6); m.visible=false; root.add(m); this.pools[2].push({m:m,u:u,i:i}); }
+      const gSeg=new THREE.SphereGeometry(1,14,10);
+      const mkPool=(geo,n,pat,rotX)=>{ const arr=[];
+        for(let i=0;i<n;i++){ const u=objU(i*1.9,pat);
+          const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({vertexShader:OBJ_VS,fragmentShader:OBJ_FS,uniforms:u}));
+          if(rotX) m.rotation.x=rotX; m.visible=false; root.add(m); arr.push({m:m,u:u,i:i}); }
+        return arr; };
+      this.pools=[ mkPool(gDisc,8,0,Math.PI/2), mkPool(gGate,6,1,0), mkPool(gShard,7,2,0),
+                   mkPool(gSeg,16,0,0), mkPool(gRing,8,1,0) ];
+      this.pools[2].forEach(o=>o.m.scale.set(0.3,0.3,2.6));
+      const PR=getPrints();
+      for(let i=0;i<3;i++){ this.shells[i].u.uTex.value=PR[0]; this.shells[i].u.uFreq.value=[1.0,1.12,1.25][i]; }
+      this.du.uTex.value=PR[0]; this.ou.uTex.value=PR[0];
+      this.walls.forEach(w=>{ w.u.uTex.value=PR[0]; });
+      this.snakeZ=-200; this.snakeSide=1; this.wAmt=[0,0,0]; this.texAmt=0;
       this.elapsed=0; this.scene=-1; this.ripZ=9999; this.ripAmp=0; this.flash=0;
       this.prevBeat=0; this.evPhase=0; this.domeAmt=0; this.wallAmt=0;
       this.cur={sp:8,wave:0.4,fold:6,A:new THREE.Vector3(0.07,0.06,0.16),B:new THREE.Vector3(0.45,0.4,0.85),D:new THREE.Vector3(0,0.15,0.35)};
@@ -336,6 +376,7 @@
         o.sc=6.5+rand(0,2.5); o.spin=rand(-0.7,0.7); o.m.scale.setScalar(o.sc); });
       if(SC.ev===2) this.pools[2].forEach((o,i)=>{ o.ang=rand(0,6.283); o.rad=rand(2.8,9);
         o.z=22+i*7; o.spin=rand(-1.2,1.2); });
+      if(SC.ev===3){ this.snakeZ=-200; this.snakeSide=(Math.random()<0.5?1:-1); }
     },
     tick:function(t,dt){ const s=Math.min(0.08,(dt||16)/1000);
       if(window.USE_TRACK&&ANA){ ANA.getByteFrequencyData(ANAD); let b=0; for(let k=1;k<7;k++)b+=ANAD[k]; b/=(6*255);
@@ -362,13 +403,18 @@
       this.cur.B.lerp(new THREE.Vector3().fromArray(SC.B),k*0.5);
       this.cur.D.lerp(new THREE.Vector3().fromArray(SC.D),k*0.5);
       const kf=1-Math.exp(-s/1.1);
-      this.domeAmt+=((menu?0.5:SC.dome)-this.domeAmt)*kf;
-      this.wallAmt+=((menu?0:SC.wall)-this.wallAmt)*kf;
+      this.domeAmt+=((menu?0.35:SC.dome)-this.domeAmt)*kf;
       this.orbAmt+=((menu?1:SC.orb)-this.orbAmt)*kf;
+      this.texAmt+=(((menu||!SC.tex)?0:SC.tex[0])-this.texAmt)*kf;
+      const wm=menu?0:SC.wall;
+      for(let i=0;i<3;i++){ const on=(wm===3)||(wm===1&&i===0)||(wm===2&&i>0);
+        this.wAmt[i]+=((on?1:0)-this.wAmt[i])*kf; }
 
       // ---- nieuwe tunnel schuift over je heen bij elk hoofdstuk ----
-      let cut=99999, dir=-1;
-      if(!menu&&tEl<3.2){ cut=-200+230*(tEl/3.2); dir=-1; }
+      let cut=99999, dir=-1, introA=1;
+      if(!menu&&SC.intro){ introA=Math.min(1,Math.max(0,(tEl-5)/9));
+        if(tEl<19) { cut=-230+260*Math.min(1,Math.max(0,(tEl-5)/12)); dir=-1; } }
+      else if(!menu&&tEl<3.2){ cut=-200+230*(tEl/3.2); dir=-1; }
 
       // ---- rimpel ----
       if(!menu&&Math.random()<s*SC.rip*0.5) this.fireRipple();
@@ -387,7 +433,9 @@
         u.uWave.value=this.cur.wave*(i===0?1:0.6);
         u.uFold.value=this.cur.fold; u.uBeat.value=beat; u.uFlash.value=this.flash*0.6;
         u.uWhite.value=(SC.white?pr*pr:0);
-        u.uAlpha.value=this.shells[i].base; u.uDark.value=1;
+        u.uAlpha.value=this.shells[i].base*introA; u.uDark.value=1;
+        u.uTexAmt.value=this.texAmt; u.uTexRep.value=[3.0,3.35,3.75][i];
+        if(SC.tex&&SC.tex[0]>0) u.uTex.value=getPrints()[SC.tex[1]||0];
         u.uCut.value=cut; u.uCutDir.value=dir;
         u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D);
         u.uRipZ.value=this.ripZ; u.uRipAmp.value=this.ripAmp*(i===0?0.9:0.5); }
@@ -399,10 +447,13 @@
       this.du.uColA.value.copy(this.cur.A); this.du.uColB.value.copy(this.cur.B); this.du.uColD.value.copy(this.cur.D);
       this.dome.visible=this.domeAmt>0.02;
       // ---- bol aan het eind: naar je toe en weer weg ----
-      const oz=-(34+80*(0.5+0.5*Math.sin(this.elapsed*0.115)));
+      let oz, osc=this.orbAmt;
+      if(!menu&&SC.intro){ const g=Math.min(1,Math.max(0,tEl/19)); osc=this.orbAmt*(0.10+0.90*g); oz=-155+58*g; }
+      else if(SC.orbNear) oz=-(21+26*(0.5+0.5*Math.sin(this.elapsed*0.20)));
+      else oz=-(34+80*(0.5+0.5*Math.sin(this.elapsed*0.115)));
       this.orb.position.z=oz;
-      this.orb.scale.setScalar(this.orbAmt*(1+beat*0.08));
-      this.orb.visible=this.orbAmt>0.03;
+      this.orb.scale.setScalar(osc*(1+beat*0.08));
+      this.orb.visible=osc>0.03;
       this.ou.uTime.value+=s*(0.7+this.cur.sp*0.1);
       this.ou.uBeat.value=beat; this.ou.uFlash.value=this.flash*0.8; this.ou.uFold.value=this.cur.fold;
       this.ou.uWhite.value=(SC.white?pr*pr:0); this.ou.uDark.value=1;
@@ -413,17 +464,18 @@
         u.uTime.value+=s*(0.5+this.cur.sp*0.3);
         u.uSpeed.value=this.cur.sp*2.2; u.uFold.value=this.cur.fold;
         u.uBeat.value=beat; u.uFlash.value=this.flash*0.6; u.uWhite.value=(SC.white?pr*pr:0);
-        u.uAlpha.value=0.55*this.wallAmt; u.uDark.value=1;
+        u.uAlpha.value=0.55*this.wAmt[i]; u.uDark.value=1;
         u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D);
-        w.m.visible=this.wallAmt>0.03;
+        w.m.visible=this.wAmt[i]>0.03;
         if(i===0){ const p=pulse(this.elapsed/11); w.m.position.y=-30+26.5*p; }
         else if(i===1){ const p=pulse(this.elapsed/15+0.15); w.m.position.x=-42+34*p; }
         else { const p=pulse(this.elapsed/15+0.65); w.m.position.x=42-34*p; } }
 
       // ---- verschijningen ----
-      const evOn=(!menu&&SC.ev>=0&&tEl>12&&tEl<30);
-      const eu=evOn?(tEl-12)/18:0;
-      for(let p=0;p<3;p++){ const on=(evOn&&SC.ev===p);
+      const e0=4, e1=Math.max(e0+6,this.scDur-4);
+      const evOn=(!menu&&SC.ev>=0&&tEl>e0&&tEl<e1);
+      const eu=evOn?(tEl-e0)/(e1-e0):0;
+      for(let p=0;p<5;p++){ const on=(evOn&&SC.ev===p);
         for(let j=0;j<this.pools[p].length;j++){ const o=this.pools[p][j], u=o.u;
           if(!on){ if(o.m.visible) o.m.visible=false; continue; }
           o.m.visible=true;
@@ -432,10 +484,16 @@
           u.uRipZ.value=this.ripZ; u.uRipAmp.value=this.ripAmp;
           u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D); }
         if(!on) continue;
-        if(p===0){ this.evPhase+=s*(0.5+8.5*eu*eu);
+        if(p===3){ // SLANG: golft langs je heen
+          const fly=24+this.cur.sp*3.0; this.snakeZ+=fly*s;
+          for(let j=0;j<16;j++){ const o=this.pools[3][j]; const zz=this.snakeZ-j*2.6;
+            o.m.position.set(this.snakeSide*(8.5+Math.sin(zz*0.045+this.elapsed*0.6)*4.0),
+                             1.6+Math.cos(zz*0.038+this.elapsed*0.5)*4.5, zz);
+            o.m.scale.setScalar(1.8*(1-j/23)); }
+        } else if(p===0||p===4){ this.evPhase+=s*(0.5+8.5*eu*eu);
           const zc=-13-7.0*Math.sin(eu*Math.PI*2.2), rr=3.4;
-          for(let j=0;j<this.pools[0].length;j++){ const o=this.pools[0][j];
-            const a=this.evPhase+j/this.pools[0].length*6.283;
+          for(let j=0;j<this.pools[p].length;j++){ const o=this.pools[p][j];
+            const a=this.evPhase+j/this.pools[p].length*6.283;
             o.m.position.set(Math.cos(a)*rr,1.6+Math.sin(a)*rr,zc);
             o.m.rotation.z=a*1.4; o.m.rotation.y+=s*1.2;
             o.m.scale.setScalar(0.85+0.3*Math.sin(eu*9+j)); }
@@ -466,6 +524,7 @@
       TRACKS.forEach(function(tr,i){ if(!tr) return; const src=A.createMediaElementSource(tr); const g=A.createGain();
         g.gain.value=(i===0)?1:0; src.connect(g).connect(ANA); TGAIN[i]=g; });
       if(!TRACKS[0]&&TGAIN[1]) TGAIN[1].gain.value=1;
+      if(TRACKS[0]){ TRACKS[0].loop=false; TRACKS[0].addEventListener('ended',function(){ switchTrack(); }); }
       (TRACKS[0]||TRACKS[1]).play(); window.USE_TRACK=true; }catch(e){ window.USE_TRACK=false; } }
     if(!window.USE_TRACK) startDrone();
     const m=$('#menu'); if(m&&m.parentNode)m.parentNode.removeChild(m);
@@ -486,7 +545,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v12.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v13.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -506,10 +565,11 @@
         <a-plane position="0 1.55 -2.11" width="1.98" height="1.23" material="color:#b04aff;opacity:0.16;transparent:true"></a-plane>
         <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.2" position="0 1.95 -2.08"></a-text>
         <a-text value="Acht minuten. Twee tracks." align="center" color="#9aa8c0" width="1.8" position="0 1.74 -2.08"></a-text>
-        <a-text value="Zet je geluid aan." align="center" color="#7c8794" width="1.6" position="0 1.62 -2.08"></a-text>
+        <a-text value="Zet je geluid aan." align="center" color="#7c8794" width="1.6" position="0 1.63 -2.08"></a-text>
+        <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v12.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v13.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
