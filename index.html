@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v14.0
+  //  DIEPE TRIP v15.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -220,31 +220,27 @@
    '  gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0); }'].join('\n');
   const SHELL_FS=[
    'precision highp float;',
-   'uniform float uTime,uBeat,uMode,uFold,uSpeed,uAlpha,uGain,uWhite,uSharp,uFlash,uDark,uCut,uCutDir,uSwap,uFreq,uTexAmt,uTexRep;',
+   'uniform float uTime,uBeat,uMode,uMode2,uMix,uFold,uSpeed,uAlpha,uGain,uWhite,uSharp,uFlash,uDark,uCut,uCutDir,uSwap,uFreq,uTexAmt,uTexRep;',
    'uniform sampler2D uTex;',
    'uniform vec3 uColA,uColB,uColD;',
    'varying vec2 vUv; varying float vAxis;',
    'vec3 pal(float t){ return uColA+uColB*cos(6.28318*(t+uColD)); }',
-   'void main(){',
-   '  float pu=mix(vUv.x,vUv.y,uSwap);',
-   '  float pv=mix(vUv.y,vUv.x,uSwap);',
-   '  float ang=pu*6.28318;',
-   '  float d=pv*60.0*uFreq+uTime*uSpeed;',
+   'float patt(float md,float ang,float d,float fold){',
    '  float t=0.5;',
-   '  if(uMode<0.5){',
+   '  if(md<0.5){',
    '    t=0.5+0.22*(sin(ang*3.0+uTime)+sin(d*0.6+uTime*1.2)+sin(ang*2.0+d*0.4)+sin(d*0.2-uTime));',
-   '  } else if(uMode<1.5){',
-   '    float seg=6.28318/uFold;',
+   '  } else if(md<1.5){',
+   '    float seg=6.28318/fold;',
    '    float a2=abs(mod(ang+uTime*0.1,seg)-seg*0.5);',
-   '    t=(sin(a2*uFold*2.0+sin(d*0.4))*0.5+0.5)*(sin(d-a2*8.0+uTime)*0.5+0.5)+0.4*(sin(a2*12.0+d*0.8-uTime)*0.5+0.5);',
-   '  } else if(uMode<2.5){',
+   '    t=(sin(a2*fold*2.0+sin(d*0.4))*0.5+0.5)*(sin(d-a2*8.0+uTime)*0.5+0.5)+0.4*(sin(a2*12.0+d*0.8-uTime)*0.5+0.5);',
+   '  } else if(md<2.5){',
    '    vec2 p=vec2(cos(ang),sin(ang))*1.25;',
    '    p+=vec2(sin(d*0.09),cos(d*0.09))*0.45;',
    '    vec2 c=vec2(0.55+0.22*sin(uTime*0.06),0.35+0.22*cos(uTime*0.05));',
    '    float acc=0.0;',
    '    for(int i=0;i<10;i++){ p=abs(p)/dot(p,p)-c; acc+=exp(-length(p)*3.0); }',
    '    t=acc*0.32;',
-   '  } else if(uMode<3.5){',
+   '  } else if(md<3.5){',
    '    float r1=sin(d*1.15)*0.5+0.5;',
    '    float r2=sin(d*1.31+ang*3.0)*0.5+0.5;',
    '    t=r1*r2*1.5;',
@@ -259,6 +255,14 @@
    '      m=min(m,length(g+o-fp)); } }',
    '    t=m*1.7;',
    '  }',
+   '  return t; }',
+   'void main(){',
+   '  float pu=mix(vUv.x,vUv.y,uSwap);',
+   '  float pv=mix(vUv.y,vUv.x,uSwap);',
+   '  float ang=pu*6.28318;',
+   '  float d=pv*60.0*uFreq+uTime*uSpeed;',
+   '  float t=patt(uMode,ang,d,uFold);',
+   '  if(uMix>0.001) t=mix(t,patt(uMode2,ang,d,uFold),uMix);',
    '  if(uTexAmt>0.001){ float px=texture2D(uTex,vec2(pu*uTexRep,pv*uTexRep*0.6+uTime*0.015)).r;',
    '    t=mix(t,t*0.30+px*1.25,uTexAmt); }',
    '  t*=uGain;',
@@ -315,12 +319,19 @@
         x.lineWidth=3; x.beginPath(); x.ellipse(cx,cy,24,13,0,0,6.283); x.stroke();
         x.beginPath(); x.arc(cx,cy,8,0,6.283); x.fill(); } }
     const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
+  function morphTo(u,m){ if(u.uMix.value>0.001) u.uMode.value=u.uMode2.value;
+    if(u.uMode.value===m){ u.uMix.value=0; u._mix=0; return; }
+    u.uMode2.value=m; u.uMix.value=0.001; u._mix=1; }
+  function stepMix(u,s,dur){ if(!u._mix) return;
+    u.uMix.value=Math.min(1,u.uMix.value+s/(dur||4.0));
+    if(u.uMix.value>=1){ u.uMode.value=u.uMode2.value; u.uMix.value=0; u._mix=0; } }
   function getPrints(){ if(!PRINTS) PRINTS=[printTex(0),printTex(1),printTex(2)]; return PRINTS; }
   function shellU(){ return {
     uTime:{value:0},uBeat:{value:0},uMode:{value:0},uFold:{value:6},uSpeed:{value:8},
     uAlpha:{value:0.7},uGain:{value:1},uWhite:{value:0},uSharp:{value:2.0},uFlash:{value:0},
     uWave:{value:0.4},uRipZ:{value:9999},uRipAmp:{value:0},uScale:{value:1},uDark:{value:1},
     uCut:{value:9999},uCutDir:{value:-1},uSwap:{value:0},uFreq:{value:1},
+    uMode2:{value:0},uMix:{value:0},
     uTexAmt:{value:0},uTexRep:{value:1},uTex:{value:null},
     uColA:{value:new THREE.Vector3(0.07,0.06,0.16)},
     uColB:{value:new THREE.Vector3(0.45,0.40,0.85)},
@@ -359,9 +370,12 @@
       this.dome.position.set(0,1.6,0); this.dome.renderOrder=-20; root.add(this.dome); this.du=du;
       // ---- de bol AAN HET EIND van de tunnel: komt naar je toe en weer weg ----
       const ou=shellU(); ou.uMode.value=2; ou.uSharp.value=1.0; ou.uCut.value=99999; ou.uSpeed.value=3;
-      this.orb=new THREE.Mesh(new THREE.SphereGeometry(15,40,28),
-        new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,uniforms:ou,side:THREE.FrontSide}));
-      this.orb.position.set(0,1.6,-90); root.add(this.orb); this.ou=ou; this.orbAmt=0;
+      const orbMat=new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,uniforms:ou,side:THREE.FrontSide});
+      const orbGeo=new THREE.SphereGeometry(1,34,24);
+      this.orbParts=[];
+      for(let i=0;i<16;i++){ const m=new THREE.Mesh(orbGeo,orbMat); m.visible=false; m.position.set(0,1.6,-90);
+        root.add(m); this.orbParts.push(m); }
+      this.ou=ou; this.orbAmt=0; this.orbForm=0; this.orbSpin={x:0.05,y:0.08,z:0.02};
       // ---- wanden: vlak onder je en naast je, schuiven hard dichtbij en weer weg ----
       this.walls=[];
       const mkWall=(geo,rot,pos,swap)=>{ const u=shellU(); u.uCut.value=99999; u.uWave.value=0; u.uSharp.value=1.5;
@@ -401,18 +415,21 @@
       if(!window.USE_TRACK){ riser(); setMusic(SC.mus); }
       this.SC=SC; this.sc0=SC.t0; this.scDur=SC.dur; this.evPhase=0;
       const self=this;
-      setTimeout(function(){ for(let i=0;i<3;i++) self.shells[i].u.uMode.value=SC.md[i];
-        self.du.uMode.value=SC.md[2];
-        for(let i=0;i<3;i++) self.walls[i].u.uMode.value=SC.md[(i+1)%3]; },500);
+      for(let i=0;i<3;i++) morphTo(self.shells[i].u,SC.md[i]);
+      morphTo(self.du,SC.md[2]);
+      for(let i=0;i<3;i++) morphTo(self.walls[i].u,SC.md[(i+1)%3]);
       if(!this.orbBag||!this.orbBag.length){ this.orbBag=[0,1,2,3,4];
         for(let i=this.orbBag.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));
           const t2=this.orbBag[i]; this.orbBag[i]=this.orbBag[j]; this.orbBag[j]=t2; } }
-      this.ou.uMode.value=this.orbBag.pop();
+      morphTo(this.ou,this.orbBag.pop());
       this.ou.uFold.value=rand(4,16); this.ou.uFreq.value=rand(0.7,1.9);
       this.ou.uSpeed.value=rand(1.5,5.5); this.ou.uGain.value=rand(0.8,1.2);
       this.ou.uTexAmt.value=(Math.random()<0.45)?rand(0.5,0.9):0;
       this.ou.uTex.value=getPrints()[Math.floor(rand(0,3))];
       this.ou.uTexRep.value=rand(2,6);
+      const FORMS=[0,0,0,1,1,2,2]; let nf=FORMS[Math.floor(Math.random()*FORMS.length)];
+      if(nf===this.orbForm&&Math.random()<0.75) nf=(nf+1+Math.floor(Math.random()*2))%3;
+      this.orbForm=nf;
       this.orbHue=rand(0,1); this.orbR=rand(0.8,1.3);
       this.orbSpin={x:rand(-0.18,0.18),y:rand(-0.25,0.25),z:rand(-0.12,0.12)};
       this.yaw0=this.tube.rotation.y; this.roll0=this.tube.rotation.z;
@@ -429,6 +446,8 @@
         window.BEAT=Math.max((window.BEAT||0)*0.82,Math.max(0,(b-0.52)*2.4)); }
       else window.BEAT=Math.max(0,(window.BEAT||0)-s*5);
       const beat=window.BEAT, hit=(beat>0.6&&this.prevBeat<0.35); this.prevBeat=beat;
+      for(let i=0;i<3;i++){ stepMix(this.shells[i].u,s,4.5); stepMix(this.walls[i].u,s,4.5); }
+      stepMix(this.du,s,4.5); stepMix(this.ou,s,4.0);
       const menu=(window.PHASE!=='trip');
       if(!menu){ this.elapsed+=s;
         let idx=SCENES.length-1;
@@ -473,7 +492,8 @@
       const fpl=$('#flash'); if(fpl) fpl.setAttribute('material','color:#dfe8ff;opacity:'+(this.flash*0.45).toFixed(3)+';transparent:true;shader:flat');
 
       // ---- de tunnel draait: de opening zwaait weg, tot 360 graden ----
-      if(!menu){ const ea=Math.min(1,Math.max(0,(pr-0.10)/0.80)), ez=0.5-0.5*Math.cos(Math.PI*ea);
+      if(!menu){ const r0=5.0, r1=Math.max(r0+8,this.scDur-3);
+        const ea=Math.min(1,Math.max(0,(tEl-r0)/(r1-r0))), ez=0.5-0.5*Math.cos(Math.PI*ea);
         this.tube.rotation.y=this.yaw0+((SC.yaw||0)*Math.PI/180)*ez;
         this.tube.rotation.z=this.roll0+((SC.roll||0)*Math.PI/180)*ez; }
       // ---- tunnel ----
@@ -501,16 +521,35 @@
       if(!menu&&SC.intro){ const g=Math.min(1,Math.max(0,tEl/19)); osc=this.orbAmt*(0.10+0.90*g); oz=-155+58*g; }
       else if(SC.orbNear) oz=-(21+26*(0.5+0.5*Math.sin(this.elapsed*0.20)));
       else oz=-(34+80*(0.5+0.5*Math.sin(this.elapsed*0.115)));
-      this.orb.position.z=oz;
-      this.orb.scale.setScalar(osc*(this.orbR||1)*(1+beat*0.08));
-      this.orb.visible=osc>0.03;
+      const vis=osc>0.03, oR=(this.orbR||1), sp=this.orbSpin;
+      const form=(menu||SC.intro)?0:this.orbForm;
+      if(form===0){
+        const p=this.orbParts[0]; p.visible=vis; p.position.set(0,1.6,oz);
+        p.scale.setScalar(15*osc*oR*(1+beat*0.08));
+        p.rotation.x+=sp.x*s; p.rotation.y+=sp.y*s; p.rotation.z+=sp.z*s;
+        for(let i=1;i<16;i++) this.orbParts[i].visible=false;
+      } else if(form===1){
+        const cz=oz*0.8;
+        for(let i=0;i<3;i++){ const p=this.orbParts[i]; p.visible=vis;
+          const a=this.elapsed*0.42+i*2.0944;
+          p.position.set(Math.cos(a)*13,1.6+Math.sin(a)*9.5,cz+Math.sin(a*2.0)*11);
+          p.scale.setScalar(7*osc*oR*(1+beat*0.11));
+          p.rotation.y+=sp.y*s*1.6; p.rotation.x+=sp.x*s; }
+        for(let i=3;i<16;i++) this.orbParts[i].visible=false;
+      } else {
+        for(let i=0;i<16;i++){ const p=this.orbParts[i]; p.visible=vis;
+          const T=this.elapsed*0.40-i*0.18;
+          p.position.set(Math.sin(T*0.9)*25,1.6+Math.sin(T*0.55+1.2)*9,-48+Math.cos(T*0.7)*26);
+          p.scale.setScalar(osc*oR*(5.4-i*0.21)*(1+beat*0.06));
+          p.rotation.z+=sp.z*s*2.0; p.rotation.y+=sp.y*s; }
+      }
       this.ou.uTime.value+=s*(0.7+this.cur.sp*0.1);
       this.ou.uBeat.value=beat; this.ou.uFlash.value=this.flash*0.8;
       this.ou.uWhite.value=(SC.white?pr*pr:0); this.ou.uDark.value=1;
       const oh=this.orbHue||0;
       this.ou.uColA.value.copy(this.cur.A); this.ou.uColB.value.copy(this.cur.B);
       this.ou.uColD.value.set(this.cur.D.x+oh,this.cur.D.y+oh*0.6,this.cur.D.z+oh*0.3);
-      if(this.orbSpin){ this.orb.rotation.x+=this.orbSpin.x*s; this.orb.rotation.y+=this.orbSpin.y*s; this.orb.rotation.z+=this.orbSpin.z*s; }
+
       // ---- wanden ----
       const pulse=(x)=>Math.pow(Math.max(0,Math.sin(Math.PI*(x-Math.floor(x)))),0.65);
       for(let i=0;i<3;i++){ const w=this.walls[i], u=w.u;
@@ -599,7 +638,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v14.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v15.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -623,7 +662,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v14.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v15.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
