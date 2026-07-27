@@ -6,55 +6,62 @@
   <title>DIEPE TRIP</title>
   <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
   <style>
-    #loader{position:fixed;inset:0;background:#070510;color:#d8b0ff;z-index:99999;display:flex;flex-direction:column;
+    #loader{position:fixed;inset:0;background:#05040a;color:#d8b0ff;z-index:99999;display:flex;flex-direction:column;
       align-items:center;justify-content:center;font-family:monospace;text-align:center;padding:20px}
     #ldErr{font-size:14px;color:#ff6a8a;max-width:90%;white-space:pre-wrap;margin-top:16px}
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v9.2 — pure shader-trip
-  //  plasma-tunnel / fractal-ruimte / caleidoscoop
+  //  DIEPE TRIP v10.0 — parallax-lagen, morphende figuren,
+  //  rimpel-schokgolf, tunnel uit/in, bliksem op de kick
   // =========================================================
   window.PHASE='menu'; window.BEAT=0; window.USE_TRACK=false;
-
   const $=q=>document.querySelector(q);
   const rand=(a,b)=>a+Math.random()*(b-a);
   const pick=a=>a[Math.floor(Math.random()*a.length)];
 
-  // ---- reis: 7 hoofdstukken, ~10 min, elk een eigen shader-wereld ----
+  // ---- het verhaal: 9 hoofdstukken, ~10 min ----
+  // tun: 1 = in een tunnel, 0 = open ruimte
+  // md: 0 plasma, 1 caleidoscoop, 2 fractal, 3 ringen, 4 cellen
   const SCENES=[
-    {name:'plasma-diep',   dur:80, surf:'tube', mode:0, fold:6,  wave:0.5, speed:2.2, white:0,
-     colA:[0.10,0.08,0.22], colB:[0.45,0.35,0.85], colD:[0.00,0.15,0.35],
-     mus:{root:110.0, mode:[0,3,5,7,10],   bpm:138, four:1, trance:1, goa:1, arp:0.5, bright:2400}},
-    {name:'caleido-zes',   dur:85, surf:'tube', mode:1, fold:6,  wave:0.35, speed:2.8, white:0,
-     colA:[0.12,0.06,0.14], colB:[0.80,0.50,0.70], colD:[0.00,0.33,0.67],
-     mus:{root:123.5, mode:[0,3,5,7,10],   bpm:142, four:1, trance:1, goa:1, acid:1, arp:0.6, bright:2600}},
-    {name:'fractal-ruimte',dur:90, surf:'dome', mode:2, fold:6,  wave:0,    speed:1.0, white:0,
-     colA:[0.05,0.05,0.10], colB:[0.60,0.50,0.80], colD:[0.30,0.20,0.55],
-     mus:{root:98.0,  mode:[0,2,3,7,10],   bpm:145, four:1, trance:1, goa:1, arp:0.55, bright:2500}},
-    {name:'plasma-ader',   dur:80, surf:'tube', mode:0, fold:6,  wave:1.0,  speed:1.6, white:0,
-     colA:[0.16,0.03,0.05], colB:[0.75,0.30,0.25], colD:[0.00,0.10,0.20],
-     mus:{root:82.4,  mode:[0,1,3,7,8],    bpm:138, four:1, trance:1, goa:1, acid:1, arp:0.45, bright:2100}},
-    {name:'caleido-twaalf',dur:85, surf:'tube', mode:1, fold:12, wave:0.45, speed:3.4, white:0,
-     colA:[0.10,0.09,0.03], colB:[0.70,0.65,0.30], colD:[0.05,0.15,0.30],
-     mus:{root:116.5, mode:[0,1,4,6,7,10], bpm:148, four:1, trance:1, goa:1, acid:1, arp:0.65, bright:2800}},
-    {name:'fractal-diep',  dur:90, surf:'dome', mode:2, fold:6,  wave:0,    speed:1.3, white:0,
-     colA:[0.02,0.06,0.05], colB:[0.40,0.70,0.60], colD:[0.20,0.45,0.60],
-     mus:{root:110.0, mode:[0,2,4,7,9],    bpm:145, four:1, trance:1, goa:1, acid:1, arp:0.6, bright:2700}},
-    {name:'wit-licht',     dur:70, surf:'tube', mode:0, fold:6,  wave:0.6,  speed:2.5, white:1,
-     colA:[0.30,0.28,0.24], colB:[0.70,0.70,0.65], colD:[0.00,0.05,0.10],
-     mus:{root:174.6, mode:[0,2,4,5,7,9,11], bpm:150, four:1, trance:1, goa:1, arp:0.6, bright:3200}}
+    {name:'vertrek',   dur:62, tun:1, md:[3,0,2], fold:[6,6],   wave:[0.3,0.7], sp:[7,9],   rip:0.05, light:0, white:0,
+     A:[0.08,0.06,0.18],B:[0.45,0.40,0.85],D:[0.00,0.15,0.35],
+     mus:{root:110.0,mode:[0,3,5,7,10],bpm:140,goa:1,bright:2400}},
+    {name:'uitbraak',  dur:66, tun:0, md:[2,4,2], fold:[6,9],   wave:[0.2,0.5], sp:[5,7],   rip:0.08, light:0, white:0,
+     A:[0.05,0.07,0.16],B:[0.50,0.45,0.80],D:[0.10,0.25,0.50],
+     mus:{root:123.5,mode:[0,3,5,7,10],bpm:142,goa:1,acid:1,bright:2500}},
+    {name:'caleido',   dur:66, tun:1, md:[1,1,4], fold:[6,14],  wave:[0.4,0.9], sp:[8,11],  rip:0.07, light:0, white:0,
+     A:[0.12,0.05,0.14],B:[0.80,0.50,0.70],D:[0.00,0.33,0.67],
+     mus:{root:116.5,mode:[0,2,4,7,9],bpm:144,goa:1,bright:2600}},
+    {name:'cellen',    dur:64, tun:0, md:[4,4,1], fold:[8,5],   wave:[0.3,0.6], sp:[6,9],   rip:0.10, light:0, white:0,
+     A:[0.04,0.10,0.09],B:[0.35,0.70,0.60],D:[0.20,0.45,0.60],
+     mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,acid:1,bright:2500}},
+    {name:'de rimpel', dur:64, tun:1, md:[0,3,0], fold:[6,6],   wave:[0.8,1.4], sp:[9,13],  rip:0.42, light:0, white:0,
+     A:[0.16,0.03,0.05],B:[0.75,0.35,0.28],D:[0.00,0.10,0.20],
+     mus:{root:82.4,mode:[0,1,3,7,8],bpm:140,goa:1,acid:1,bright:2200}},
+    {name:'fractaldiep',dur:68,tun:0, md:[2,2,4], fold:[6,6],   wave:[0.2,0.4], sp:[4,6],   rip:0.06, light:0, white:0,
+     A:[0.06,0.05,0.12],B:[0.55,0.50,0.85],D:[0.30,0.20,0.55],
+     mus:{root:110.0,mode:[0,2,4,7,9],bpm:145,goa:1,bright:2700}},
+    {name:'chaos',     dur:66, tun:1, md:[1,4,3], fold:[14,3],  wave:[0.6,1.2], sp:[12,17], rip:0.20, light:0, white:0,
+     A:[0.10,0.04,0.12],B:[0.85,0.55,0.75],D:[0.55,0.20,0.85],
+     mus:{root:116.5,mode:[0,1,4,6,7,10],bpm:150,goa:1,acid:1,bright:2900}},
+    {name:'storm',     dur:62, tun:0, md:[2,3,4], fold:[6,10],  wave:[0.3,0.8], sp:[7,10],  rip:0.15, light:1, white:0,
+     A:[0.05,0.07,0.14],B:[0.40,0.50,0.75],D:[0.60,0.65,0.75],
+     mus:{root:92.5,mode:[0,1,3,7,8],bpm:148,goa:1,acid:1,bright:2600}},
+    {name:'wit licht', dur:72, tun:1, md:[3,0,2], fold:[6,6],   wave:[0.5,0.9], sp:[13,26], rip:0.10, light:0, white:1,
+     A:[0.30,0.28,0.24],B:[0.70,0.70,0.66],D:[0.00,0.06,0.12],
+     mus:{root:174.6,mode:[0,2,4,5,7,9,11],bpm:150,goa:1,bright:3200}}
   ];
   let TOTALT=0; SCENES.forEach(sc=>{ sc.t0=TOTALT; TOTALT+=sc.dur; });
 
   // =========================================================
-  //  MUZIEK — Goa-engine (fallback) of music/track.mp3
+  //  MUZIEK
   // =========================================================
-  let A=null, MASTER=null, DUCK=null, DELAY=null, DRONE=null;
-  let TRACKS=[null,null], ANA=null, ANAD=null, TGAIN=[null,null], SWITCHED=false;
+  let A=null,MASTER=null,DUCK=null,DELAY=null,DRONE=null;
+  let TRACKS=[null,null],ANA=null,ANAD=null,TGAIN=[null,null],SWITCHED=false;
   const TRACK_URLS=[
-    ['Music/Track.mp3','music/Track.mp3','Music/track.mp3','music/track.mp3'],
-    ['Music/Track_2.mp3','music/Track_2.mp3','Music/track_2.mp3','music/track_2.mp3']
+    ['Music/Track.mp3','music/Track.mp3','Music/Track1.mp3','music/track.mp3'],
+    ['Music/Track2.mp3','music/Track2.mp3','Music/Track_2.mp3','music/Track_2.mp3','Music/Track%202.mp3']
   ];
   function AC(){ if(A) return A; A=new (window.AudioContext||window.webkitAudioContext)();
     MASTER=A.createGain(); MASTER.gain.value=0.5; MASTER.connect(A.destination);
@@ -64,19 +71,16 @@
     const dw=A.createGain(); dw.gain.value=0.5;
     DELAY.connect(fl).connect(fb).connect(DELAY); DELAY.connect(dw).connect(DUCK);
     return A; }
-  function tryTrack(){ TRACK_URLS.forEach(function(list,i){ probe(list,0,i); }); }
-  function probe(list,k,i){ if(k>=list.length){ TRACKS[i]=null; return; }
+  function tryTrack(){ TRACK_URLS.forEach(function(l,i){ probe(l,0,i); }); }
+  function probe(list,k,i){ if(k>=list.length) return;
     const au=new Audio(); au.src=list[k]; au.loop=true; au.preload='auto';
     au.addEventListener('canplaythrough',function(){ if(!TRACKS[i]) TRACKS[i]=au; },{once:true});
-    au.addEventListener('error',function(){ probe(list,k+1,i); });
-    au.load(); }
-  function switchTrack(){ if(SWITCHED||!TRACKS[1]||!TGAIN[0]||!TGAIN[1]) return; SWITCHED=true;
-    const t=A.currentTime;
-    try{ TRACKS[1].play(); }catch(e){}
-    TGAIN[0].gain.linearRampToValueAtTime(0, t+4);
-    TGAIN[1].gain.setValueAtTime(0, t);
-    TGAIN[1].gain.linearRampToValueAtTime(1, t+4);
-    setTimeout(function(){ try{ TRACKS[0].pause(); }catch(e){} }, 4500); }
+    au.addEventListener('error',function(){ probe(list,k+1,i); }); au.load(); }
+  function switchTrack(){ if(SWITCHED||!TRACKS[1]||!TGAIN[1]) return; SWITCHED=true;
+    const t=A.currentTime; try{ TRACKS[1].play(); }catch(e){}
+    if(TGAIN[0]) TGAIN[0].gain.linearRampToValueAtTime(0,t+4);
+    TGAIN[1].gain.setValueAtTime(0,t); TGAIN[1].gain.linearRampToValueAtTime(1,t+4);
+    setTimeout(function(){ try{ if(TRACKS[0]) TRACKS[0].pause(); }catch(e){} },4500); }
   function duckNow(t){ if(!DUCK)return; DUCK.gain.cancelScheduledValues(t);
     DUCK.gain.setValueAtTime(0.32,t); DUCK.gain.linearRampToValueAtTime(1.0,t+0.22); }
   function supersaw(f,t,dur,vol,dest,att,bright){ const a=AC(); const g=a.createGain();
@@ -121,154 +125,271 @@
     const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=500;
     const lfo=a.createOscillator(); lfo.frequency.value=0.08; const lg=a.createGain(); lg.gain.value=260; lfo.connect(lg).connect(f.frequency); lfo.start();
     const g=a.createGain(); g.gain.value=0.045;
-    o1.connect(f); o2.connect(f); f.connect(g).connect(DUCK); o1.start(); o2.start();
-    DRONE={o1:o1,o2:o2,f:f}; }
-  const MUS={cfg:null, nextT:0, step:0, phrase:[]};
-  function makePhrase(c){ const ph=[];
-    if(c.goa){ const off=Math.floor(Math.random()*c.mode.length);
-      for(let i=0;i<16;i++) ph.push(c.mode[(off+i*3)%c.mode.length]+(((i%8)>5)?12:0));
-      return ph; }
-    for(let i=0;i<16;i++){ if(i===0){ ph.push(0); continue; }
-      ph.push(Math.random()<0.55 ? pick(c.mode)+12*Math.floor(Math.random()*2) : null); } return ph; }
+    o1.connect(f); o2.connect(f); f.connect(g).connect(DUCK); o1.start(); o2.start(); DRONE={o1:o1,o2:o2,f:f}; }
+  const MUS={cfg:null,nextT:0,step:0,phrase:[]};
+  function makePhrase(c){ const ph=[]; const off=Math.floor(Math.random()*c.mode.length);
+    for(let i=0;i<16;i++) ph.push(c.mode[(off+i*3)%c.mode.length]+(((i%8)>5)?12:0)); return ph; }
   function setMusic(cfg){ const a=AC(); MUS.cfg=cfg; MUS.step=0;
-    cfg.prog=(cfg.mode.indexOf(4)>=0)?[0,9,5,7]:[0,8,3,10];
-    MUS.phrase=makePhrase(cfg);
-    if(DRONE){ DRONE.o1.frequency.linearRampToValueAtTime(cfg.root/2, a.currentTime+2.5);
-      DRONE.o2.frequency.linearRampToValueAtTime(cfg.root/2*1.004, a.currentTime+2.5);
-      DRONE.f.frequency.linearRampToValueAtTime(Math.max(300,cfg.bright*0.35), a.currentTime+2.5); } }
-  function musTick(){ if(!A||!MUS.cfg||window.PHASE!=='trip'||window.USE_TRACK) return; const a=A, c=MUS.cfg;
+    cfg.prog=(cfg.mode.indexOf(4)>=0)?[0,9,5,7]:[0,8,3,10]; MUS.phrase=makePhrase(cfg);
+    if(DRONE){ DRONE.o1.frequency.linearRampToValueAtTime(cfg.root/2,a.currentTime+2.5);
+      DRONE.o2.frequency.linearRampToValueAtTime(cfg.root/2*1.004,a.currentTime+2.5);
+      DRONE.f.frequency.linearRampToValueAtTime(Math.max(300,cfg.bright*0.35),a.currentTime+2.5); } }
+  function musTick(){ if(!A||!MUS.cfg||window.PHASE!=='trip'||window.USE_TRACK) return; const a=A,c=MUS.cfg;
     const stepDur=60/c.bpm/4;
     if(MUS.nextT<a.currentTime) MUS.nextT=a.currentTime+0.05;
     while(MUS.nextT<a.currentTime+0.28){
-      const t=MUS.nextT, i=MUS.step;
-      const bar=Math.floor(i/16), pos=i%16, sect=bar%16;
+      const t=MUS.nextT,i=MUS.step,bar=Math.floor(i/16),pos=i%16,sect=bar%16;
       const chord=c.root*Math.pow(2,(c.prog[Math.floor(bar/2)%4])/12);
-      if(pos===0 && bar%8===0) MUS.phrase=makePhrase(c);
+      if(pos===0&&bar%8===0) MUS.phrase=makePhrase(c);
       if(i%32===0){ supersaw(chord,t,4.6,0.07,DUCK,1.6,1400);
         supersaw(chord*Math.pow(2,(c.mode.indexOf(3)>=0?3:4)/12),t,4.6,0.05,DUCK,1.8,1300);
         supersaw(chord*1.4983,t,4.6,0.05,DUCK,2.0,1300); }
-      if(pos%4===0) kickAt(t,0.9);
-      else note(chord/2,t,0.12,0.17,'sawtooth',DUCK,0.004);
-      if(sect>=2) hatAt(t, pos%4===2?0.13:0.045);
-      if(pos===14 && Math.random()<0.4) hatAt(t,0.1,true);
-      if(c.goa){ supersaw(c.root*2*Math.pow(2,MUS.phrase[pos]/12),t,0.14,0.055,DELAY,0.008,c.bright); }
-      else if(sect>=1 && MUS.phrase[pos]!=null){ supersaw(c.root*2*Math.pow(2,MUS.phrase[pos]/12),t,0.24,0.06,DELAY,0.01,c.bright); }
-      if(c.acid && sect>=6 && pos%2===0 && Math.random()<0.5){
-        acidAt(c.root*Math.pow(2,pick(c.mode)/12)*(Math.random()<0.3?2:1),t); }
+      if(pos%4===0) kickAt(t,0.9); else note(chord/2,t,0.12,0.17,'sawtooth',DUCK,0.004);
+      if(sect>=2) hatAt(t,pos%4===2?0.13:0.045);
+      if(pos===14&&Math.random()<0.4) hatAt(t,0.1,true);
+      supersaw(c.root*2*Math.pow(2,MUS.phrase[pos]/12),t,0.14,0.055,DELAY,0.008,c.bright);
+      if(c.acid&&sect>=6&&pos%2===0&&Math.random()<0.5) acidAt(c.root*Math.pow(2,pick(c.mode)/12)*(Math.random()<0.3?2:1),t);
       if(sect===15) hatAt(t,0.04+pos*0.007);
-      MUS.nextT+=stepDur; MUS.step++;
-    } }
+      MUS.nextT+=stepDur; MUS.step++; } }
   setInterval(musTick,85);
 
   // =========================================================
-  //  SHADERS — de wereld is een levend oppervlak
+  //  SHADERS
   // =========================================================
-  const VERT=`
-    uniform float uTime; uniform float uWave;
-    varying vec2 vUv;
-    void main(){ vUv=uv; vec3 p=position;
-      float w=1.0 + uWave*0.35*sin(p.y*0.05+uTime*0.9) + uWave*0.2*sin(p.y*0.13-uTime*0.6);
-      p.x*=w; p.z*=w;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.0); }`;
-  const FRAG=`
-    precision highp float;
-    uniform float uTime,uBeat,uMode,uFold,uSpeed,uAlpha,uDim,uWhite;
-    uniform vec3 uColA,uColB,uColD;
-    varying vec2 vUv;
-    vec3 pal(float t){ return uColA + uColB*cos(6.28318*(t+uColD)); }
-    void main(){
-      float t=0.5;
-      float ang=vUv.x*6.28318;
-      float d=vUv.y*40.0 + uTime*uSpeed;
-      if(uMode<0.5){
-        float v=sin(ang*3.0+uTime)+sin(d*0.7+uTime*1.3)+sin(ang*2.0+d*0.5+uTime*0.6)+sin(sqrt(ang*ang+d*d*0.1)*2.0-uTime);
-        t=v*0.25+0.5;
-      } else if(uMode<1.5){
-        float seg=6.28318/uFold;
-        float a2=abs(mod(ang+uTime*0.12,seg)-seg*0.5);
-        float f=sin(a2*uFold*2.0+sin(d*0.5))*0.5+0.5;
-        float g=sin(d-a2*8.0+uTime)*0.5+0.5;
-        float pl=sin(a2*14.0+d*0.9-uTime*1.4)*0.5+0.5;
-        t=f*g*0.7+pl*0.45;
-      } else {
-        vec2 p=vec2(cos(ang),sin(ang))*(1.0-vUv.y)*2.2;
-        p*=1.4+0.4*sin(uTime*0.05);
-        vec2 c=vec2(0.55+0.25*sin(uTime*0.07), 0.35+0.25*cos(uTime*0.05));
-        float acc=0.0;
-        for(int i=0;i<11;i++){ p=abs(p)/dot(p,p)-c; acc+=exp(-length(p)*3.0); }
-        t=acc*0.35;
-      }
-      vec3 col=pal(t+uTime*0.02)*(0.75+0.5*uBeat)*uDim;
-      col+=pal(t+0.3)*uBeat*0.35*smoothstep(0.12,0.0,abs(fract(vUv.y*4.0-uTime*0.15)-0.5));
-      col=mix(col,vec3(1.0),uWhite);
-      gl_FragColor=vec4(col,uAlpha); }`;
-  function mkUniforms(){ return {
-    uTime:{value:0}, uBeat:{value:0}, uMode:{value:0}, uFold:{value:6}, uSpeed:{value:2},
-    uAlpha:{value:1}, uDim:{value:1}, uWhite:{value:0}, uWave:{value:0.5},
-    uColA:{value:new THREE.Vector3(0.1,0.08,0.22)}, uColB:{value:new THREE.Vector3(0.45,0.35,0.85)},
-    uColD:{value:new THREE.Vector3(0.0,0.15,0.35)} }; }
+  const SHELL_VS=[
+   'uniform float uTime,uWave,uRipZ,uRipAmp,uScale;',
+   'varying vec2 vUv;',
+   'void main(){ vUv=uv; vec3 p=position;',
+   '  float az=p.y;',
+   '  float w=1.0+uWave*0.28*sin(az*0.055+uTime*0.9)+uWave*0.16*sin(az*0.14-uTime*0.65);',
+   '  float dd=az-uRipZ;',
+   '  w+=uRipAmp*exp(-dd*dd*0.0035);',
+   '  p.x*=w*uScale; p.z*=w*uScale;',
+   '  gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0); }'].join('\n');
 
+  const SHELL_FS=[
+   'precision highp float;',
+   'uniform float uTime,uBeat,uMode,uFold,uSpeed,uAlpha,uGain,uWhite,uSharp,uFlash;',
+   'uniform vec3 uColA,uColB,uColD;',
+   'varying vec2 vUv;',
+   'vec3 pal(float t){ return uColA+uColB*cos(6.28318*(t+uColD)); }',
+   'void main(){',
+   '  float ang=vUv.x*6.28318;',
+   '  float d=vUv.y*60.0+uTime*uSpeed;',
+   '  float t=0.5;',
+   '  if(uMode<0.5){',
+   '    t=0.5+0.22*(sin(ang*3.0+uTime)+sin(d*0.6+uTime*1.2)+sin(ang*2.0+d*0.4)+sin(d*0.2-uTime));',
+   '  } else if(uMode<1.5){',
+   '    float seg=6.28318/uFold;',
+   '    float a2=abs(mod(ang+uTime*0.1,seg)-seg*0.5);',
+   '    t=(sin(a2*uFold*2.0+sin(d*0.4))*0.5+0.5)*(sin(d-a2*8.0+uTime)*0.5+0.5)+0.4*(sin(a2*12.0+d*0.8-uTime)*0.5+0.5);',
+   '  } else if(uMode<2.5){',
+   '    vec2 p=vec2(cos(ang),sin(ang))*1.25;',
+   '    p+=vec2(sin(d*0.09),cos(d*0.09))*0.45;',
+   '    vec2 c=vec2(0.55+0.22*sin(uTime*0.06),0.35+0.22*cos(uTime*0.05));',
+   '    float acc=0.0;',
+   '    for(int i=0;i<10;i++){ p=abs(p)/dot(p,p)-c; acc+=exp(-length(p)*3.0); }',
+   '    t=acc*0.32;',
+   '  } else if(uMode<3.5){',
+   '    float r1=sin(d*1.15)*0.5+0.5;',
+   '    float r2=sin(d*1.31+ang*3.0)*0.5+0.5;',
+   '    t=r1*r2*1.5;',
+   '  } else {',
+   '    vec2 q=vec2(ang*1.6,d*0.22);',
+   '    vec2 ip=floor(q), fp=fract(q);',
+   '    float m=1.0;',
+   '    for(int y=-1;y<=1;y++){ for(int x=-1;x<=1;x++){',
+   '      vec2 g=vec2(float(x),float(y));',
+   '      vec2 o=fract(sin(vec2(dot(ip+g,vec2(127.1,311.7)),dot(ip+g,vec2(269.5,183.3))))*43758.545);',
+   '      o=0.5+0.5*sin(uTime*0.6+6.28318*o);',
+   '      m=min(m,length(g+o-fp)); } }',
+   '    t=m*1.7;',
+   '  }',
+   '  t*=uGain;',
+   '  vec3 col=pal(t+uTime*0.02)*(0.7+0.6*uBeat);',
+   '  col=mix(col,vec3(1.0),clamp(uWhite+uFlash,0.0,1.0));',
+   '  float a=uAlpha*clamp(pow(clamp(t,0.0,1.4),uSharp),0.0,1.0);',
+   '  a*=smoothstep(0.0,0.06,vUv.y)*smoothstep(1.0,0.94,vUv.y);',
+   '  gl_FragColor=vec4(col,a); }'].join('\n');
+
+  const OBJ_VS=[
+   'uniform float uTime,uMorph,uRipZ,uRipAmp,uSeed;',
+   'varying vec3 vP;',
+   'void main(){',
+   '  vec3 n=normalize(position);',
+   '  float sp=sin(n.x*4.0+uTime+uSeed)*sin(n.y*4.0+uTime*1.3)*sin(n.z*4.0+uTime*0.7);',
+   '  float ring=1.0-abs(n.y);',
+   '  float r=1.0+uMorph*0.5*sp+(1.0-uMorph)*0.35*ring;',
+   '  vec3 p=n*r; vP=p;',
+   '  vec4 wp=modelMatrix*vec4(p,1.0);',
+   '  float dd=wp.z-uRipZ;',
+   '  wp.xyz+=n*uRipAmp*2.0*exp(-dd*dd*0.0035);',
+   '  gl_Position=projectionMatrix*viewMatrix*wp; }'].join('\n');
+
+  const OBJ_FS=[
+   'precision highp float;',
+   'uniform float uTime,uBeat,uWhite,uFlash,uSeed;',
+   'uniform vec3 uColA,uColB,uColD;',
+   'varying vec3 vP;',
+   'vec3 pal(float t){ return uColA+uColB*cos(6.28318*(t+uColD)); }',
+   'void main(){',
+   '  float t=sin(vP.x*7.0+uTime*2.0+uSeed)+sin(vP.y*7.0-uTime*1.5)+sin(vP.z*7.0+uTime);',
+   '  t=t*0.18+0.5;',
+   '  float band=sin(atan(vP.z,vP.x)*8.0+uTime*3.0)*0.5+0.5;',
+   '  vec3 col=pal(t+band*0.12)*(0.75+0.7*uBeat);',
+   '  col=mix(col,vec3(1.0),clamp(uWhite+uFlash,0.0,1.0));',
+   '  gl_FragColor=vec4(col,1.0); }'].join('\n');
+
+  function shellUniforms(){ return {
+    uTime:{value:0},uBeat:{value:0},uMode:{value:0},uFold:{value:6},uSpeed:{value:8},
+    uAlpha:{value:1},uGain:{value:1},uWhite:{value:0},uSharp:{value:1.4},uFlash:{value:0},
+    uWave:{value:0.4},uRipZ:{value:9999},uRipAmp:{value:0},uScale:{value:1},
+    uColA:{value:new THREE.Vector3(0.08,0.06,0.18)},
+    uColB:{value:new THREE.Vector3(0.45,0.40,0.85)},
+    uColD:{value:new THREE.Vector3(0.00,0.15,0.35)} }; }
+  function objUniforms(seed){ return {
+    uTime:{value:0},uBeat:{value:0},uWhite:{value:0},uFlash:{value:0},uMorph:{value:0.5},
+    uRipZ:{value:9999},uRipAmp:{value:0},uSeed:{value:seed},
+    uColA:{value:new THREE.Vector3(0.08,0.06,0.18)},
+    uColB:{value:new THREE.Vector3(0.45,0.40,0.85)},
+    uColD:{value:new THREE.Vector3(0.00,0.15,0.35)} }; }
+
+  // =========================================================
+  //  WERELD
+  // =========================================================
   AFRAME.registerComponent('shaderworld',{
     init:function(){
-      this.TU=mkUniforms(); this.DU=mkUniforms();
-      const tubeGeo=new THREE.CylinderGeometry(9,9,300,48,72,true);
-      const tubeMat=new THREE.ShaderMaterial({vertexShader:VERT,fragmentShader:FRAG,uniforms:this.TU,side:THREE.BackSide,transparent:true,depthWrite:false});
-      this.tube=new THREE.Mesh(tubeGeo,tubeMat); this.tube.rotation.x=Math.PI/2; this.tube.position.set(0,1.6,0); this.tube.renderOrder=2;
-      const domeGeo=new THREE.SphereGeometry(90,48,32);
-      const domeMat=new THREE.ShaderMaterial({vertexShader:VERT,fragmentShader:FRAG,uniforms:this.DU,side:THREE.BackSide});
-      this.dome=new THREE.Mesh(domeGeo,domeMat); this.dome.position.set(0,1.6,0); this.dome.renderOrder=1;
-      this.DU.uMode.value=2; this.DU.uDim.value=0.28; this.DU.uWave.value=0;
-      this.el.object3D.add(this.tube); this.el.object3D.add(this.dome);
-      this.elapsed=0; this.scene=-1; this.dip=0;
-      this.tgt={tubeAlpha:1, dim:0.28, speed:2, white:0, wave:0.5,
-        A:new THREE.Vector3(), B:new THREE.Vector3(), D:new THREE.Vector3()};
+      const root=this.el.object3D;
+      this.shells=[]; this.objs=[];
+      // drie schillen op verschillende diepte -> parallax
+      const SPEC=[{r:6,seg:56,so:-6,sharp:1.5,gain:1.0},
+                  {r:15,seg:44,so:-5,sharp:1.1,gain:0.9},
+                  {r:30,seg:36,so:-4,sharp:0.9,gain:0.8}];
+      for(let i=0;i<SPEC.length;i++){ const S=SPEC[i];
+        const u=shellUniforms(); u.uSharp.value=S.sharp; u.uGain.value=S.gain;
+        const geo=new THREE.CylinderGeometry(S.r,S.r,400,S.seg,80,true);
+        const mat=new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,uniforms:u,
+          side:THREE.BackSide,transparent:true,depthWrite:false});
+        const m=new THREE.Mesh(geo,mat); m.rotation.x=Math.PI/2; m.position.set(0,1.6,0); m.renderOrder=S.so;
+        root.add(m); this.shells.push({m:m,u:u,i:i}); }
+      // verre koepel
+      const du=shellUniforms(); du.uMode.value=2; du.uSharp.value=1.0; du.uGain.value=0.9; du.uSpeed.value=1.2;
+      const dgeo=new THREE.SphereGeometry(110,40,26);
+      const dmat=new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,uniforms:du,side:THREE.BackSide});
+      this.dome=new THREE.Mesh(dgeo,dmat); this.dome.position.set(0,1.6,0); this.dome.renderOrder=-20;
+      root.add(this.dome); this.du=du;
+      // morphende figuren die op je afkomen
+      const ogeo=new THREE.IcosahedronGeometry(1,3);
+      for(let i=0;i<9;i++){ const u=objUniforms(i*1.7);
+        const mat=new THREE.ShaderMaterial({vertexShader:OBJ_VS,fragmentShader:OBJ_FS,uniforms:u});
+        const m=new THREE.Mesh(ogeo,mat); root.add(m);
+        const o={m:m,u:u,sc:1,orb:0,orbR:0,orbSp:0}; this.objs.push(o); this.respawn(o,true); }
+      this.elapsed=0; this.scene=-1; this.ripZ=9999; this.ripAmp=0; this.flash=0;
+      this.tunAmt=1; this.tunTgt=1; this.prevBeat=0; this.lightT=0;
+      this.cur={sp:8,wave:0.4,fold:6,A:new THREE.Vector3(),B:new THREE.Vector3(),D:new THREE.Vector3()};
     },
+    respawn:function(o,init){
+      const ang=rand(0,6.283), r=rand(3.2,11);
+      o.orb=ang; o.orbR=r; o.orbSp=rand(-0.35,0.35);
+      o.m.position.set(Math.cos(ang)*r, 1.6+Math.sin(ang)*r*0.55, init?rand(-160,0):rand(-190,-150));
+      o.sc=rand(0.7,Math.max(0.9,Math.min(3.4,r*0.5))); o.m.scale.setScalar(o.sc);
+      o.spin=new THREE.Vector3(rand(-0.8,0.8),rand(-0.8,0.8),rand(-0.8,0.8));
+      o.u.uMorph.value=Math.random();
+    },
+    fireRipple:function(){ this.ripZ=-200; this.ripAmp=1; },
+    fireFlash:function(v){ this.flash=Math.max(this.flash,v); },
     enter:function(SC){
       if(!window.USE_TRACK){ riser(); setMusic(SC.mus); }
-      this.dip=1;
+      this.tunTgt=SC.tun; this.sc0=SC.t0; this.scDur=SC.dur; this.SC=SC;
       const self=this;
+      // patronen pas wisselen als de tunnel dicht/open is -> voelt als een doorgang
       setTimeout(function(){
-        self.TU.uMode.value=(SC.surf==='tube')?SC.mode:0;
-        self.TU.uFold.value=SC.fold;
-        self.DU.uMode.value=(SC.surf==='dome')?SC.mode:2;
-        self.DU.uFold.value=SC.fold; },350);
-      this.tgt.tubeAlpha=(SC.surf==='tube')?1:0;
-      this.tgt.dim=(SC.surf==='dome')?1:0.28;
-      this.tgt.speed=SC.speed; this.tgt.white=0; this.tgt.wave=SC.wave;
-      this.tgt.A.fromArray(SC.colA); this.tgt.B.fromArray(SC.colB); this.tgt.D.fromArray(SC.colD);
-      this.whiteRamp=SC.white?SC.dur:0; this.sceneT0=SC.t0; this.sceneDur=SC.dur;
+        self.shells[0].u.uMode.value=SC.md[0];
+        self.shells[1].u.uMode.value=SC.md[1];
+        self.shells[2].u.uMode.value=SC.md[2];
+        self.du.uMode.value=SC.md[2]; },600);
+      this.fireRipple();
     },
-    tick:function(t,dt){ const s=Math.min(0.1,(dt||16)/1000);
-      // beat: van analyser (echte track) of van de engine
+    tick:function(t,dt){ const s=Math.min(0.08,(dt||16)/1000);
+      // beat
       if(window.USE_TRACK&&ANA){ ANA.getByteFrequencyData(ANAD); let b=0; for(let k=1;k<7;k++)b+=ANAD[k]; b/=(6*255);
-        window.BEAT=Math.max((window.BEAT||0)*0.82, Math.max(0,(b-0.55)*2.4)); }
+        window.BEAT=Math.max((window.BEAT||0)*0.82,Math.max(0,(b-0.52)*2.4)); }
       else window.BEAT=Math.max(0,(window.BEAT||0)-s*5);
-      if(window.PHASE!=='trip'){ // menu: rustige plasma-achtergrond
-        this.TU.uTime.value+=s*0.4; this.DU.uTime.value+=s*0.4;
-        this.TU.uBeat.value=0; this.DU.uBeat.value=0; return; }
-      this.elapsed+=s;
-      let idx=SCENES.length-1;
-      for(let i=0;i<SCENES.length;i++){ if(this.elapsed<SCENES[i].t0+SCENES[i].dur){ idx=i; break; } }
-      if(idx!==this.scene){ this.scene=idx; this.enter(SCENES[idx]); }
-      this.dip=Math.max(0,this.dip-s*1.6);
-      const k=1-Math.exp(-s/0.8);
-      const TU=this.TU, DU=this.DU, tg=this.tgt;
-      TU.uAlpha.value+= (tg.tubeAlpha-TU.uAlpha.value)*k;
-      DU.uDim.value  += (tg.dim   -DU.uDim.value)*k;
-      TU.uSpeed.value+= (tg.speed -TU.uSpeed.value)*k;
-      TU.uWave.value += (tg.wave  -TU.uWave.value)*k;
-      [ [TU.uColA,tg.A],[TU.uColB,tg.B],[TU.uColD,tg.D],
-        [DU.uColA,tg.A],[DU.uColB,tg.B],[DU.uColD,tg.D] ].forEach(function(pr){ pr[0].value.lerp(pr[1],k); });
-      // wit-licht finale: langzaam naar wit + versnellen
-      if(this.whiteRamp){ const pr=Math.min(1,(this.elapsed-this.sceneT0)/this.sceneDur);
-        TU.uWhite.value=pr*pr; DU.uWhite.value=pr*pr; TU.uSpeed.value=tg.speed*(1+pr*2.2); }
-      const dipf=1-this.dip*0.85;
-      TU.uDim.value=((tg.tubeAlpha>0.5)?1:0.5)*dipf;
-      TU.uBeat.value=window.BEAT*dipf; DU.uBeat.value=window.BEAT*dipf;
-      TU.uTime.value+=s*(0.8+TU.uSpeed.value*0.25);
-      DU.uTime.value+=s*(0.5+((tg.dim>0.5)?0.4:0.1));
-      if(this.elapsed>=TOTALT*0.5) switchTrack();
-      if(this.elapsed>=TOTALT){ endTrip(); } }
+      const beat=window.BEAT;
+      const hit=(beat>0.6&&this.prevBeat<0.35); this.prevBeat=beat;
+
+      const menu=(window.PHASE!=='trip');
+      if(!menu){ this.elapsed+=s;
+        let idx=SCENES.length-1;
+        for(let i=0;i<SCENES.length;i++){ if(this.elapsed<SCENES[i].t0+SCENES[i].dur){ idx=i; break; } }
+        if(idx!==this.scene){ this.scene=idx; this.enter(SCENES[idx]); } }
+      const SC=this.SC||SCENES[0];
+      const pr=menu?0:Math.min(1,Math.max(0,(this.elapsed-this.sc0)/this.scDur));
+
+      // ---- drift: niets staat stil ----
+      const wob=Math.sin(this.elapsed*0.21)*0.5+0.5;
+      const tSp=(SC.sp[0]+(SC.sp[1]-SC.sp[0])*pr)*(0.82+0.36*wob)*(menu?0.35:1);
+      const tWv=(SC.wave[0]+(SC.wave[1]-SC.wave[0])*pr)*(0.8+0.4*Math.sin(this.elapsed*0.13+1.2));
+      const tFd=SC.fold[0]+(SC.fold[1]-SC.fold[0])*pr;
+      const k=1-Math.exp(-s/0.7);
+      this.cur.sp+=(tSp-this.cur.sp)*k; this.cur.wave+=(tWv-this.cur.wave)*k; this.cur.fold+=(tFd-this.cur.fold)*k;
+      this.cur.A.lerp(new THREE.Vector3().fromArray(SC.A),k*0.5);
+      this.cur.B.lerp(new THREE.Vector3().fromArray(SC.B),k*0.5);
+      this.cur.D.lerp(new THREE.Vector3().fromArray(SC.D),k*0.5);
+
+      // ---- tunnel uit / in ----
+      this.tunAmt+=((menu?1:this.tunTgt)-this.tunAmt)*(1-Math.exp(-s/1.6));
+      const openAmt=1-this.tunAmt;
+
+      // ---- rimpel ----
+      if(!menu&&Math.random()<s*SC.rip*0.5) this.fireRipple();
+      if(this.ripAmp>0){ this.ripZ+=s*260; this.ripAmp=Math.max(0,this.ripAmp-s*0.42);
+        if(this.ripZ>60){ this.ripAmp=0; this.ripZ=9999; } }
+      // ---- bliksem op de kick ----
+      if(!menu&&SC.light&&hit&&Math.random()<0.3) this.fireFlash(0.8);
+      if(!menu&&hit&&Math.random()<0.03) this.fireFlash(0.35);
+      this.flash=Math.max(0,this.flash-s*3.2);
+      const fpl=$('#flash'); if(fpl) fpl.setAttribute('material','color:#dfe8ff;opacity:'+(this.flash*0.55).toFixed(3)+';transparent:true;shader:flat');
+
+      // ---- schillen bijwerken ----
+      for(let i=0;i<this.shells.length;i++){ const sh=this.shells[i], u=sh.u;
+        const par=[1.0,0.45,0.2][i];                       // parallax: dichtbij snel, ver traag
+        u.uTime.value+=s*(0.5+this.cur.sp*0.22*par);
+        u.uSpeed.value=this.cur.sp*par*1.6;
+        u.uWave.value=this.cur.wave*(i===0?1:0.6);
+        u.uFold.value=this.cur.fold;
+        u.uBeat.value=beat; u.uFlash.value=this.flash*0.5;
+        u.uWhite.value=(SC.white?pr*pr:0);
+        u.uAlpha.value=[1.0,0.75,0.55][i]*(0.25+0.75*this.tunAmt);
+        u.uScale.value=1+openAmt*(1.6+i*0.5);
+        u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D);
+        u.uRipZ.value=this.ripZ; u.uRipAmp.value=this.ripAmp*(i===0?0.9:0.5); }
+      // koepel
+      this.du.uTime.value+=s*(0.35+this.cur.sp*0.05);
+      this.du.uBeat.value=beat*0.7; this.du.uFlash.value=this.flash*0.7;
+      this.du.uWhite.value=(SC.white?pr*pr:0);
+      this.du.uFold.value=this.cur.fold; this.du.uWave.value=0;
+      this.du.uGain.value=0.55+0.55*openAmt;
+      this.du.uColA.value.copy(this.cur.A); this.du.uColB.value.copy(this.cur.B); this.du.uColD.value.copy(this.cur.D);
+
+      // ---- figuren: naar je toe, langs je heen, draaiend ----
+      const fly=(6+this.cur.sp*3.4);
+      for(let i=0;i<this.objs.length;i++){ const o=this.objs[i], u=o.u;
+        o.m.position.z+=fly*s;
+        o.orb+=o.orbSp*s;
+        const rr=o.orbR*(1+openAmt*0.9);
+        o.m.position.x=Math.cos(o.orb)*rr; o.m.position.y=1.6+Math.sin(o.orb)*rr*0.55;
+        o.m.rotation.x+=o.spin.x*s; o.m.rotation.y+=o.spin.y*s; o.m.rotation.z+=o.spin.z*s;
+        u.uTime.value+=s*1.4; u.uBeat.value=beat; u.uFlash.value=this.flash;
+        u.uWhite.value=(SC.white?pr*pr:0);
+        u.uMorph.value=0.5+0.5*Math.sin(this.elapsed*0.35+i);
+        u.uRipZ.value=this.ripZ; u.uRipAmp.value=this.ripAmp;
+        u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D);
+        const sc=o.sc*(1+beat*0.12); o.m.scale.setScalar(sc);
+        if(o.m.position.z>10) this.respawn(o); }
+
+      if(!menu){ if(this.elapsed>=TOTALT*0.5) switchTrack();
+        if(this.elapsed>=TOTALT) endTrip(); } }
   });
 
   // =========================================================
@@ -276,13 +397,11 @@
   // =========================================================
   function startTrip(){ if(window.PHASE!=='menu') return; AC();
     if(TRACKS[0]||TRACKS[1]){ try{
-        ANA=A.createAnalyser(); ANA.fftSize=256; ANAD=new Uint8Array(ANA.frequencyBinCount); ANA.connect(MASTER);
-        TRACKS.forEach(function(tr,i){ if(!tr) return;
-          const src=A.createMediaElementSource(tr); const g=A.createGain();
-          g.gain.value=(i===0)?1:0; src.connect(g).connect(ANA); TGAIN[i]=g; });
-        const first=TRACKS[0]||TRACKS[1];
-        if(!TRACKS[0]&&TGAIN[1]) TGAIN[1].gain.value=1;
-        first.play(); window.USE_TRACK=true; }catch(e){ window.USE_TRACK=false; } }
+      ANA=A.createAnalyser(); ANA.fftSize=256; ANAD=new Uint8Array(ANA.frequencyBinCount); ANA.connect(MASTER);
+      TRACKS.forEach(function(tr,i){ if(!tr) return; const src=A.createMediaElementSource(tr); const g=A.createGain();
+        g.gain.value=(i===0)?1:0; src.connect(g).connect(ANA); TGAIN[i]=g; });
+      if(!TRACKS[0]&&TGAIN[1]) TGAIN[1].gain.value=1;
+      (TRACKS[0]||TRACKS[1]).play(); window.USE_TRACK=true; }catch(e){ window.USE_TRACK=false; } }
     if(!window.USE_TRACK) startDrone();
     const m=$('#menu'); if(m&&m.parentNode)m.parentNode.removeChild(m);
     document.querySelectorAll('.hand').forEach(function(h){ h.removeAttribute('cursor'); h.removeAttribute('raycaster');
@@ -290,7 +409,7 @@
     $('#reticle').setAttribute('visible',false);
     window.PHASE='trip'; }
   function endTrip(){ if(window.PHASE!=='trip') return; window.PHASE='end';
-    if(MASTER){ MASTER.gain.linearRampToValueAtTime(0.12, A.currentTime+3); }
+    if(MASTER) MASTER.gain.linearRampToValueAtTime(0.12,A.currentTime+3);
     document.querySelectorAll('.hand').forEach(function(h){ h.setAttribute('visible',true);
       h.setAttribute('raycaster','objects: .menu-btn; far: 12');
       h.setAttribute('cursor','fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity');
@@ -302,12 +421,12 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v9.2</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v10.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
     window.onerror=function(msg,src,line,col){ var e=document.getElementById('ldErr');
-      if(e) e.textContent += 'FOUT: '+msg+' @ '+line+':'+col+'\n'; return false; };
+      if(e) e.textContent+='FOUT: '+msg+' @ '+line+':'+col+'\n'; return false; };
     (function poll(){ var l=document.getElementById('loader'); if(!l) return;
       if(window.SCENE_LOADED){ l.style.display='none'; return; }
       var secs=Math.round((Date.now()-window.T0)/1000);
@@ -321,11 +440,11 @@
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.15" material="color:#0a0714;opacity:0.93;transparent:true"></a-plane>
         <a-plane position="0 1.55 -2.11" width="1.98" height="1.23" material="color:#b04aff;opacity:0.16;transparent:true"></a-plane>
         <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.2" position="0 1.95 -2.08"></a-text>
-        <a-text value="Plasma. Fractals. Caleidoscoop." align="center" color="#9aa8c0" width="1.8" position="0 1.74 -2.08"></a-text>
+        <a-text value="Negen werelden. Tien minuten." align="center" color="#9aa8c0" width="1.8" position="0 1.74 -2.08"></a-text>
         <a-text value="Zet je geluid aan." align="center" color="#7c8794" width="1.6" position="0 1.62 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v9.2" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v10.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
@@ -334,8 +453,9 @@
         <a-plane id="btnAgain" class="menu-btn" position="0 1.32 -2.08" width="1.2" height="0.28" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="NOG EEN KEER" align="center" color="#fff" width="2.6" position="0 1.32 -2.07"></a-text>
       </a-entity>
-      <a-camera wasd-controls-enabled="false" far="250">
+      <a-camera wasd-controls-enabled="false" far="400">
         <a-cursor id="reticle" color="#d8b0ff" fuse="false" raycaster="objects: .menu-btn"></a-cursor>
+        <a-plane id="flash" position="0 0 -0.32" width="2.6" height="2.6" material="color:#dfe8ff;opacity:0;transparent:true;shader:flat"></a-plane>
       </a-camera>
       <a-entity id="leftHand" class="hand" meta-touch-controls="hand: left"
                 raycaster="objects: .menu-btn; far: 12"
