@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v16.1
+  //  DIEPE TRIP v16.2
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -382,7 +382,8 @@
       this.oBox=mkOrb(new THREE.BoxGeometry(1,1,1),6);
       this.oOct=mkOrb(new THREE.OctahedronGeometry(1,0),6);
       this.oPan=mkOrb(new THREE.BoxGeometry(1,1,1),3);
-      this.orbAll=this.orbParts.concat(this.oBox,this.oOct,this.oPan);
+      this.oSnake=mkOrb(new THREE.SphereGeometry(1,16,12),64);
+      this.orbAll=this.orbParts.concat(this.oBox,this.oOct,this.oPan,this.oSnake);
       this.ou=ou; this.orbAmt=0; this.orbForm=0; this.orbSpin={x:0.05,y:0.08,z:0.02};
       // ---- wanden: vlak onder je en naast je, schuiven hard dichtbij en weer weg ----
       this.walls=[];
@@ -546,9 +547,9 @@
         for(let i=0;i<3;i++){ const a=E*0.42+i*2.0944;
           put(this.orbParts[i],Math.cos(a)*13,1.6+Math.sin(a)*9.5,oz*0.8+Math.sin(a*2)*11,7*osc*oR*(1+beat*0.11)); }
       } else if(form===3){                             // slang (zeldzaam)
-        for(let i=0;i<16;i++){ const T=E*0.40-i*0.18;
-          put(this.orbParts[i],Math.sin(T*0.9)*25,1.6+Math.sin(T*0.55+1.2)*9,-48+Math.cos(T*0.7)*26,
-              osc*oR*(5.4-i*0.21)*(1+beat*0.06)); }
+        for(let i=0;i<64;i++){ const T=E*0.80-i*0.18;
+          put(this.oSnake[i],Math.sin(T*0.9)*25,1.6+Math.sin(T*0.55+1.2)*9,-48+Math.cos(T*0.7)*26,
+              osc*oR*(2.4-i*0.028)*(1+beat*0.06)); }
       } else if(form===4){                             // vier octaeders in een draaiend kruis
         for(let i=0;i<4;i++){ const a=E*0.5+i*1.5708;
           put(this.oOct[i],Math.cos(a)*11.5,1.6+Math.sin(a)*11.5,oz*0.8,6.2*osc*oR*(1+beat*0.12)); }
@@ -679,7 +680,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v16.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v16.2</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -703,7 +704,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v16.1" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v16.2" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
