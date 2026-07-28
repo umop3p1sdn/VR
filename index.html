@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v18.1
+  //  DIEPE TRIP v19.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -428,14 +428,16 @@
           side:THREE.BackSide,transparent:true,depthWrite:false}));
       this.shaft.rotation.y=Math.PI/4; this.shaft.position.set(0,1.6,0); this.shaft.renderOrder=-6;
       this.shaft.visible=false; root.add(this.shaft); this.shu=shu; this.shaftAmt=0;
-      this.pipes=[]; const pipeGeo=new THREE.CylinderGeometry(5.5,5.5,14,26,1,true);
-      for(let i=0;i<6;i++){ const pu=shellU(); pu.uCut.value=99999; pu.uWave.value=0;
-        pu.uSharp.value=1.2; pu.uAlpha.value=0; pu.uGain.value=1.1;
+      this.PIPE_LEN=190; this.PIPE_GAP=110;
+      const pipeGeo=new THREE.CylinderGeometry(5.5,5.5,this.PIPE_LEN,34,44,true);
+      this.pipes=[];
+      for(let i=0;i<2;i++){ const pu=shellU(); pu.uCut.value=99999; pu.uWave.value=0.3;
+        pu.uSharp.value=1.0; pu.uAlpha.value=0; pu.uGain.value=1.3;
         const m=new THREE.Mesh(pipeGeo,new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,
-          uniforms:pu,side:THREE.DoubleSide,transparent:true,depthWrite:false}));
-        m.rotation.x=Math.PI/2; m.position.set(0,1.6,-40-i*34); m.renderOrder=-1; m.visible=false;
-        root.add(m); this.pipes.push({m:m,u:pu,z:-40-i*34}); }
-      this.pipeAmt=0;
+          uniforms:pu,side:THREE.BackSide,transparent:true,depthWrite:false}));
+        m.rotation.x=Math.PI/2; m.position.set(0,1.6,-200-i*300); m.renderOrder=-1; m.visible=false;
+        root.add(m); this.pipes.push({m:m,u:pu,z:-200-i*300}); }
+      this.pipeAmt=0; this.pipeInside=0;
       this.snakeZ=-200; this.snakeSide=1; this.wAmt=[0,0,0]; this.texAmt=0;
       this.elapsed=0; this.scene=-1; this.ripZ=9999; this.ripAmp=0; this.flash=0;
       this.prevBeat=0; this.evPhase=0; this.domeAmt=0; this.wallAmt=0;
@@ -451,7 +453,7 @@
       for(let i=0;i<3;i++) morphTo(self.walls[i].u,SC.md[(i+1)%3]);
       morphTo(self.shu,SC.md[0]);
       for(let i=0;i<9;i++) morphTo(self.layers[i].u,SC.md[i%3]);
-      for(let i=0;i<6;i++) morphTo(self.pipes[i].u,SC.md[2]);
+      for(let i=0;i<2;i++) morphTo(self.pipes[i].u,SC.md[0]);
       if(!this.orbBag||!this.orbBag.length){ this.orbBag=[0,1,2,3,4];
         for(let i=this.orbBag.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));
           const t2=this.orbBag[i]; this.orbBag[i]=this.orbBag[j]; this.orbBag[j]=t2; } }
@@ -481,7 +483,7 @@
       for(let i=0;i<3;i++){ stepMix(this.shells[i].u,s,4.5); stepMix(this.walls[i].u,s,4.5); }
       stepMix(this.du,s,4.5); stepMix(this.ou,s,4.0); stepMix(this.shu,s,4.5);
       for(let i=0;i<9;i++) stepMix(this.layers[i].u,s,4.5);
-      for(let i=0;i<6;i++) stepMix(this.pipes[i].u,s,4.0);
+      for(let i=0;i<2;i++) stepMix(this.pipes[i].u,s,4.0);
       const menu=(window.PHASE!=='trip');
       if(!menu){ this.elapsed+=s;
         let idx=SCENES.length-1;
@@ -538,7 +540,8 @@
         u.uWave.value=this.cur.wave*(i===0?1:0.6);
         u.uFold.value=this.cur.fold; u.uBeat.value=beat; u.uFlash.value=this.flash*0.6;
         u.uWhite.value=(SC.white?pr*pr:0);
-        u.uAlpha.value=this.shells[i].base*introA*(1-this.shaftAmt*0.88)*(1-this.layAmt*0.75)*(1-this.pipeAmt*0.55); u.uDark.value=1;
+        const pf=(i===2)?(1-this.pipeAmt*0.65*this.pipeInside):(1-this.pipeAmt);
+        u.uAlpha.value=this.shells[i].base*introA*(1-this.shaftAmt*0.88)*(1-this.layAmt*0.75)*pf; u.uDark.value=1;
         u.uTexAmt.value=this.texAmt; u.uTexRep.value=[3.0,3.35,3.75][i];
         if(SC.tex&&SC.tex[0]>0) u.uTex.value=getPrints()[SC.tex[1]||0];
         u.uCut.value=cut; u.uCutDir.value=dir;
@@ -556,22 +559,23 @@
         u.uBeat.value=beat; u.uFlash.value=this.flash*0.6; u.uWhite.value=(SC.white?pr*pr:0);
         u.uDark.value=1; u.uAlpha.value=0.42*this.layAmt;
         u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D); }
-      // ---- witte pulsende kokers waar je doorheen schiet ----
+      // ---- lange kokers: je zit er echt in, dan kom je eruit in het zwart ----
       this.pipeAmt+=(((menu||!SC.pipe)?0:1)-this.pipeAmt)*kf;
-      for(let i=0;i<6;i++){ const P=this.pipes[i], u=P.u;
-        P.m.visible=this.pipeAmt>0.02; if(!P.m.visible) continue;
-        const last=(i===5);
-        const fly=(last?46:30)+this.cur.sp*(last?5.2:3.0);
-        P.z+=fly*s; if(P.z>14) P.z-=6*34;
-        const near=Math.max(0,1-Math.abs(P.z+6)/26);
-        const sc=last?(1+near*0.55):1;
-        P.m.position.set(0,1.6,P.z); P.m.scale.set(sc,1+near*0.9,sc);
-        u.uTime.value+=s*2.2; u.uFold.value=this.cur.fold;
-        u.uBeat.value=beat; u.uWhite.value=Math.min(1,0.30+beat*0.55+near*(last?0.35:0.1));
-        u.uFlash.value=this.flash*0.5; u.uDark.value=1;
-        u.uAlpha.value=(0.5+0.45*beat)*this.pipeAmt;
-        u.uColA.value.set(0.55,0.55,0.58); u.uColB.value.set(0.45,0.45,0.42);
-        u.uColD.value.copy(this.cur.D); }
+      { const half=this.PIPE_LEN*0.5, cyc=this.PIPE_LEN+this.PIPE_GAP;
+        const pspd=42+this.cur.sp*2.4; let ins=0;
+        for(let i=0;i<2;i++){ const P=this.pipes[i], u=P.u;
+          P.m.visible=this.pipeAmt>0.02; if(!P.m.visible) continue;
+          P.z+=pspd*s; if(P.z-half>this.PIPE_GAP) P.z-=2*cyc;
+          P.m.position.z=P.z;
+          if(P.z-half<0 && P.z+half>0) ins=1;
+          u.uTime.value+=s*(1.1+this.cur.sp*0.3);
+          u.uSpeed.value=this.cur.sp*2.1; u.uFold.value=this.cur.fold;
+          u.uBeat.value=beat; u.uWhite.value=Math.min(1,0.10+beat*0.45);
+          u.uFlash.value=this.flash*0.5; u.uDark.value=1;
+          u.uTexAmt.value=0.7; u.uTexRep.value=3.2; u.uTex.value=getPrints()[2];
+          u.uAlpha.value=0.92*this.pipeAmt;
+          u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D); }
+        this.pipeInside+=(ins-this.pipeInside)*(1-Math.exp(-s/0.5)); }
       // ---- vierkante koker: patroon kruipt omhoog, dus jij zakt ----
       this.shaftAmt+=(((menu||!SC.shaft)?0:1)-this.shaftAmt)*kf;
       this.shaft.visible=this.shaftAmt>0.02;
@@ -746,7 +750,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v18.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v19.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -770,7 +774,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v18.1" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v19.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
