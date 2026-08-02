@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v31.1
+  //  DIEPE TRIP v32.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -186,13 +186,13 @@
       setTimeout(function(){ try{ pn.disconnect(); }catch(x){} },400); }
     const o=a.createOscillator(); o.type='sine';
     o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(46,t+0.07);
-    const g=a.createGain(); g.gain.setValueAtTime(0.62,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.1);
+    const g=a.createGain(); g.gain.setValueAtTime(1.0,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.11);
     o.connect(g); g.connect(dest); o.start(t); o.stop(t+0.1);
     const len=Math.floor(a.sampleRate*0.05); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
     for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.5);
     const n=a.createBufferSource(); n.buffer=b;
     const fl=a.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=950;
-    const ng=a.createGain(); ng.gain.value=0.45;
+    const ng=a.createGain(); ng.gain.value=0.7;
     n.connect(fl); fl.connect(ng); ng.connect(dest); n.start(t); }
   function hitSnd(pan,prog){ const a=AC(); const t=a.currentTime; SFXSEQ++;
     const pv=1+0.06*Math.sin(SFXSEQ*1.31);
@@ -216,7 +216,7 @@
       o.connect(g); g.connect(bus); o.start(t); o.stop(t+0.22); } }
   function boomSnd(pan){ const a=AC(); const t=a.currentTime;
     const bus=sfxBus(pan,t,0.55);
-    bus.gain.setValueAtTime(1.15,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.6);
+    bus.gain.setValueAtTime(1.8,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.7);
     const len=Math.floor(a.sampleRate*0.5); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
     for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.2);
     const n=a.createBufferSource(); n.buffer=b;
@@ -225,7 +225,7 @@
     n.connect(fl); fl.connect(bus); n.start(t);
     const o=a.createOscillator(); o.type='sine';
     o.frequency.setValueAtTime(75,t); o.frequency.exponentialRampToValueAtTime(32,t+0.3);
-    const g=a.createGain(); g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.4);
+    const g=a.createGain(); g.gain.setValueAtTime(1.4,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.45);
     o.connect(g); g.connect(bus); o.start(t); o.stop(t+0.45); }
   function startDrone(){ const a=AC(); if(DRONE) return;
     const o1=a.createOscillator(); o1.type='sawtooth'; const o2=a.createOscillator(); o2.type='sawtooth'; o2.detune.value=9;
@@ -816,6 +816,9 @@
       for(let i=0;i<44;i++){
         const m=new THREE.Mesh(fgeo,new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:0}));
         m.visible=false; this.g.add(m); this.fx.push({m:m,t:0,life:0,sc:1}); }
+      this.blast=new THREE.Mesh(new THREE.SphereGeometry(1,22,14),
+        new THREE.MeshBasicMaterial({color:0xfff0b0,wireframe:true,transparent:true,opacity:0}));
+      this.blast.visible=false; this.blast.renderOrder=4; this.g.add(this.blast); this.blastLife=0;
       this.snakes=[]; this.spawnT=8.0; this.score=0; this.lastShot=0; this.T=0; this.white=new THREE.Color(1,1,1);
       this.ori=new THREE.Vector3(); this.dir=new THREE.Vector3(); this.q=new THREE.Quaternion();
       const self=this;
@@ -872,6 +875,7 @@
       let pts=0; const px=c.m.position.x/9, csz=c.m.scale.x||1;
       if(c.special){
         const p=c.m.position.clone(); pts+=this.kill(c,50);
+        this.blast.position.copy(p); this.blast.visible=true; this.blastLife=1;
         boomSnd(px); let ci=0;
         for(let a=0;a<this.snakes.length;a++){ const sn=this.snakes[a];
           for(let b=0;b<sn.cubes.length;b++){ const o=sn.cubes[b];
@@ -888,7 +892,7 @@
       const now=performance.now(); if(now-this.lastShot<110) return; this.lastShot=now;
       gunSnd(this.dir?this.dir.x*0.8:0);
       h.object3D.getWorldPosition(this.ori); h.object3D.getWorldQuaternion(this.q);
-      this.dir.set(0,0,-1).applyQuaternion(this.q).normalize();
+      this.dir.set(0,-0.7071,-0.7071).applyQuaternion(this.q).normalize();
       let best=null,bd=1e9;
       for(let a=0;a<this.snakes.length;a++){ const sn=this.snakes[a];
         for(let b=0;b<sn.cubes.length;b++){ const c=sn.cubes[b]; if(!c.alive) continue;
@@ -906,6 +910,12 @@
         F.m.scale.setScalar(0.6+k*F.sc); F.m.material.opacity=Math.max(0,F.life);
         F.m.rotation.x+=s*3; F.m.rotation.y+=s*2.4;
         if(F.life<=0) F.m.visible=false; }
+      if(this.blastLife>0){ this.blastLife-=s*1.9;
+        const k=1-Math.max(0,this.blastLife);
+        this.blast.scale.setScalar(0.6+k*9.5);
+        this.blast.rotation.y+=s*0.8;
+        this.blast.material.opacity=Math.max(0,this.blastLife*0.75);
+        if(this.blastLife<=0) this.blast.visible=false; }
       if(!on){ for(let a=0;a<this.snakes.length;a++){ const sn=this.snakes[a];
           this.stopHum(sn);
           for(let b=0;b<sn.cubes.length;b++){ const c=sn.cubes[b]; if(c.alive){ c.alive=false; c.m.visible=false; this.free.push(c.m); } } }
@@ -978,7 +988,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v31.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v32.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1004,7 +1014,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v31.1" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v32.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
@@ -1020,14 +1030,14 @@
         <a-plane id="flash" position="0 0 -0.32" width="2.6" height="2.6" material="color:#dfe8ff;opacity:0;transparent:true;shader:flat"></a-plane>
       </a-camera>
       <a-entity id="leftHand" class="hand" meta-touch-controls="hand: left" oculus-touch-controls="hand: left"
-                raycaster="objects: .menu-btn; far: 30"
+                raycaster="objects: .menu-btn; far: 30; direction: 0 -0.7071 -0.7071"
                 cursor="fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity">
-        <a-entity class="menu-laser" line="start: 0 0 0; end: 0 0 -30; color: #e8dcff; opacity: 1"></a-entity>
+        <a-entity class="menu-laser" rotation="-45 0 0" line="start: 0 0 0; end: 0 0 -30; color: #e8dcff; opacity: 1"></a-entity>
       </a-entity>
       <a-entity id="rightHand" class="hand" meta-touch-controls="hand: right" oculus-touch-controls="hand: right"
-                raycaster="objects: .menu-btn; far: 30"
+                raycaster="objects: .menu-btn; far: 30; direction: 0 -0.7071 -0.7071"
                 cursor="fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity">
-        <a-entity class="menu-laser" line="start: 0 0 0; end: 0 0 -30; color: #e8dcff; opacity: 1"></a-entity>
+        <a-entity class="menu-laser" rotation="-45 0 0" line="start: 0 0 0; end: 0 0 -30; color: #e8dcff; opacity: 1"></a-entity>
       </a-entity>
     </a-entity>
     <script>
