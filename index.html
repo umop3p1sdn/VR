@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v30.0
+  //  DIEPE TRIP v31.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -156,6 +156,77 @@
     f.frequency.setValueAtTime(200,t); f.frequency.exponentialRampToValueAtTime(4500,t+2);
     const g=a.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.2,t+1.6); g.gain.linearRampToValueAtTime(0,t+2.1);
     n.connect(f).connect(g).connect(MASTER); n.start(t); }
+  // ---- shooter-geluid: hit != kapot, alles door een langzaam draaiende faser ----
+  let SFX=null, SFXSEQ=0;
+  function initSFX(){ if(SFX) return SFX; const a=AC();
+    const inG=a.createGain(); inG.gain.value=0.9;
+    const dry=a.createGain(); dry.gain.value=0.45;
+    const wet=a.createGain(); wet.gain.value=0.8;
+    const aps=[340,560,940,1500].map(function(f0){ const ap=a.createBiquadFilter();
+      ap.type='allpass'; ap.frequency.value=f0; ap.Q.value=0.7; return ap; });
+    inG.connect(aps[0]); aps[0].connect(aps[1]); aps[1].connect(aps[2]); aps[2].connect(aps[3]);
+    const fb=a.createGain(); fb.gain.value=0.35; aps[3].connect(fb); fb.connect(aps[0]);
+    inG.connect(dry); aps[3].connect(wet); dry.connect(MASTER); wet.connect(MASTER);
+    const lfo=a.createOscillator(); lfo.frequency.value=0.21;
+    const lg=a.createGain(); lg.gain.value=430; lfo.connect(lg);
+    aps.forEach(function(ap){ lg.connect(ap.frequency); }); lfo.start();
+    SFX={in:inG}; return SFX; }
+  function sfxBus(pan,t,echoAmt){ const a=AC(); initSFX();
+    const g=a.createGain(); let out=g, p=null;
+    if(a.createStereoPanner){ p=a.createStereoPanner();
+      p.pan.setValueAtTime(Math.max(-1,Math.min(1,pan||0)),t); g.connect(p); out=p; }
+    out.connect(SFX.in);
+    if(echoAmt&&DELAY){ const e=a.createGain(); e.gain.value=echoAmt; out.connect(e); e.connect(DELAY);
+      setTimeout(function(){ try{ e.disconnect(); }catch(x){} },2500); }
+    setTimeout(function(){ try{ g.disconnect(); if(p)p.disconnect(); }catch(x){} },2500);
+    return g; }
+  function gunSnd(pan){ const a=AC(); const t=a.currentTime;
+    const pn=a.createStereoPanner?a.createStereoPanner():null;
+    const dest=pn||MASTER; if(pn){ pn.pan.value=Math.max(-1,Math.min(1,pan||0)); pn.connect(MASTER);
+      setTimeout(function(){ try{ pn.disconnect(); }catch(x){} },400); }
+    const o=a.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(46,t+0.07);
+    const g=a.createGain(); g.gain.setValueAtTime(0.42,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.09);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t+0.1);
+    const len=Math.floor(a.sampleRate*0.05); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.5);
+    const n=a.createBufferSource(); n.buffer=b;
+    const fl=a.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=950;
+    const ng=a.createGain(); ng.gain.value=0.3;
+    n.connect(fl); fl.connect(ng); ng.connect(dest); n.start(t); }
+  function hitSnd(pan,prog){ const a=AC(); const t=a.currentTime; SFXSEQ++;
+    const pv=1+0.06*Math.sin(SFXSEQ*1.31);
+    const bus=sfxBus(pan,t,0.12);
+    bus.gain.setValueAtTime(0.42,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.15);
+    const o=a.createOscillator(); o.type='triangle';
+    o.frequency.setValueAtTime((175+95*prog)*pv,t); o.frequency.exponentialRampToValueAtTime(90*pv,t+0.13);
+    o.connect(bus); o.start(t); o.stop(t+0.17); }
+  function killSnd(pan,size,t0){ const a=AC(); const t=t0||a.currentTime; SFXSEQ++;
+    const pv=1+0.07*Math.sin(SFXSEQ*1.31);
+    const bus=sfxBus(pan,t,0.18);
+    bus.gain.setValueAtTime(0.5,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.2);
+    const len=Math.floor(a.sampleRate*0.06); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+    const n=a.createBufferSource(); n.buffer=b; n.playbackRate.value=pv;
+    const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=3800;
+    n.connect(fl); fl.connect(bus); n.start(t);
+    if(size>=1.8){ const o=a.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(95,t); o.frequency.exponentialRampToValueAtTime(38,t+0.16);
+      const g=a.createGain(); g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.2);
+      o.connect(g); g.connect(bus); o.start(t); o.stop(t+0.22); } }
+  function boomSnd(pan){ const a=AC(); const t=a.currentTime;
+    const bus=sfxBus(pan,t,0.55);
+    bus.gain.setValueAtTime(0.9,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.55);
+    const len=Math.floor(a.sampleRate*0.5); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.2);
+    const n=a.createBufferSource(); n.buffer=b;
+    const fl=a.createBiquadFilter(); fl.type='bandpass'; fl.Q.value=1.1;
+    fl.frequency.setValueAtTime(1700,t); fl.frequency.exponentialRampToValueAtTime(160,t+0.5);
+    n.connect(fl); fl.connect(bus); n.start(t);
+    const o=a.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(75,t); o.frequency.exponentialRampToValueAtTime(32,t+0.3);
+    const g=a.createGain(); g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.4);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t+0.45); }
   function startDrone(){ const a=AC(); if(DRONE) return;
     const o1=a.createOscillator(); o1.type='sawtooth'; const o2=a.createOscillator(); o2.type='sawtooth'; o2.detune.value=9;
     const f=a.createBiquadFilter(); f.type='lowpass'; f.frequency.value=500;
@@ -771,6 +842,14 @@
         ph:Math.random()*6.28,ph2:Math.random()*6.28,
         hue:Math.random(),hueSp:0.05+Math.random()*0.25,
         match:(Math.random()<0.33),headZ:-120-Math.random()*50};
+      if(A){ try{ const o=A.createOscillator(); o.type='sawtooth';
+        o.frequency.value=(size>=2?42:(size<0.9?88:64))*(1+Math.random()*0.08);
+        const fl=A.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=260; fl.Q.value=4;
+        const g=A.createGain(); g.gain.value=0;
+        let out=g, p=null;
+        if(A.createStereoPanner){ p=A.createStereoPanner(); g.connect(p); out=p; }
+        o.connect(fl); fl.connect(g); out.connect(MASTER);
+        o.start(); sn.hum={o:o,g:g,p:p}; }catch(e){} }
       const spec=1+((Math.random()<0.45)?1:0);
       const specIdx={}; for(let k=0;k<spec;k++) specIdx[2+Math.floor(Math.random()*(len-3))]=1;
       for(let i=0;i<len;i++){ const m=this.free.pop(); if(!m) break;
@@ -778,6 +857,9 @@
         sn.cubes.push({m:m,i:i,alive:true,special:!!specIdx[i],hp:hp,big0:hp,flash:0,
           sx:(Math.random()-0.5)*2.2,sy:(Math.random()-0.5)*2.2,sz:(Math.random()-0.5)*2.2}); }
       this.snakes.push(sn); },
+    stopHum:function(sn){ if(sn&&sn.hum){ try{ sn.hum.o.stop(); }catch(e){}
+      try{ sn.hum.g.disconnect(); }catch(e){} if(sn.hum.p){ try{ sn.hum.p.disconnect(); }catch(e){} }
+      sn.hum=null; } },
     boom:function(x,y,z,col,big){
       for(let i=0;i<this.fx.length;i++){ const F=this.fx[i];
         if(F.life>0) continue;
@@ -787,20 +869,24 @@
       this.boom(c.m.position.x,c.m.position.y,c.m.position.z,c.m.material.color,c.special);
       c.m.visible=false; this.free.push(c.m); return pts; },
     hit:function(c){
-      let pts=0;
+      let pts=0; const px=c.m.position.x/9, csz=c.m.scale.x||1;
       if(c.special){
         const p=c.m.position.clone(); pts+=this.kill(c,50);
+        boomSnd(px); let ci=0;
         for(let a=0;a<this.snakes.length;a++){ const sn=this.snakes[a];
           for(let b=0;b<sn.cubes.length;b++){ const o=sn.cubes[b];
-            if(o.alive&&o.m.position.distanceTo(p)<9.5) pts+=this.kill(o,15); } }
+            if(o.alive&&o.m.position.distanceTo(p)<9.5){ ci++;
+              killSnd(o.m.position.x/9,o.m.scale.x||1,(A?A.currentTime:0)+ci*0.05);
+              pts+=this.kill(o,15); } } }
       } else { c.hp=(c.hp||1)-1;
-        if(c.hp<=0) pts+=this.kill(c,(c.big0===3)?40:((c.big0===2)?25:10));
-        else { c.flash=1; pts+=5; } }
+        if(c.hp<=0){ pts+=this.kill(c,(c.big0===3)?40:((c.big0===2)?25:10)); killSnd(px,csz); }
+        else { c.flash=1; pts+=5; hitSnd(px,(c.big0-c.hp)/Math.max(1,c.big0)); } }
       this.score+=pts;
 },
     fire:function(h){
       if(window.PHASE!=='trip') return;
       const now=performance.now(); if(now-this.lastShot<110) return; this.lastShot=now;
+      gunSnd(this.dir?this.dir.x*0.8:0);
       h.object3D.getWorldPosition(this.ori); h.object3D.getWorldQuaternion(this.q);
       this.dir.set(0,0,-1).applyQuaternion(this.q).normalize();
       let best=null,bd=1e9;
@@ -821,6 +907,7 @@
         F.m.rotation.x+=s*3; F.m.rotation.y+=s*2.4;
         if(F.life<=0) F.m.visible=false; }
       if(!on){ for(let a=0;a<this.snakes.length;a++){ const sn=this.snakes[a];
+          this.stopHum(sn);
           for(let b=0;b<sn.cubes.length;b++){ const c=sn.cubes[b]; if(c.alive){ c.alive=false; c.m.visible=false; this.free.push(c.m); } } }
         this.snakes.length=0; return; }
       this.spawnT-=s;
@@ -832,7 +919,7 @@
       const col=new THREE.Color();
       for(let a=this.snakes.length-1;a>=0;a--){ const sn=this.snakes[a];
         sn.headZ+=sn.speed*s;
-        let living=0;
+        let living=0, minD=1e9, hx=0;
         for(let b=0;b<sn.cubes.length;b++){ const c=sn.cubes[b]; if(!c.alive) continue;
           const z=sn.headZ-c.i*sn.gap;
           if(z>13){ c.alive=false; c.m.visible=false; this.free.push(c.m); continue; }
@@ -842,6 +929,7 @@
           const cl=4.6+(sn.size||1)*0.6;
           if(Math.abs(z)<14&&r2<cl){ const q=cl/Math.max(0.001,r2); x*=q; y=1.6+(y-1.6)*q; }
           c.m.position.set(x,y,z);
+          const dd=Math.sqrt(x*x+(y-1.6)*(y-1.6)+z*z); if(dd<minD){ minD=dd; hx=x; }
           c.m.rotation.x+=c.sx*s; c.m.rotation.y+=c.sy*s; c.m.rotation.z+=c.sz*s;
           if(sn.match) this.pal(sn.hue+c.i*0.05+this.T*sn.hueSp,col);
           else col.setHSL((sn.hue+c.i*0.035+this.T*sn.hueSp)%1,0.85,0.58);
@@ -850,7 +938,10 @@
           if(c.flash>0){ col.lerp(this.white,Math.min(1,c.flash)); c.flash-=s*4; }
           c.m.material.color.copy(col);
           c.m.scale.setScalar((sn.size||1)*(c.special?1.5:1)*(1+0.35*Math.max(0,c.flash||0))); }
-        if(living===0) this.snakes.splice(a,1); }
+        if(sn.hum){ const v=Math.pow(Math.max(0,1-minD/20),2)*0.16;
+          sn.hum.g.gain.value+=(v-sn.hum.g.gain.value)*Math.min(1,s*8);
+          if(sn.hum.p) sn.hum.p.pan.value=Math.max(-1,Math.min(1,hx/9)); }
+        if(living===0){ this.stopHum(sn); this.snakes.splice(a,1); } }
       const dbg=document.querySelector('#dbgTxt');
       if(dbg){ let nb=0; for(let a=0;a<this.snakes.length;a++) for(let b=0;b<this.snakes[a].cubes.length;b++) if(this.snakes[a].cubes[b].alive) nb++;
         dbg.setAttribute('value','slangen '+this.snakes.length+'  blokjes '+nb); }
@@ -870,6 +961,7 @@
       if(TRACKS[1]){ TRACKS[1].preload='auto'; try{ TRACKS[1].load(); }catch(e){} }
       (TRACKS[0]||TRACKS[1]).play(); window.USE_TRACK=true; }catch(e){ window.USE_TRACK=false; } }
     if(!window.USE_TRACK) startDrone();
+    initSFX();
     const m=$('#menu'); if(m&&m.parentNode)m.parentNode.removeChild(m);
     document.querySelectorAll('.hand').forEach(function(h){ h.setAttribute('visible',true); });
     $('#reticle').setAttribute('visible',false);
@@ -886,7 +978,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v30.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v31.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -912,7 +1004,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v30.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v31.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
