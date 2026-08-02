@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v29.0
+  //  DIEPE TRIP v29.2
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -745,11 +745,11 @@
       for(let i=0;i<44;i++){
         const m=new THREE.Mesh(fgeo,new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:0}));
         m.visible=false; this.g.add(m); this.fx.push({m:m,t:0,life:0,sc:1}); }
-      this.snakes=[]; this.spawnT=2.0; this.score=0; this.lastShot=0; this.T=0;
+      this.snakes=[]; this.spawnT=3.0; this.score=0; this.lastShot=0; this.T=0;
       this.ori=new THREE.Vector3(); this.dir=new THREE.Vector3(); this.q=new THREE.Quaternion();
       const self=this;
       ['#leftHand','#rightHand'].forEach(function(id){ const h=document.querySelector(id); if(!h) return;
-        ['triggerdown','selectstart'].forEach(function(ev){ h.addEventListener(ev,function(){ self.fire(h); }); }); });
+        ['triggerdown','selectstart','gripdown'].forEach(function(ev){ h.addEventListener(ev,function(){ self.fire(h); }); }); });
     },
     pal:function(t,out){ const P=window.CURPAL; if(!P){ out.setHSL(t%1,0.8,0.6); return out; }
       const c=function(i){ return P.A[i]+P.B[i]*Math.cos(6.28318*(t+P.D[i])); };
@@ -762,7 +762,7 @@
         fx:0.018+Math.random()*0.03,fy:0.015+Math.random()*0.03,
         ph:Math.random()*6.28,ph2:Math.random()*6.28,
         hue:Math.random(),hueSp:0.05+Math.random()*0.25,
-        match:(Math.random()<0.33),headZ:-190-Math.random()*40};
+        match:(Math.random()<0.33),headZ:-120-Math.random()*50};
       const spec=1+((Math.random()<0.45)?1:0);
       const specIdx={}; for(let k=0;k<spec;k++) specIdx[2+Math.floor(Math.random()*(len-3))]=1;
       for(let i=0;i<len;i++){ const m=this.free.pop(); if(!m) break;
@@ -787,7 +787,7 @@
             if(o.alive&&o.m.position.distanceTo(p)<9.5) pts+=this.kill(o,15); } }
       } else pts+=this.kill(c,10);
       this.score+=pts;
-      const t=document.querySelector('#scoreTxt'); if(t) t.setAttribute('value',this.score); },
+},
     fire:function(h){
       if(window.PHASE!=='trip') return;
       const now=performance.now(); if(now-this.lastShot<110) return; this.lastShot=now;
@@ -817,6 +817,7 @@
         const n=(r<0.42)?1:(r<0.68)?2:(r<0.84)?3:(r<0.95)?4:8;
         for(let i=0;i<n;i++) this.spawn();
         this.spawnT=3.5+Math.random()*4.5; }
+      if(this.snakes.length===0&&this.spawnT>3.0) this.spawnT=3.0;
       const col=new THREE.Color();
       for(let a=this.snakes.length-1;a>=0;a--){ const sn=this.snakes[a];
         sn.headZ+=sn.speed*s;
@@ -861,17 +862,22 @@
     document.querySelectorAll('.hand').forEach(function(h){ h.setAttribute('visible',true);
       h.setAttribute('raycaster','objects: .menu-btn; far: 12; lineColor: #ffd98a; lineOpacity: 0.8'); });
     $('#reticle').setAttribute('visible',true);
+    const st=$('#scoreTxt'); const sc=$('#rig').components.shooter;
+    if(st&&sc) st.setAttribute('value','score  '+sc.score);
     $('#endscreen').setAttribute('visible',true); }
   </script>
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v29.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v29.2</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
     window.onerror=function(msg,src,line,col){ var e=document.getElementById('ldErr');
-      if(e) e.textContent+='FOUT: '+msg+' @ '+line+':'+col+'\n'; return false; };
+      if(e) e.textContent+='FOUT: '+msg+' @ '+line+':'+col+'\n';
+      var t=document.querySelector('#errTxt');
+      if(t) t.setAttribute('value',String(msg).slice(0,70)+' @'+line);
+      return false; };
     (function poll(){ var l=document.getElementById('loader'); if(!l) return;
       if(window.SCENE_LOADED){ l.style.display='none'; return; }
       var secs=Math.round((Date.now()-window.T0)/1000);
@@ -889,24 +895,30 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v29.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v29.2" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
         <a-text value="EINDE" align="center" color="#ffd98a" width="5" position="0 1.85 -2.08"></a-text>
-        <a-text value="Welkom terug." align="center" color="#9aa8c0" width="1.8" position="0 1.62 -2.08"></a-text>
+        <a-text id="scoreTxt" value="" align="center" color="#ffd98a" width="2.6" position="0 1.62 -2.08"></a-text>
         <a-plane id="btnAgain" class="menu-btn" position="0 1.32 -2.08" width="1.2" height="0.28" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="NOG EEN KEER" align="center" color="#fff" width="2.6" position="0 1.32 -2.07"></a-text>
       </a-entity>
       <a-camera wasd-controls-enabled="false" far="400">
         <a-entity id="reticle" cursor="rayOrigin: mouse; fuse: false" raycaster="objects: .menu-btn"></a-entity>
-        <a-text id="scoreTxt" value="0" align="center" color="#ffffff" width="1.1" position="0 -0.42 -1.3"></a-text>
+        <a-text id="errTxt" value="" align="center" color="#ff5a6a" width="1.0" position="0 -0.55 -1.3"></a-text>
         <a-plane id="flash" position="0 0 -0.32" width="2.6" height="2.6" material="color:#dfe8ff;opacity:0;transparent:true;shader:flat"></a-plane>
       </a-camera>
-      <a-entity id="leftHand" class="hand" laser-controls="hand: left"
-                raycaster="objects: .menu-btn; far: 12; lineColor: #d8b0ff; lineOpacity: 0.75"></a-entity>
-      <a-entity id="rightHand" class="hand" laser-controls="hand: right"
-                raycaster="objects: .menu-btn; far: 12; lineColor: #d8b0ff; lineOpacity: 0.75"></a-entity>
+      <a-entity id="leftHand" class="hand" meta-touch-controls="hand: left" oculus-touch-controls="hand: left"
+                raycaster="objects: .menu-btn; far: 30"
+                cursor="fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity">
+        <a-entity class="menu-laser" line="start: 0 0 0; end: 0 0 -30; color: #d8b0ff; opacity: 0.7"></a-entity>
+      </a-entity>
+      <a-entity id="rightHand" class="hand" meta-touch-controls="hand: right" oculus-touch-controls="hand: right"
+                raycaster="objects: .menu-btn; far: 30"
+                cursor="fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity">
+        <a-entity class="menu-laser" line="start: 0 0 0; end: 0 0 -30; color: #d8b0ff; opacity: 0.7"></a-entity>
+      </a-entity>
     </a-entity>
     <script>
       window.addEventListener('load',function(){ try{
@@ -917,6 +929,10 @@
         tryTrack();
         document.querySelector('#btnStart').addEventListener('click',function(){ startTrip(); });
         document.querySelector('#btnAgain').addEventListener('click',function(){ location.reload(); });
+        ['#leftHand','#rightHand'].forEach(function(id){ var h=document.querySelector(id); if(!h) return;
+          ['triggerdown','selectstart'].forEach(function(ev){ h.addEventListener(ev,function(){
+            if(window.PHASE==='menu') startTrip();
+            else if(window.PHASE==='end') location.reload(); }); }); });
 
       }catch(e){ var el=document.getElementById('ldErr'); if(el) el.textContent+='FOUT: '+e.message+'\n'; } });
     </script>
