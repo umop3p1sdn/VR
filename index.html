@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v31.0
+  //  DIEPE TRIP v31.1
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -186,37 +186,37 @@
       setTimeout(function(){ try{ pn.disconnect(); }catch(x){} },400); }
     const o=a.createOscillator(); o.type='sine';
     o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(46,t+0.07);
-    const g=a.createGain(); g.gain.setValueAtTime(0.42,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.09);
+    const g=a.createGain(); g.gain.setValueAtTime(0.62,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.1);
     o.connect(g); g.connect(dest); o.start(t); o.stop(t+0.1);
     const len=Math.floor(a.sampleRate*0.05); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
     for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.5);
     const n=a.createBufferSource(); n.buffer=b;
     const fl=a.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=950;
-    const ng=a.createGain(); ng.gain.value=0.3;
+    const ng=a.createGain(); ng.gain.value=0.45;
     n.connect(fl); fl.connect(ng); ng.connect(dest); n.start(t); }
   function hitSnd(pan,prog){ const a=AC(); const t=a.currentTime; SFXSEQ++;
     const pv=1+0.06*Math.sin(SFXSEQ*1.31);
     const bus=sfxBus(pan,t,0.12);
-    bus.gain.setValueAtTime(0.42,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.15);
+    bus.gain.setValueAtTime(0.7,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.22);
     const o=a.createOscillator(); o.type='triangle';
-    o.frequency.setValueAtTime((175+95*prog)*pv,t); o.frequency.exponentialRampToValueAtTime(90*pv,t+0.13);
-    o.connect(bus); o.start(t); o.stop(t+0.17); }
+    o.frequency.setValueAtTime((140+80*prog)*pv,t); o.frequency.exponentialRampToValueAtTime(60*pv,t+0.2);
+    o.connect(bus); o.start(t); o.stop(t+0.24); }
   function killSnd(pan,size,t0){ const a=AC(); const t=t0||a.currentTime; SFXSEQ++;
     const pv=1+0.07*Math.sin(SFXSEQ*1.31);
     const bus=sfxBus(pan,t,0.18);
-    bus.gain.setValueAtTime(0.5,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.2);
-    const len=Math.floor(a.sampleRate*0.06); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
-    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+    bus.gain.setValueAtTime(0.85,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.28);
+    const len=Math.floor(a.sampleRate*0.1); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.6);
     const n=a.createBufferSource(); n.buffer=b; n.playbackRate.value=pv;
-    const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=3800;
+    const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=1600;
     n.connect(fl); fl.connect(bus); n.start(t);
     if(size>=1.8){ const o=a.createOscillator(); o.type='sine';
       o.frequency.setValueAtTime(95,t); o.frequency.exponentialRampToValueAtTime(38,t+0.16);
-      const g=a.createGain(); g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.2);
+      const g=a.createGain(); g.gain.setValueAtTime(0.7,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.24);
       o.connect(g); g.connect(bus); o.start(t); o.stop(t+0.22); } }
   function boomSnd(pan){ const a=AC(); const t=a.currentTime;
     const bus=sfxBus(pan,t,0.55);
-    bus.gain.setValueAtTime(0.9,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.55);
+    bus.gain.setValueAtTime(1.15,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.6);
     const len=Math.floor(a.sampleRate*0.5); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
     for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.2);
     const n=a.createBufferSource(); n.buffer=b;
@@ -912,9 +912,9 @@
         this.snakes.length=0; return; }
       this.spawnT-=s;
       if(this.spawnT<=0){ const r=Math.random();
-        const n=(r<0.42)?1:(r<0.68)?2:(r<0.84)?3:(r<0.95)?4:8;
-        for(let i=0;i<n;i++) this.spawn();
-        this.spawnT=3.5+Math.random()*4.5; }
+        const n=(r<0.6)?1:(r<0.85)?2:(r<0.96)?3:4;
+        for(let i=0;i<n;i++){ if(this.snakes.length<4) this.spawn(); }
+        this.spawnT=6+Math.random()*5; }
       if(this.snakes.length===0&&this.spawnT>3.0) this.spawnT=3.0;
       const col=new THREE.Color();
       for(let a=this.snakes.length-1;a>=0;a--){ const sn=this.snakes[a];
@@ -931,8 +931,8 @@
           c.m.position.set(x,y,z);
           const dd=Math.sqrt(x*x+(y-1.6)*(y-1.6)+z*z); if(dd<minD){ minD=dd; hx=x; }
           c.m.rotation.x+=c.sx*s; c.m.rotation.y+=c.sy*s; c.m.rotation.z+=c.sz*s;
-          if(sn.match) this.pal(sn.hue+c.i*0.05+this.T*sn.hueSp,col);
-          else col.setHSL((sn.hue+c.i*0.035+this.T*sn.hueSp)%1,0.85,0.58);
+          if(sn.match){ this.pal(sn.hue+c.i*0.05+this.T*sn.hueSp,col); col.multiplyScalar(0.72); }
+          else col.setHSL((sn.hue+c.i*0.035+this.T*sn.hueSp)%1,0.8,0.4);
           if(c.special){ const k=0.5+0.5*Math.sin(this.T*9+c.i);
             col.lerp(this.white,0.35+0.45*k); }
           if(c.flash>0){ col.lerp(this.white,Math.min(1,c.flash)); c.flash-=s*4; }
@@ -978,7 +978,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v31.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v31.1</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1004,7 +1004,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v31.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v31.1" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
@@ -1038,7 +1038,7 @@
                sc.addEventListener('renderstart',function(){ window.SCENE_LOADED=true; }); }
         tryTrack();
         document.querySelector('#btnStart').addEventListener('click',function(){ startTrip(); });
-        document.querySelector('#btnAgain').addEventListener('click',function(){ location.reload(); });
+        document.querySelector('#btnAgain').addEventListener('click',function(){ if(window.PHASE==='end') location.reload(); });
         ['#leftHand','#rightHand'].forEach(function(id){ var h=document.querySelector(id); if(!h) return;
           ['triggerdown','selectstart'].forEach(function(ev){ h.addEventListener(ev,function(){
             if(window.PHASE==='menu') startTrip();
