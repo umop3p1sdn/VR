@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v42.0
+  //  DIEPE TRIP v43.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -821,6 +821,19 @@
         } }
   });
 
+  // ---- eindbazen: 32x32 pixelfiguren ----
+  const BOSSES=[
+   {n:'oog-blauw',p:['dcccbd','d5b4a3','d0a897','c89886','bb9f92','b68777','828e95','9d6c5d','4e5a66','5d382f','272c36','140f13','050001','000005','000000'],e:[[7,8],[17,9]],g:'000000000000000000000000000000000000000000000004443000000000000000000000000468888888864000000000000000003688684668888a8860000000000000068868688aaaaaaaaaa840000000000388668accddfddccbaaba840000000048868aceecccccefeddccaba60000003888acdccc917cbbbebcfcbab8600003886acc99b9707eeb9cc9bddbba80002688acc919b79beeeb99b78bddca8600486aca8219979cefc979b779cccba802668ca85117b77bbbb7799279aacca86338a8885111997799977b728a8aca88624a864641117b977799995788abaa86004468666421179999bb95558aaaa86400022224664322127775568aaaaa8640000003332322358866688aa8888844000000000323322255558668888664000000000000023333344466666446400000000000000002233334444444000000000000000000000003333300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000055556000000000000000000000003332222225660000000000000000003322111111123556000000000000000332211111111223566000000000000000000000000000000000000000'},
+   {n:'oog-reptiel',p:['b1b84e','999d22','938814','618229','6f6722','536c23','445f1c','424e17','3f3f23','2d3d13','282c1d','1a2b08','192007','0d0e02','000000'],e:[[8,8],[26,8]],g:'00000000000044446777000000000000000000000464444447677770000000000000000466444211412247787000000000000076644411216464487a7a00000000000677444266adeeeddc8a8aa0000000006774227adededddeefedccaa00000006772278de8119c338ceffeecca00000788648dfd3100de2235ceeefedcc00068866aefd81111ff22338dcbefedcc009867aeeec83111ff22337ab69eeedc078768ed5d853223ff21237ab56deeddc7788de51d832222ee22238c945bdeddc888ced119d53322cd22358c955bbcdcc888666515ea3332882337ad5568aaac0076446212be7533533358ce556788cc00aa8644422aec88858acdda667aaad00008a874444248addddda6446c87cc0000000c888667222244124488a6acc000000000dcaa7647677677aaa7accd000000000000dccaaa88acaaaacdde0000000000000000dddcccccccddee00000000000000000000000eeeed000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000099bbbbb9000000000000000000000699bbbbbbbb9bb0000000000000000699b99999999bbbbbb000000000000069bbb96555699999bbbb000000'},
+   {n:'oog-paars',p:['ba8aab','a85b60','a2474e','5e3f77','802a71','4d2c65','332247','5c0f88','2c1048','171223','100a1c','090314','15002d','000003','000000'],e:[[14,8],[23,8]],g:'0000000000000000000000000000000000000000000000000000000000000000000000000000aaaaa000000000000000000000000aa7aaaaabbbb0000000000000000007a9779aaaaabbbbb000000000000000777aacfffffeebaccba000000000000a77befecdceeffffeccbb0000000000a7aeffd811ce99ddeefecec0000000077aefe98101ff96989ceffeec000000777eedd88119ffd9888ddbefeec0000077cf6499889dff98818974aeffec00077ae61188888dff981118646aeecb0066ae7211888889fc8811194449eea00067a21111698888e6811589447bcb0000677644411998888888889649ceca00000044446744698888889d967ceba00000000004449964469699767acca700000000000004469976666699dd970000000000000000444469679997776000000000000000000004444446440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001022000000000000000000000000000033320000000000000000000000222233a730000000000000000000033333333777a3200022300000000000333333333733b3330233000000000000000000000000000000000000000000000000000000000000000000000'},
+   {n:'schedel-bot',p:['f7e3ca','eacfb1','e1c4a5','d8ba9b','cdae90','c0a183','b29174','a38062','98795e','8a6b51','7b5b43','604532','2d1c11','060000','000000'],e:[[14,12],[17,10]],g:'0000005433221112234567900000000000000544321111122345667a00000000000065543211111122346789a000000000006645321111222346679aa000000000006744322111234456778cab00000000065763421112343234668cab00000000076793321112531234659cbc000000000768b12479635369a9626dcc00000000086777cdddb879bcdddc6ccc0000000009788dddddca18ddddddccdc000000000aa95ccdded515cfeddc9bdc0000000000bb2b9cdeb3db6ddcb95adc0000000000ca268cc729fe859c973ad00000000000845243313deec423446ab00000000000953436b86edec6cb88a9bc00000000000b6897763dcdc5b988acd000000000000bcde946375967a9ddddd000000000000bbbec644123488cfddc00000000000000c9dd7666658abcecd00000000000000008bd86543358addbc000000000000000097dba9788abccbbc0000000000000000967876789bccb9cb000000000000000078457888abcc89cb0000000000000000896477779abb8bcc00000000000000000b96743367888bc00000000000000000000964243458c00000000000000000000000b97aa9bc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000'},
+   {n:'schedel-groen',p:['aec862','858b65','6f6962','4c612c','444933','36392d','312f2b','282823','1c2a19','1e231e','1e1f1c','141d16','0e120f','030603','000000'],e:[[14,12],[20,17]],g:'000003687755323536678a8000000000000056a76532222235788aa80000000000005b8753321112337778ca7000000000036aa7533111223677accaa00000000003898875321233578abcc9900000000005796a75332235578abb9d460000000005666963123363358899999a000000000787444532353237bb99699a0000000009c65449b75775bdd9444dca0000000009c7de419dd86eee94449dca000000000cd8d91119d32bf92114ccdc0000000009e8d911297335d911149ce00000000006f78e94983df778444968d00000000005a85553236fed5533457a70000000000666557865cfefb6bb888b880000000000c57bdcd6ed8fcddbaa8ac00000000000dcdfdb8676568abbdded000000000000bbeeec753355667cfeec0000000000000adce8655565567dfdd000000000000000cceb55324446cdecd000000000000000c9c94422124499e9d000000000000000cb59411111149dbcd000000000000000bc6596444448ccad8000000000000000abcb8668babbbcdc80000000000000000caba5355668abbc0000000000000000000c752333578c0000000000000000000000c755658bc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000021111012000'},
+   {n:'schedel-vuur',p:['d1a06c','bb7647','b35b2a','805848','9e3d16','663b2b','79270a','5a2313','48251c','411910','2b1613','1c0705','0c0000','000001','000000'],e:[[7,9],[19,9]],g:'00000046753255757b757333000000000000045573115667ba55b555500000000000453863134469988775a7700000000004673a641224467375578a000000000005587a641124466337dbaa6300000000035ab964244466877aacb8550000000003589b422464446adb9db5550000000005564642116414abb9bd83530000000007744697649669cdcb9b55530000000008a9dffdcc9adcdddfca5333000000000899ccdcea26cedccc7a5220000000000866c8ccd468adda53282330000000000842ca5844fd88a8311a3570000000000642493229eeb6463149577000000000069446462cddc9bb9669898000000000009889752cabb9aab969aa8000000000009bb9841224667bdc7ab700000000000008dd73211346bdd77db0000000000000066d7221124accc5cdb0000000000000003c82211268ad77cb000000000000000027a86446abbb7aca0000000000000006238664669baabbba000000000000000655889999abccb8bb0000000000000000988a8349cbcccabb00000000000000000b9b54246aacbbb0000000000000000000b64444999bb0000000000000000000000b99bbbbc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111000'},
+   {n:'komeet-oranje',p:['fac76a','f1a458','ea8e46','df804b','eb7422','e36315','a86644','d05316','c8440b','8f3d17','674537','5a3527','511f0c','2e0f07','000000'],e:[[11,17],[17,20]],g:'0000000000000000000000000000000000000000000000000000000002224220000000000000000000000144422424400000000000000000000111288784440000000000000000001112444886384100000000000000004211149986558842000000000000000461488865555684400000000000000048429965551258410000000000000444898996656313681240000000000044966688662122569418700000000004556565335511136994477000000000055877b825851113997774000000000099a87cca6533122596584400000000089bba8daa637c813255644000000000b8bcbccaba67bba2311664200000000bb8bcbcb7ba9cbda131396240000000b7757b7b7cca655922316824400000007778a777cfd957865a9265442000000bbb8a777bca577da85aa556440000000bcc77777bbcb7cdaa8a958844000000bbcb77bddbb7aacdeda3699420000000cccbccea8bbbadddeea5996200000000cccbcce8abbdcddeedaad85000000000ceebbdccdacccedad5ada65000000000eeeccddeeeddeee69da96500000000000eeedeeeeeddeed6ded680000000000000eedadded9ade9deea600000000000000ededadd9aadd9ddaa0000000000000000eeededaffddd9aa000000000000000000eefedddeddda00000000000000000000000eeeee0000000000000000000000000000000000000000000000000000'},
+   {n:'komeet-roze',p:['e8b8c3','cc93b1','bc7894','e15676','b05685','7a516c','ce2b5d','952759','65264b','2e222e','1c0d1a','380322','000207','000006','000000'],e:[[13,20],[20,18]],g:'0000000000000000000000000000000000000000000000000000000000000000000000000000000000000321122212200000000000000000000032122321222000000000000000000003555884353200000000000000002211558888745522000000000000000253126877772563200000000000000221355587474259522000000000000125215887741147993330000000000012352547144214778965000000000021244442531111147799522000000002247445666961111479c9522000000011553369659675424499856500000004153666665369997447784560000000445553256c88a99a744449986000000066663226976999a97411499600000000969833ab3369a99874477960000000009a949aa6369abac9479888300000000a9966693336a9bb978aa853350000000a956666366aaaa839aaa85350000000a9a8469699aaad98aaac888660000000aaa686abaadbbd9abab8755600000000baaa99aa9adbbc8aab948500000000000bababbbabbbd98899945500000000000aabbcbbbbbccc979c5350000000000000dbd9c88dc99db9b94800000000000000bbcce99ebbdbccc550000000000000000d9cdabddddbcb00000000000000000000bbbbbdddd00000000000000000000000000bddd0000000000000000000000000000000000000000000000000000000000000000000000000000000000000'},
+   {n:'komeet-blauw',p:['afe8f7','83d7f1','80beda','53c0e5','40aed9','4da2c8','249dce','408eb1','327596','0f7eb3','0f547d','083d64','022644','001229','000000'],e:[[14,19],[17,19]],g:'000000000000000000000000000000000000000000000000000000000021332000000000000000000000000332133230000000000000000000003123368633000000000000000000006312367a66620000000000000000000632466a7466220000000000000000133368a7752562130000000000000331267aaa752145323000000000000033367aa775421255633000000000003667aaa7a444112577633000000000034aa77545544112477633300000000046aa422212222114576230000000000aa77a459a31111124543300000000007724abaa8665111122424600000000044a87a72688ab612147a753300000005798687899a7aa811257773330000005ab99422988a77a511477a43600000009b9984338999a2451257a62680000000c9b936838b99bc84aa27a35600000000cbb88933969bccbaba5a557000000000b988883399ccbca7a7aa46600000000cbb966389cbda7b88aab846000000000cccd3399ddddbaacdccc760000000000dddbccddeeebacbddbca780000000000dccceeeedddabececbca0000000000000dddeedddeddeeeeabb000000000000000ddeeeeeeeedeecbb0000000000000000dddddcceedbdcb00000000000000000000ddbccccbcdd0000000000000000000000dccedde000000000000000000000000000000000000000000000000000000000000000000000000000000000000'},
+  ];
+
   // =========================================================
   //  SHOOTER — slangen van blokjes door de hele trip
   // =========================================================
@@ -861,6 +874,15 @@
         new THREE.MeshBasicMaterial({color:0xfff4c0,wireframe:true,transparent:true,opacity:0,depthWrite:false}));
       this.blastW.visible=false; this.blastW.renderOrder=6; this.g.add(this.blastW);
       this.blastLife=0; this.blastId=0; this.pending=[];
+      // eindbaas: alles in één tekenopdracht
+      this.BCELL=0.58;
+      this.bMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(0.55,0.55,0.55),
+        new THREE.MeshBasicMaterial({}),600);
+      this.bMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.bMesh.count=0; this.bMesh.frustumCulled=false; this.bMesh.renderOrder=3;
+      this.g.add(this.bMesh);
+      this.dum=new THREE.Object3D(); this.bcol=new THREE.Color();
+      this.boss=null; this.bossBag=[];
       this.beams=[];
       const bg=new THREE.CylinderGeometry(0.10,0.03,60,10,1,true);
       bg.translate(0,-30,0); bg.rotateX(Math.PI/2);
@@ -959,6 +981,66 @@
       G.ent=(side===5)?0:1;
       this.hum(G,G.size||1.5);
       this.groups.push(G); return true; },
+    spawnBoss:function(){
+      if(!this.bossBag.length){ this.bossBag=[0,1,2,3,4,5,6,7,8];
+        for(let i=this.bossBag.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));
+          const t=this.bossBag[i]; this.bossBag[i]=this.bossBag[j]; this.bossBag[j]=t; } }
+      const B=BOSSES[this.bossBag.pop()], cells=[];
+      for(let y=0;y<32;y++) for(let x=0;x<32;x++){
+        const ch=B.g[y*32+x]; if(ch==='0') continue;
+        cells.push({x:x,y:y,c:parseInt(B.p[parseInt(ch,16)-1],16),alive:true,special:false,flash:0,
+          ox:(Math.random()-0.5)*2,oy:(Math.random()-0.5)*2,oz:(Math.random()-0.5)*2,
+          sp:Math.random()*6.28}); }
+      for(let k=0;k<B.e.length;k++){ const ex=B.e[k][0], ey=B.e[k][1];
+        for(let i=0;i<cells.length;i++){ const c=cells[i];
+          if(Math.abs(c.x-ex)<2&&Math.abs(c.y-ey)<2) c.special=true; } }
+      this.boss={cells:cells,cz:-56,t:0,phase:0,pt:0,k:0,n:cells.length,name:B.n};
+      this.bMesh.count=cells.length;
+      window.SHOOTFLASH=0.5; boomSnd(0); },
+    bossTick:function(s,beat){
+      const B=this.boss; if(!B) return;
+      B.t+=s; B.pt+=s;
+      if(B.phase===0&&B.pt>5){ B.phase=1; B.pt=0; }
+      else if(B.phase===1){ B.k=Math.min(1,B.k+s/1.8); if(B.k>=1){ B.phase=2; B.pt=0; } }
+      else if(B.phase===2&&B.pt>2.2){ B.phase=3; B.pt=0; }
+      else if(B.phase===3){ B.k=Math.max(0,B.k-s/1.8); if(B.k<=0){ B.phase=0; B.pt=0; } }
+      const cz=B.cz+Math.sin(B.t*0.22)*9, cs=this.BCELL;
+      const sway=Math.sin(B.t*0.3)*2.2, bob=Math.cos(B.t*0.25)*1.4;
+      let alive=0, idx=0;
+      for(let i=0;i<B.cells.length;i++){ const c=B.cells[i];
+        if(!c.alive){ this.dum.position.set(0,-9999,0); this.dum.scale.setScalar(0.001);
+          this.dum.updateMatrix(); this.bMesh.setMatrixAt(i,this.dum.matrix); continue; }
+        alive++;
+        const sp=B.k*(9+Math.sin(c.sp+B.t*1.4)*4);
+        const x=sway+(c.x-15.5)*cs+c.ox*sp;
+        const y=1.6-(c.y-15.5)*cs+bob+c.oy*sp;
+        const z=cz+c.oz*sp*0.7;
+        this.dum.position.set(x,y,z);
+        this.dum.rotation.set(c.sp+B.t*B.k*1.2,c.sp*2+B.t*B.k,0);
+        this.dum.scale.setScalar(c.special?1.35:1);
+        this.dum.updateMatrix(); this.bMesh.setMatrixAt(i,this.dum.matrix);
+        c.wx=x; c.wy=y; c.wz=z;
+        this.bcol.setHex(c.c);
+        if(c.special){ const q=0.5+0.5*Math.sin(B.t*8+c.sp); this.bcol.lerp(this.white,0.3+0.4*q); }
+        if(c.flash>0){ this.bcol.lerp(this.white,Math.min(1,c.flash)); c.flash-=s*4; }
+        this.bMesh.setColorAt(i,this.bcol); idx++; }
+      this.bMesh.instanceMatrix.needsUpdate=true;
+      if(this.bMesh.instanceColor) this.bMesh.instanceColor.needsUpdate=true;
+      if(alive===0){ for(let k=0;k<5;k++) this.pending.push({p:new THREE.Vector3(
+          (Math.random()-0.5)*14,1.6+(Math.random()-0.5)*10,cz),t:0.25*k});
+        this.score+=500; this.boss=null; this.bMesh.count=0; } },
+    bossDamage:function(x,y,z,rad,pts){
+      const B=this.boss; if(!B) return 0;
+      let got=0, sp=null;
+      for(let i=0;i<B.cells.length;i++){ const c=B.cells[i]; if(!c.alive||c.wx===undefined) continue;
+        const dx=c.wx-x, dy=c.wy-y, dz=c.wz-z;
+        if(dx*dx+dy*dy+dz*dz<rad*rad){
+          if(c.special&&!sp) sp=new THREE.Vector3(c.wx,c.wy,c.wz);
+          c.alive=false; got++;
+          if(got<9) this.burst(c.wx,c.wy,c.wz,this.bcol.setHex(c.c),2,9); } }
+      if(got){ this.score+=got*pts; killSnd(x/9,1.4); }
+      if(sp) this.pending.push({p:sp,t:0.5});
+      return got; },
     fireBlast:function(p){
       this.blast.position.copy(p); this.blastW.position.copy(p);
       this.blast.visible=true; this.blastW.visible=true;
@@ -1010,6 +1092,14 @@
           if(t<0.6||t>150||t>=bd) continue;
           const qx=vx-this.dir.x*t, qy=vy-this.dir.y*t, qz=vz-this.dir.z*t;
           if(Math.sqrt(qx*qx+qy*qy+qz*qz) < (c.size||1)*0.6+t*0.014){ bd=t; bg=G; bc=c; } } }
+      if(this.boss){ const B=this.boss;
+        for(let i=0;i<B.cells.length;i++){ const c=B.cells[i]; if(!c.alive||c.wx===undefined) continue;
+          const vx=c.wx-this.ori.x, vy=c.wy-this.ori.y, vz=c.wz-this.ori.z;
+          const t=vx*this.dir.x+vy*this.dir.y+vz*this.dir.z;
+          if(t<0.6||t>150||t>=bd) continue;
+          const qx=vx-this.dir.x*t, qy=vy-this.dir.y*t, qz=vz-this.dir.z*t;
+          if(Math.sqrt(qx*qx+qy*qy+qz*qz)<0.42+t*0.014){ bd=t; bg=null; bc=null;
+            this.bossDamage(c.wx,c.wy,c.wz,1.55,12); return; } } }
       if(bc) this.hit(bg,bc); },
     tick:function(t,dt){ if(this.dead) return; try{
       const s=Math.min(0.08,(dt||16)/1000);
@@ -1031,7 +1121,8 @@
         if(this.blastLife<=0){ this.blast.visible=false; this.blastW.visible=false; } }
       if(!on){ for(let a=0;a<this.groups.length;a++){ const G=this.groups[a]; this.stopHum(G);
           for(let b=0;b<G.cubes.length;b++){ const c=G.cubes[b]; if(c.alive){ c.alive=false; c.m.visible=false; this.free.push(c.m); } } }
-        this.groups.length=0; this.pending.length=0; this.level=0; this.state='wacht'; return; }
+        this.groups.length=0; this.pending.length=0; this.boss=null; this.bMesh.count=0;
+        this.level=0; this.state='wacht'; return; }
 
       // ---- levels en golven; vormen komen er gaandeweg bij ----
       const L=window.LEVEL||0;
@@ -1047,6 +1138,8 @@
             if(this.level>=3) menu.push('grid');
             let form='snake';
             if(this.wave>1&&menu.length>1&&Math.random()<0.55) form=menu[1+Math.floor(Math.random()*(menu.length-1))];
+            if(this.level>=2&&!this.boss&&this.wave>2&&Math.random()<0.22){
+              this.spawnBoss(); this.state='golf'; return; }
             let n=1;
             if(form==='snake') n=Math.min(4,1+Math.floor((this.level+this.wave)/3));
             else if(form==='big') n=1;
@@ -1058,7 +1151,7 @@
         else if(this.state==='golf'){ this.waveT=(this.waveT||0)+s;
           if(this.groups.length>0&&this.groups.length<2&&this.waveT>3&&this.wave<this.waves){
             this.state='pauze'; this.gap=0.15; this.waveT=0; } }
-        if(this.state==='golf'&&this.groups.length===0){ this.waveT=0;
+        if(this.state==='golf'&&this.groups.length===0&&!this.boss){ this.waveT=0;
           if(this.wave>=this.waves){ this.state='klaar'; this.gap=8.0; }
           else { this.state='pauze'; this.gap=0.15; } }
         else if(this.state==='klaar'){ this.gap-=s;
@@ -1143,6 +1236,9 @@
       }
       for(let i=0;i<this.pending.length;i++){ const B=this.pending[i]; B.t-=s;
         if(B.t<=0&&this.blastLife<0.35){ this.pending.splice(i,1); this.fireBlast(B.p); break; } }
+      this.bossTick(s,beat);
+      if(this.blastLife>0&&this.boss) this.bossDamage(this.blast.position.x,this.blast.position.y,
+        this.blast.position.z,this.blast.scale.x,10);
       const dbg=document.querySelector('#dbgTxt');
       if(dbg) dbg.setAttribute('value','level '+this.level+'   golf '+this.wave+'/'+this.waves);
       }catch(e){ this.dead=true; window.onerror('SHOOTER-TICK: '+e.message,'',0,0); } }
@@ -1174,7 +1270,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v42.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v43.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1200,7 +1296,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v42.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v43.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
