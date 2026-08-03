@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v35.1
+  //  DIEPE TRIP v37.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -152,7 +152,13 @@
     const g=a.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.2,t+1.6); g.gain.linearRampToValueAtTime(0,t+2.1);
     n.connect(f).connect(g).connect(MASTER); n.start(t); }
   // ---- shooter-geluid: hit != kapot, alles door een langzaam draaiende faser ----
-  let SFX=null, SFXSEQ=0;
+  let SFX=null, SFXSEQ=0, SFXOUT=null;
+  function sfxOut(){ if(SFXOUT) return SFXOUT; const a=AC();
+    SFXOUT=a.createGain(); SFXOUT.gain.value=1.35;
+    const comp=a.createDynamicsCompressor();
+    comp.threshold.value=-12; comp.knee.value=6; comp.ratio.value=7;
+    comp.attack.value=0.002; comp.release.value=0.18;
+    SFXOUT.connect(comp); comp.connect(a.destination); return SFXOUT; }
   function initSFX(){ if(SFX) return SFX; const a=AC();
     const inG=a.createGain(); inG.gain.value=0.9;
     const dry=a.createGain(); dry.gain.value=0.45;
@@ -161,7 +167,7 @@
       ap.type='allpass'; ap.frequency.value=f0; ap.Q.value=0.7; return ap; });
     inG.connect(aps[0]); aps[0].connect(aps[1]); aps[1].connect(aps[2]); aps[2].connect(aps[3]);
     const fb=a.createGain(); fb.gain.value=0.35; aps[3].connect(fb); fb.connect(aps[0]);
-    inG.connect(dry); aps[3].connect(wet); dry.connect(MASTER); wet.connect(MASTER);
+    inG.connect(dry); aps[3].connect(wet); dry.connect(sfxOut()); wet.connect(sfxOut());
     const lfo=a.createOscillator(); lfo.frequency.value=0.21;
     const lg=a.createGain(); lg.gain.value=430; lfo.connect(lg);
     aps.forEach(function(ap){ lg.connect(ap.frequency); }); lfo.start();
@@ -177,11 +183,11 @@
     return g; }
   function gunSnd(pan){ const a=AC(); const t=a.currentTime;
     const pn=a.createStereoPanner?a.createStereoPanner():null;
-    const dest=pn||MASTER; if(pn){ pn.pan.value=Math.max(-1,Math.min(1,pan||0)); pn.connect(MASTER);
+    const dest=pn||sfxOut(); if(pn){ pn.pan.value=Math.max(-1,Math.min(1,pan||0)); pn.connect(sfxOut());
       setTimeout(function(){ try{ pn.disconnect(); }catch(x){} },400); }
     const o=a.createOscillator(); o.type='sine';
     o.frequency.setValueAtTime(130,t); o.frequency.exponentialRampToValueAtTime(46,t+0.07);
-    const g=a.createGain(); g.gain.setValueAtTime(1.0,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.11);
+    const g=a.createGain(); g.gain.setValueAtTime(1.8,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.13);
     o.connect(g); g.connect(dest); o.start(t); o.stop(t+0.1);
     const len=Math.floor(a.sampleRate*0.05); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
     for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.5);
@@ -190,23 +196,27 @@
     fl.frequency.setValueAtTime(2600,t); fl.frequency.exponentialRampToValueAtTime(320,t+0.09);
     const sh=a.createWaveShaper(); const cv=new Float32Array(1024);
     for(let i=0;i<1024;i++){ const x=i/512-1; cv[i]=Math.tanh(x*6); } sh.curve=cv;
-    const ng=a.createGain(); ng.gain.value=1.0;
+    const ng=a.createGain(); ng.gain.value=1.9;
     n.connect(fl); fl.connect(sh); sh.connect(ng); ng.connect(dest); n.start(t);
+    const cl=a.createBufferSource(); const clen=Math.floor(a.sampleRate*0.006);
+    const cb=a.createBuffer(1,clen,a.sampleRate); const cd=cb.getChannelData(0);
+    for(let i=0;i<clen;i++) cd[i]=(Math.random()*2-1)*(1-i/clen);
+    cl.buffer=cb; const cg=a.createGain(); cg.gain.value=1.1; cl.connect(cg); cg.connect(dest); cl.start(t);
     const z=a.createOscillator(); z.type='sawtooth';
     z.frequency.setValueAtTime(900,t); z.frequency.exponentialRampToValueAtTime(70,t+0.1);
-    const zg=a.createGain(); zg.gain.setValueAtTime(0.5,t); zg.gain.exponentialRampToValueAtTime(0.01,t+0.12);
+    const zg=a.createGain(); zg.gain.setValueAtTime(0.95,t); zg.gain.exponentialRampToValueAtTime(0.01,t+0.13);
     z.connect(zg); zg.connect(dest); z.start(t); z.stop(t+0.14); }
   function hitSnd(pan,prog){ const a=AC(); const t=a.currentTime; SFXSEQ++;
     const pv=1+0.06*Math.sin(SFXSEQ*1.31);
     const bus=sfxBus(pan,t,0.12);
-    bus.gain.setValueAtTime(0.7,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.22);
+    bus.gain.setValueAtTime(1.1,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.24);
     const o=a.createOscillator(); o.type='triangle';
     o.frequency.setValueAtTime((140+80*prog)*pv,t); o.frequency.exponentialRampToValueAtTime(60*pv,t+0.2);
     o.connect(bus); o.start(t); o.stop(t+0.24); }
   function killSnd(pan,size,t0){ const a=AC(); const t=t0||a.currentTime; SFXSEQ++;
     const pv=1+0.07*Math.sin(SFXSEQ*1.31);
     const bus=sfxBus(pan,t,0.18);
-    bus.gain.setValueAtTime(0.85,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.28);
+    bus.gain.setValueAtTime(1.5,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.3);
     const len=Math.floor(a.sampleRate*0.1); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
     for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.6);
     const n=a.createBufferSource(); n.buffer=b; n.playbackRate.value=pv;
@@ -214,11 +224,11 @@
     n.connect(fl); fl.connect(bus); n.start(t);
     if(size>=1.8){ const o=a.createOscillator(); o.type='sine';
       o.frequency.setValueAtTime(95,t); o.frequency.exponentialRampToValueAtTime(38,t+0.16);
-      const g=a.createGain(); g.gain.setValueAtTime(0.7,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.24);
+      const g=a.createGain(); g.gain.setValueAtTime(1.2,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.26);
       o.connect(g); g.connect(bus); o.start(t); o.stop(t+0.22); } }
   function boomSnd(pan){ const a=AC(); const t=a.currentTime;
     const bus=sfxBus(pan,t,0.55);
-    bus.gain.setValueAtTime(1.8,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.7);
+    bus.gain.setValueAtTime(2.6,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.8);
     const len=Math.floor(a.sampleRate*0.5); const b=a.createBuffer(1,len,a.sampleRate); const d=b.getChannelData(0);
     for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.2);
     const n=a.createBufferSource(); n.buffer=b;
@@ -227,7 +237,7 @@
     n.connect(fl); fl.connect(bus); n.start(t);
     const o=a.createOscillator(); o.type='sine';
     o.frequency.setValueAtTime(75,t); o.frequency.exponentialRampToValueAtTime(32,t+0.3);
-    const g=a.createGain(); g.gain.setValueAtTime(1.4,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.45);
+    const g=a.createGain(); g.gain.setValueAtTime(2.0,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.5);
     o.connect(g); g.connect(bus); o.start(t); o.stop(t+0.45); }
   function startDrone(){ const a=AC(); if(DRONE) return;
     const o1=a.createOscillator(); o1.type='sawtooth'; const o2=a.createOscillator(); o2.type='sawtooth'; o2.detune.value=9;
@@ -593,6 +603,7 @@
       // ---- bliksem, vooral als het donker is ----
       if(!menu&&SC.light&&hit&&Math.random()<0.35) this.flash=Math.max(this.flash,0.85);
       if(!menu&&hit&&Math.random()<0.02) this.flash=Math.max(this.flash,0.3);
+      if(window.SHOOTFLASH){ this.flash=Math.max(this.flash,window.SHOOTFLASH); window.SHOOTFLASH=0; }
       this.flash=Math.max(0,this.flash-s*3.2);
       const fpl=$('#flash'); if(fpl) fpl.setAttribute('material','color:#dfe8ff;opacity:'+(this.flash*0.45).toFixed(3)+';transparent:true;shader:flat');
 
@@ -836,9 +847,9 @@
       for(let i=0;i<150;i++){ const m=new THREE.Mesh(sg,new THREE.MeshBasicMaterial({color:0xffffff}));
         m.visible=false; m.renderOrder=4; this.g.add(m);
         this.shards.push({m:m,life:0,vx:0,vy:0,vz:0,rx:0,ry:0}); }
-      this.BLAST=16.0;
+      this.BLAST=18.0;
       this.blast=new THREE.Mesh(new THREE.SphereGeometry(1,26,16),
-        new THREE.MeshBasicMaterial({color:0xffe08a,transparent:true,opacity:0,side:THREE.DoubleSide,
+        new THREE.MeshBasicMaterial({color:0xffd070,transparent:true,opacity:0,side:THREE.DoubleSide,
           blending:THREE.AdditiveBlending,depthWrite:false}));
       this.blast.visible=false; this.blast.renderOrder=5; this.g.add(this.blast);
       this.blastW=new THREE.Mesh(new THREE.SphereGeometry(1,20,12),
@@ -846,13 +857,13 @@
       this.blastW.visible=false; this.blastW.renderOrder=6; this.g.add(this.blastW);
       this.blastLife=0;
       this.beams=[];
-      const bg=new THREE.CylinderGeometry(0.035,0.012,60,8,1,true);
-      bg.translate(0,-30,0); bg.rotateX(-Math.PI/2);
+      const bg=new THREE.CylinderGeometry(0.10,0.03,60,10,1,true);
+      bg.translate(0,-30,0); bg.rotateX(Math.PI/2);
       const self=this;
       ['#leftHand','#rightHand'].forEach(function(id){ const h=document.querySelector(id); if(!h) return;
         const m=new THREE.Mesh(bg,new THREE.MeshBasicMaterial({color:0xbfe4ff,transparent:true,opacity:0,
           blending:THREE.AdditiveBlending,depthWrite:false}));
-        m.rotation.x=-Math.PI/4; m.visible=false; h.object3D.add(m); self.beams.push(m); });
+        m.rotation.x=-Math.PI/4; m.visible=false; m.renderOrder=7; h.object3D.add(m); self.beams.push(m); });
       this.groups=[]; this.white=new THREE.Color(1,1,1);
       this.level=0; this.wave=0; this.waves=0; this.gap=0; this.state='wacht';
       this.score=0; this.lastShot=0; this.T=0;
@@ -886,16 +897,16 @@
         hue:Math.random(),hueSp:0.04+Math.random()*0.18,match:(Math.random()<0.3)};
       if(form==='snake'){
         const roll=Math.random(); let size,hp,spd;
-        if(roll<0.45){ size=1.0+Math.random()*0.4; hp=1; spd=7+Math.random()*5; }
-        else if(roll<0.78){ size=1.5+Math.random()*0.5; hp=1; spd=5.5+Math.random()*4; }
-        else if(roll<0.92){ size=2.7; hp=2; spd=4+Math.random()*2.5; }
-        else { size=3.8; hp=3; spd=3+Math.random()*2; }
+        if(roll<0.45){ size=1.0+Math.random()*0.4; hp=1; spd=9+Math.random()*6; }
+        else if(roll<0.78){ size=1.5+Math.random()*0.5; hp=1; spd=7+Math.random()*5; }
+        else if(roll<0.92){ size=2.7; hp=2; spd=5+Math.random()*3; }
+        else { size=3.8; hp=3; spd=4+Math.random()*2.5; }
         const len=(size>=2.5)?(5+Math.floor(Math.random()*4)):(8+Math.floor(Math.random()*7));
         if(this.free.length<len) return false;
         G.size=size; G.speed=spd; G.gap=(3.6+Math.random()*2.2)*Math.max(1,size*0.7);
         G.R=5.0+Math.random()*3.4; G.R2=3.4+Math.random()*3.0;
         G.fx=0.016+Math.random()*0.026; G.fy=0.014+Math.random()*0.026;
-        G.ph2=Math.random()*6.28; G.headZ=-150-Math.random()*60;
+        G.ph2=Math.random()*6.28; G.headZ=-62-Math.random()*22;
         G.laps=(Math.random()<0.4)?2:1; G.lap=0;
         const sp=2+Math.floor(Math.random()*Math.max(1,len-3));
         for(let i=0;i<len;i++){ const c=this.piece(G,i,size,hp); if(c&&i===sp) c.special=true; }
@@ -904,26 +915,41 @@
         if(this.free.length<n) return false;
         G.size=size; G.n=n; G.RR=6.5+Math.random()*4; G.spin=(Math.random()<0.5?-1:1)*(0.35+Math.random()*0.5);
         G.slide=(Math.random()<0.45); G.sw=0.16+Math.random()*0.12;
-        G.speed=G.slide?0.9:(4+Math.random()*2.5); G.cz=G.slide?-38:-130;
+        G.speed=G.slide?1.1:(5+Math.random()*3); G.cz=G.slide?-30:-62;
         for(let i=0;i<n;i++){ const c=this.piece(G,i,size,1); if(c&&i===0) c.special=true; }
       } else if(form==='line'){
         const n=6+Math.floor(Math.random()*5), size=1.5+Math.random()*0.6;
         if(this.free.length<n) return false;
         G.size=size; G.n=n; G.gap=3.4+Math.random()*1.4;
         G.tilt=(Math.random()-0.5)*1.3; G.slide=(Math.random()<0.4); G.sw=0.18+Math.random()*0.12;
-        G.speed=G.slide?1.0:(4.5+Math.random()*2.5); G.cz=G.slide?-34:-130;
+        G.speed=G.slide?1.2:(5.5+Math.random()*3); G.cz=G.slide?-27:-60;
         for(let i=0;i<n;i++){ const c=this.piece(G,i,size,1); if(c&&i===(n>>1)) c.special=true; }
       } else if(form==='grid'){
         if(this.free.length<16) return false;
-        G.size=1.5; G.gap=3.8; G.speed=0.9; G.cz=-36;
+        G.size=1.5; G.gap=3.8; G.speed=1.1; G.cz=-30;
         for(let i=0;i<16;i++) this.piece(G,i,1.5,1,{split:4,gen:0});
+      } else if(form==='zwerm'){
+        const n=18+Math.floor(Math.random()*8);
+        if(this.free.length<n) return false;
+        G.size=1.3; G.n=n; G.speed=5+Math.random()*3; G.cz=-64; G.RR=7;
+        for(let i=0;i<n;i++){ const c=this.piece(G,i,1.3,1,{ind:true,
+            px:(Math.random()-0.5)*15,py:1.6+(Math.random()-0.5)*11,pz:-64-Math.random()*16,
+            vx:(Math.random()-0.5)*1.2,vy:(Math.random()-0.5)*1.2,vz:G.speed});
+          if(c&&i%5===2) c.special=true; }
       } else { // big: valt uiteen in vier
         const n=1+((Math.random()<0.4)?1:0);
         if(this.free.length<n*6) return false;
-        G.size=4.2; G.speed=2.6+Math.random()*1.6; G.gap=9; G.cz=-110;
+        G.size=4.2; G.speed=3.4+Math.random()*2; G.gap=9; G.cz=-58;
         for(let i=0;i<n;i++) this.piece(G,i,4.2,2,{split:4,gen:0});
       }
       if(!G.cubes.length) return false;
+      // invliegen vanaf een willekeurige kant, daarna meteen normaal gedrag
+      const side=Math.floor(Math.random()*6);
+      G.ex=(side===0?-75:(side===1?75:0));
+      G.ey=(side===3?48:(side===4?-42:0));
+      G.ez=(side===2?70:0);
+      if(side===5){ G.ex=0; G.ey=0; G.ez=0; }
+      G.ent=(side===5)?0:1;
       this.hum(G,G.size||1.5);
       this.groups.push(G); return true; },
     burst:function(x,y,z,col,n,pw){ let made=0;
@@ -947,13 +973,19 @@
         const p=c.m.position.clone(); pts+=this.kill(G,c,50);
         this.blast.position.copy(p); this.blastW.position.copy(p);
         this.blast.visible=true; this.blastW.visible=true; this.blastLife=1;
+        this.blast.scale.setScalar(0.6); this.blastW.scale.setScalar(0.6);
+        window.SHOOTFLASH=0.75;
         this.burst(p.x,p.y,p.z,this.white,26,32);
-        boomSnd(px); let ci=0;
-        for(let a=0;a<this.groups.length;a++){ const H=this.groups[a];
-          for(let b=0;b<H.cubes.length;b++){ const o=H.cubes[b];
-            if(o.alive&&o.m.position.distanceTo(p)<this.BLAST){ ci++;
-              killSnd(o.m.position.x/9,o.m.scale.x||1,(A?A.currentTime:0)+ci*0.045);
-              pts+=this.kill(H,o,15); } } }
+        boomSnd(px); let ci=0; const q=[p];
+        for(let r=0;r<4&&q.length;r++){ const cen=q.shift();
+          for(let a=0;a<this.groups.length;a++){ const H=this.groups[a];
+            for(let b=0;b<H.cubes.length;b++){ const o=H.cubes[b];
+              if(o.alive&&o.m.position.distanceTo(cen)<this.BLAST){ ci++;
+                if(o.special&&q.length<4){ q.push(o.m.position.clone());
+                  this.burst(o.m.position.x,o.m.position.y,o.m.position.z,this.white,14,26);
+                  boomSnd(o.m.position.x/9); }
+                killSnd(o.m.position.x/9,o.m.scale.x||1,(A?A.currentTime:0)+ci*0.04);
+                pts+=this.kill(H,o,o.special?35:15); } } } }
       } else { c.hp=(c.hp||1)-1;
         if(c.hp<=0){ pts+=this.kill(G,c,(c.big0===3)?40:((c.big0===2)?25:10)); killSnd(px,csz); }
         else { c.flash=1; pts+=5; hitSnd(px,(c.big0-c.hp)/Math.max(1,c.big0)); } }
@@ -964,7 +996,7 @@
       h.object3D.getWorldPosition(this.ori); h.object3D.getWorldQuaternion(this.q);
       this.dir.set(0,-0.7071,-0.7071).applyQuaternion(this.q).normalize();
       gunSnd(this.dir.x*0.8);
-      for(let i=0;i<this.beams.length;i++){ this.beams[i].visible=true; this.beams[i].material.opacity=0.85; }
+      for(let i=0;i<this.beams.length;i++){ this.beams[i].visible=true; this.beams[i].material.opacity=1.0; }
       let bg=null,bc=null,bd=1e9;
       for(let a=0;a<this.groups.length;a++){ const G=this.groups[a];
         for(let b=0;b<G.cubes.length;b++){ const c=G.cubes[b]; if(!c.alive) continue;
@@ -978,7 +1010,7 @@
       const s=Math.min(0.08,(dt||16)/1000);
       const on=(window.PHASE==='trip'); this.T+=s;
       for(let i=0;i<this.beams.length;i++){ const b=this.beams[i];
-        if(b.material.opacity>0){ b.material.opacity-=s*6; if(b.material.opacity<=0) b.visible=false; } }
+        if(b.material.opacity>0){ b.material.opacity-=s*4.5; if(b.material.opacity<=0) b.visible=false; } }
       for(let i=0;i<this.shards.length;i++){ const F=this.shards[i]; if(F.life<=0) continue;
         F.life-=s*1.5;
         F.m.position.x+=F.vx*s; F.m.position.y+=F.vy*s-3*s*(1-F.life); F.m.position.z+=F.vz*s;
@@ -988,8 +1020,8 @@
       if(this.blastLife>0){ this.blastLife-=s*1.35;
         const k=1-Math.max(0,this.blastLife), r=0.6+k*this.BLAST;
         this.blast.scale.setScalar(r); this.blastW.scale.setScalar(r*1.02);
-        this.blast.material.opacity=Math.max(0,this.blastLife*0.42);
-        this.blastW.material.opacity=Math.max(0,this.blastLife*0.85);
+        this.blast.material.opacity=Math.max(0,this.blastLife*this.blastLife*0.95);
+        this.blastW.material.opacity=Math.max(0,this.blastLife);
         this.blastW.rotation.y+=s*0.9;
         if(this.blastLife<=0){ this.blast.visible=false; this.blastW.visible=false; } }
       if(!on){ for(let a=0;a<this.groups.length;a++){ const G=this.groups[a]; this.stopHum(G);
@@ -998,11 +1030,12 @@
 
       // ---- levels en golven; vormen komen er gaandeweg bij ----
       const L=window.LEVEL||0;
-      if(L>0&&L!==this.level){ this.level=L; this.wave=0; this.waves=4+L; this.gap=2.5; this.state='pauze'; }
+      if(L>0&&L!==this.level){ this.level=L; this.wave=0; this.waves=10+L*4; this.gap=1.0; this.state='pauze'; }
       if(L>0){
         if(this.state==='pauze'){ this.gap-=s;
           if(this.gap<=0){ this.wave++;
             let menu=['snake'];
+            if(this.level>=2) menu.push('zwerm');
             if(this.level>=3) menu.push('line');
             if(this.level>=4) menu.push('ring');
             if(this.level>=5) menu.push('big');
@@ -1010,22 +1043,26 @@
             let form='snake';
             if(this.wave>1&&menu.length>1&&Math.random()<0.55) form=menu[1+Math.floor(Math.random()*(menu.length-1))];
             let n=1;
-            if(form==='snake') n=Math.min(3,1+Math.floor((this.level+this.wave)/5));
+            if(form==='snake') n=Math.min(4,1+Math.floor((this.level+this.wave)/3));
             else if(form==='big') n=1;
             else n=(Math.random()<0.3)?2:1;
             const gi=this.level-1+((this.wave%2)?0:1);
-            for(let i=0;i<n;i++){ if(this.groups.length<3) this.spawn(gi,form); }
+            for(let i=0;i<n;i++){ if(this.groups.length<5) this.spawn(gi,form); }
             if(!this.groups.length) this.spawn(gi,'snake');
             this.state='golf'; } }
-        else if(this.state==='golf'&&this.groups.length===0){
+        else if(this.state==='golf'){ this.waveT=(this.waveT||0)+s;
+          if(this.groups.length>0&&this.groups.length<2&&this.waveT>3&&this.wave<this.waves){
+            this.state='pauze'; this.gap=0.15; this.waveT=0; } }
+        if(this.state==='golf'&&this.groups.length===0){ this.waveT=0;
           if(this.wave>=this.waves){ this.state='klaar'; this.gap=8.0; }
-          else { this.state='pauze'; this.gap=2.5; } }
+          else { this.state='pauze'; this.gap=0.15; } }
         else if(this.state==='klaar'){ this.gap-=s;
           if(this.gap<=0){ window.LEVELDONE=true; this.state='wacht'; } } }
 
       const col=new THREE.Color();
       for(let a=this.groups.length-1;a>=0;a--){ const G=this.groups[a];
         G.age+=s;
+        if(G.ent>0) G.ent=Math.max(0,G.ent-s*1.35);
         if(G.form==='snake') G.headZ+=G.speed*s;
         else if(G.form==='grid'){ G.speed+=s*0.16; G.cz+=G.speed*s;
           G.cx=Math.sin(this.T*0.22)*3.6; G.cy=1.6+Math.cos(this.T*0.17)*2.2; }
@@ -1036,11 +1073,11 @@
         for(let b=0;b<G.cubes.length;b++){ const c=G.cubes[b]; if(!c.alive) continue;
           let x,y,z;
           if(c.ind){ c.px+=c.vx*s; c.py+=c.vy*s; c.pz+=c.vz*s;
-            c.vx*=(1-s*0.5); c.vy*=(1-s*0.5); c.vz+=s*1.2;
+            if(G.form!=='zwerm'){ c.vx*=(1-s*0.5); c.vy*=(1-s*0.5); c.vz+=s*1.2; }
             x=c.px; y=c.py; z=c.pz;
           } else if(G.form==='snake'){
             z=G.headZ-c.i*G.gap;
-            if(z>16){ if(c.i===G.cubes.length-1&&G.lap<G.laps-1){ G.lap++; G.headZ=-150; G.ph+=1.7; z=G.headZ; }
+            if(z>16){ if(c.i===G.cubes.length-1&&G.lap<G.laps-1){ G.lap++; G.headZ=-64; G.ph+=1.7; z=G.headZ; }
               else if(G.lap>=G.laps-1){ c.alive=false; c.m.visible=false; this.free.push(c.m); continue; }
               else continue; }
             x=Math.sin(z*G.fx+G.ph)*G.R; y=1.6+Math.sin(z*G.fy+G.ph2)*G.R2;
@@ -1055,6 +1092,7 @@
           } else { x=G.cx+(c.i?9:-9); y=1.6; z=G.cz; }
           if(z>18){ c.alive=false; c.m.visible=false; this.free.push(c.m); continue; }
           living++;
+          if(G.ent>0){ const e=G.ent*G.ent; x+=G.ex*e; y+=G.ey*e; z+=G.ez*e; }
           const r2=Math.hypot(x,y-1.6), cl=5.0+(c.size||1)*0.6;
           if(Math.abs(z)<14&&r2<cl){ const q=cl/Math.max(0.001,r2); x*=q; y=1.6+(y-1.6)*q; }
           c.m.position.set(x,y,z);
@@ -1100,7 +1138,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v35.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v37.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1126,7 +1164,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v35.1" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v37.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
