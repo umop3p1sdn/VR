@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v62.1
+  //  DIEPE TRIP v65.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -966,15 +966,27 @@
       for(let i=0;i<2;i++){ const m=new THREE.Mesh(lg,new THREE.MeshBasicMaterial({color:0xaef2ff}));
         m.visible=false; m.renderOrder=9; this.g.add(m); this.rays.push(m); }
       this.wep={}; this.beamId=0;
+      this.ults=3; this.nextUlt=10000; this.ult=null; this.suck=null; this.suckK=0;
+      this.uMesh=new THREE.Mesh(new THREE.SphereGeometry(1.6,20,16),
+        new THREE.MeshBasicMaterial({color:0xfff0a0}));
+      this.uMesh.visible=false; this.uMesh.renderOrder=9; this.g.add(this.uMesh);
+      this.uRing=new THREE.Mesh(new THREE.SphereGeometry(1,18,12),
+        new THREE.MeshBasicMaterial({color:0xff9a3a,transparent:true,opacity:0,side:THREE.BackSide,depthWrite:false}));
+      this.uRing.visible=false; this.uRing.renderOrder=8; this.g.add(this.uRing);
       this.groups=[]; this.white=new THREE.Color(1,1,1); this.gold=new THREE.Color(1,0.76,0.16);
       this.level=-1; this.wave=0; this.waves=0; this.gap=0; this.state='wacht';
       this.score=0; this.lastShot=0; this.T=0; this.held=[];
       this.hits=0; this.klein=0; this.groot=0; this.combo=0; this.beste=0;
       this.bonus=0; this.comboPts=0; this.laatst=-9; this.totaal=0; this.rondes=[];
+      this.totHits=0; this.totBonus=0; this.topCombo=0;
       this.ori=new THREE.Vector3(); this.dir=new THREE.Vector3(); this.q=new THREE.Quaternion();
+      this.hands={};
       ['#leftHand','#rightHand'].forEach(function(id){ const h=document.querySelector(id); if(!h) return;
-        ['triggerdown','selectstart','gripdown'].forEach(function(ev){ h.addEventListener(ev,function(){
+        self.hands[h.id]=h;
+        ['triggerdown','selectstart'].forEach(function(ev){ h.addEventListener(ev,function(){
           if(self.held.indexOf(h)<0) self.held.push(h); self.fire(h); }); });
+        ['gripdown','squeezestart','abuttondown','xbuttondown'].forEach(function(ev){
+          h.addEventListener(ev,function(){ self.ultimate(h); }); });
         ['triggerup','selectend','gripup'].forEach(function(ev){ h.addEventListener(ev,function(){
           const i=self.held.indexOf(h); if(i>=0) self.held.splice(i,1); }); }); });
       }catch(e){ this.dead=true; window.SHOOTDEAD=true; window.onerror('SHOOTER-INIT: '+e.message,'',0,0); }
@@ -1014,6 +1026,9 @@
       const tot=this.score+this.bonus;
       this.rondes.push({r:this.level,h:this.hits||0,k:this.klein||0,g:this.groot||0,
         p:this.score,c:this.beste||0,b:this.bonus||0});
+      this.totHits=(this.totHits||0)+(this.hits||0);
+      this.totBonus=(this.totBonus||0)+(this.bonus||0);
+      this.topCombo=Math.max(this.topCombo||0,this.beste||0);
       this.totaal=tot;
       const zet=function(id,v){ const e=document.querySelector(id); if(e) e.setAttribute('value',v); };
       zet('#rndTitel','RONDE '+this.level+' VOLTOOID');
@@ -1172,6 +1187,8 @@
           y=1.6-(c.y-15.5)*cs+bob+c.oy*sp+Math.cos(B.t*0.75+c.sp*1.7)*0.85;
           z=cz+c.oz*sp*0.7+Math.sin(B.t*0.65+c.sp*2.3)*1.3;
         }
+        if(this.suck&&this.suckK>0){ const K=this.suckK, P=this.suck;
+          x+=(P.x-x)*K; y+=(P.y-y)*K; z+=(P.z-z)*K; }
         this.dum.position.set(x,y,z);
         this.dum.rotation.set(c.sp+B.t*B.k*1.2,c.sp*2+B.t*B.k,0);
         this.dum.scale.setScalar(c.thrown?1.5:(c.special?1.35:1));
@@ -1254,7 +1271,9 @@
         if(c.hp<=0){ pts+=this.kill(G,c,this.waarde(c)); killSnd(px,csz); }
         else { c.flash=1; pts+=5; hitSnd(px,(c.big0-c.hp)/Math.max(1,c.big0)); } }
       this.score+=pts; },
-    wp:function(h){ let W=this.wep[h.id]; if(!W){ W={t:0,lvl:1,up:0,last:0,h:h}; this.wep[h.id]=W; } return W; },
+    wp:function(h){ let W=this.wep[h.id]; if(!W){ W={t:5,lvl:1,up:0,last:0,h:h}; this.wep[h.id]=W; } return W; },
+    prim:function(){ return window.PRIMHAND||'leftHand'; },
+    spec:function(){ return (this.prim()==='leftHand')?'rightHand':'leftHand'; },
     kracht:function(W){ return ((W.lvl||1)-1)*(W.up?2:1); },
     bolt:function(o,d,col,md,sz){
       for(let i=0;i<this.bolts.length;i++){ const B=this.bolts[i]; if(B.d<B.md) continue;
@@ -1268,10 +1287,11 @@
         const t=vx*d.x+vy*d.y+vz*d.z; if(t<0.6||t>150) continue;
         const qx=vx-d.x*t, qy=vy-d.y*t, qz=vz-d.z*t;
         if(Math.sqrt(qx*qx+qy*qy+qz*qz)<1.5+t*0.014){
-          const W=this.wp(h);
-          if(P.up) W.up=1;
-          else if(W.t===P.k) W.lvl=Math.min(6,(W.lvl||1)+1);
-          else { W.t=P.k; W.up=0; W.lvl=1; }
+          const hp=this.hands[this.prim()]||h, hs=this.hands[this.spec()]||h;
+          if(P.up){ this.wp(hp).up=1; this.wp(hs).up=1; }
+          else if(P.k===5){ const Wp=this.wp(hp); Wp.t=5; Wp.lvl=(Wp.lvl||1)+1; }
+          else { const Ws=this.wp(hs);
+            if(Ws.t===P.k) Ws.lvl=(Ws.lvl||1)+1; else Ws.t=P.k; }
           this.burst(P.m.position.x,P.m.position.y,P.m.position.z,
             this.bcol.setHex(P.up?this.UPCOL:this.WCOL[P.k]),16,20);
           boomSnd(P.m.position.x/9); window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.35);
@@ -1324,6 +1344,16 @@
               if(o.hp<=0){ this.score+=this.kill(G,o,this.waarde(o)); killSnd(p.x/9,o.size||1); }
               else { o.flash=1; this.score+=5; } } } } }
       if(this.boss) this.bossDamage(p.x,p.y,p.z,r*0.7,10); },
+    ultimate:function(h){
+      if(window.PHASE!=='trip'||window.OUTRO) return;
+      if(this.ult||this.ults<=0) return;
+      this.ults--;
+      h.object3D.getWorldPosition(this.ori); h.object3D.getWorldQuaternion(this.q);
+      this.dir.set(0,-0.7071,-0.7071).applyQuaternion(this.q).normalize();
+      this.ult={f:'fly',t:0,d:0,o:this.ori.clone(),dir:this.dir.clone()};
+      this.uMesh.position.copy(this.ori); this.uMesh.scale.setScalar(1);
+      this.uMesh.visible=true;
+      boomSnd(0); },
     fire:function(h){
       if(window.PHASE!=='trip'||window.OUTRO) return;
       const W=this.wp(h), now=performance.now();
@@ -1425,7 +1455,7 @@
 
       // ---- levels en golven; vormen komen er gaandeweg bij ----
       const L=window.LEVEL||0;
-      if(L!==this.level){ this.level=L; this.wave=0; this.waves=(L===0)?999:(10+L*4);
+      if(L!==this.level){ this.level=L; this.wave=0; this.waves=(L===0)?999:(14+L*6);
         this.gap=1.0; this.state='pauze'; if(L===2) this.pickT=16; }
       {
         if(this.state==='pauze'){ this.gap-=s;
@@ -1530,6 +1560,8 @@
           if(G.ent>0){ const e=G.ent*G.ent; x+=G.ex*e; y+=G.ey*e; z+=G.ez*e; }
           const r2=Math.hypot(x,y-1.6), cl=5.0+(c.size||1)*0.6;
           if(Math.abs(z)<14&&r2<cl){ const q=cl/Math.max(0.001,r2); x*=q; y=1.6+(y-1.6)*q; }
+          if(this.suck&&this.suckK>0){ const K=this.suckK, P=this.suck;
+            x+=(P.x-x)*K; y+=(P.y-y)*K; z+=(P.z-z)*K; }
           c.m.position.set(x,y,z);
           this.writeSlot(c.m);
 
@@ -1628,6 +1660,29 @@
       for(let i=0;i<this.zaps.length;i++){ const Z=this.zaps[i];
         if(Z.life>0){ Z.life-=s; if(Z.life<=0) Z.m.visible=false; } }
       for(const k in this.wep){ const W=this.wep[k]; if(W.cool>0) W.cool-=s; }
+      // ---- ultimate ----
+      if(this.ult){ const U=this.ult; U.t+=s;
+        if(U.f==='fly'){ U.d+=46*s;
+          this.uMesh.position.copy(U.o).addScaledVector(U.dir,U.d);
+          this.uMesh.scale.setScalar(1+U.d*0.02);
+          if(U.d>=30){ U.f='suck'; U.t=0; this.suck=this.uMesh.position.clone();
+            this.uRing.position.copy(this.suck); this.uRing.visible=true; boomSnd(0); } }
+        else if(U.f==='suck'){
+          this.suckK=Math.min(1,U.t/1.3);
+          const p=1.9+Math.sin(U.t*9)*0.35+U.t*0.5;
+          this.uMesh.scale.setScalar(p);
+          this.uRing.scale.setScalar(3+U.t*3.4);
+          this.uRing.material.opacity=0.35*(1-U.t/5);
+          if(Math.random()<s*14) this.burst(this.suck.x,this.suck.y,this.suck.z,this.bcol.setHex(0xffd070),2,10);
+          if(U.t>=5){ U.f='boom'; U.t=0;
+            this.fireBlast(this.suck.clone(),24);
+            window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.95);
+            this.burst(this.suck.x,this.suck.y,this.suck.z,this.white,40,44);
+            this.uMesh.visible=false; this.uRing.visible=false; } }
+        else { this.suckK=Math.max(0,1-U.t/1.2);
+          if(U.t>=1.2){ this.suck=null; this.suckK=0; this.ult=null; } } }
+      // ultimate verdienen op punten
+      while((this.score+(this.bonus||0))>=this.nextUlt){ this.ults++; this.nextUlt+=10000; }
       this.bossTick(s);
       if(this.blastLife>0&&this.bosses.length) this.bossDamage(this.blast.position.x,this.blast.position.y,
         this.blast.position.z,this.blast.scale.x,10);
@@ -1636,12 +1691,74 @@
         if(this.imesh[g].instanceColor) this.imesh[g].instanceColor.needsUpdate=true;
         this.idirty[g]=false; }
       const dbg=document.querySelector('#dbgTxt');
-      if(dbg){ let w='';
-        for(const k in this.wep){ const W=this.wep[k];
-          if(W.t>0) w+='  '+this.WNAME[W.t]+' '+W.ammo; }
-        dbg.setAttribute('value','level '+this.level+'   golf '+this.wave+'/'+this.waves+'   knal '+this.expl+w); }
+      if(dbg){ const N=this.WNAME;
+        const naam=function(pre,W){ if(!W) return pre+'-';
+          return pre+(W.t?N[W.t]:'-')+' lvl '+(W.lvl||1)+(W.up?'+':''); };
+        dbg.setAttribute('value','ronde '+this.level+'   golf '+this.wave+'/'+this.waves+
+          '   ultimate x'+this.ults+'\n'+
+          naam('L ',this.wep.leftHand)+'     '+naam('R ',this.wep.rightHand)); }
       }catch(e){ this.dead=true; window.SHOOTDEAD=true; window.onerror('SHOOTER-TICK: '+e.message,'',0,0); } }
   });
+
+  // =========================================================
+  //  SCOREBORD — blijft bewaard in je browser
+  // =========================================================
+  const SLEUTEL='diepetrip_top20';
+  function leesBord(){ try{ const r=localStorage.getItem(SLEUTEL);
+      const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+  function schrijfBord(a){ try{ localStorage.setItem(SLEUTEL,JSON.stringify(a.slice(0,20))); }catch(e){} }
+  function bewaarScore(naam,punten){
+    const a=leesBord(); a.push({n:(naam||'SPELER').slice(0,8),s:punten|0});
+    a.sort(function(x,y){ return y.s-x.s; }); schrijfBord(a); return a.slice(0,20); }
+  let NAAM='';
+  function toonNaam(){ const e=$('#nmNaam');
+    if(e) e.setAttribute('value',NAAM+((NAAM.length<8)?'_':'')); }
+  function bouwToetsen(){
+    const wrap=$('#nameKeys'); if(!wrap||wrap.getAttribute('data-klaar')) return;
+    wrap.setAttribute('data-klaar','1');
+    const rijen=['ABCDEFG','HIJKLMN','OPQRSTU','VWXYZ'];
+    for(let r=0;r<rijen.length;r++){
+      const rij=rijen[r], x0=-(rij.length-1)*0.105;
+      for(let i=0;i<rij.length;i++){
+        const L=rij[i], px=x0+i*0.21, py=1.65-r*0.2;
+        const p=document.createElement('a-plane');
+        p.setAttribute('class','menu-btn');
+        p.setAttribute('position',px+' '+py+' -2.08');
+        p.setAttribute('width','0.17'); p.setAttribute('height','0.17');
+        p.setAttribute('material','color:#2a1442;opacity:0.98;transparent:true');
+        p.addEventListener('click',function(){ if(NAAM.length<8){ NAAM+=L; toonNaam(); } });
+        wrap.appendChild(p);
+        const t=document.createElement('a-text');
+        t.setAttribute('value',L); t.setAttribute('align','center'); t.setAttribute('color','#e6d8ff');
+        t.setAttribute('width','1.5'); t.setAttribute('position',px+' '+py+' -2.07');
+        wrap.appendChild(t); } }
+    const mk=function(px,label,kleur,fn){
+      const p=document.createElement('a-plane');
+      p.setAttribute('class','menu-btn'); p.setAttribute('position',px+' 0.82 -2.08');
+      p.setAttribute('width','0.6'); p.setAttribute('height','0.22');
+      p.setAttribute('material','color:'+kleur+';opacity:0.98;transparent:true');
+      p.addEventListener('click',fn); wrap.appendChild(p);
+      const t=document.createElement('a-text');
+      t.setAttribute('value',label); t.setAttribute('align','center'); t.setAttribute('color','#fff');
+      t.setAttribute('width','2.2'); t.setAttribute('position',px+' 0.82 -2.07'); wrap.appendChild(t); };
+    mk(-0.45,'WIS','#3a1a2a',function(){ NAAM=NAAM.slice(0,-1); toonNaam(); });
+    mk(0.45,'KLAAR','#1f5a3a',function(){ rondAf(); });
+  }
+  function toonBord(lijst){
+    const kol=function(a,van){ let t='';
+      for(let i=van;i<van+10;i++){ const e=a[i];
+        t+=(i+1)+'. '+(e?(e.n+'  '+e.s):'-')+'\n'; } return t; };
+    const l=$('#bdLinks'), r=$('#bdRechts');
+    if(l) l.setAttribute('value',kol(lijst,0));
+    if(r) r.setAttribute('value',kol(lijst,10));
+    $('#namePanel').setAttribute('visible',false);
+    $('#boardPanel').setAttribute('visible',true);
+    window.NAMEDONE=true; }
+  function rondAf(){
+    if(window.NAMEDONE) return;
+    const sc=$('#rig').components.shooter;
+    const punten=sc?((sc.score||0)+(sc.bonus||0)):0;
+    toonBord(bewaarScore(NAAM,punten)); }
 
   // =========================================================
   //  START / EINDE
@@ -1663,14 +1780,21 @@
     document.querySelectorAll('.hand').forEach(function(h){ h.setAttribute('visible',true);
       h.setAttribute('raycaster','objects: .menu-btn; far: 12; lineColor: #ffd98a; lineOpacity: 0.8'); });
     $('#reticle').setAttribute('visible',true);
-    const st=$('#scoreTxt'); const sc=$('#rig').components.shooter;
-    if(st&&sc) st.setAttribute('value','score  '+(sc.score+(sc.bonus||0)));
-    $('#endscreen').setAttribute('visible',true); }
+    const sc=$('#rig').components.shooter;
+    if(sc&&sc.sluitCombo) sc.sluitCombo();
+    const punten=sc?((sc.score||0)+(sc.bonus||0)):0;
+    NAAM=''; window.NAMEDONE=false;
+    bouwToetsen(); toonNaam();
+    const ns=$('#nmScore'); if(ns) ns.setAttribute('value','SCORE  '+punten);
+    const nd=$('#nmDetail');
+    if(nd&&sc) nd.setAttribute('value','geraakt '+(sc.totHits||0)+'      combobonus '+(sc.totBonus||0)+
+      '      beste combo '+(sc.topCombo||0)+'x');
+    $('#namePanel').setAttribute('visible',true); }
   </script>
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v62.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v65.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1689,14 +1813,38 @@
            background="color: #000000">
     <a-entity id="rig" position="0 0 0" shaderworld shooter>
       <a-entity id="menu">
-        <a-plane position="0 1.55 -2.1" width="1.9" height="1.15" material="color:#0a0714;opacity:0.93;transparent:true"></a-plane>
-        <a-plane position="0 1.55 -2.11" width="1.98" height="1.23" material="color:#b04aff;opacity:0.16;transparent:true"></a-plane>
-        <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.2" position="0 1.95 -2.08"></a-text>
-        <a-text value="Zet je geluid aan." align="center" color="#7c8794" width="1.6" position="0 1.63 -2.08"></a-text>
-        <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
-        <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
-        <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v62.1" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-plane position="0 1.5 -2.1" width="2.5" height="2.0" material="color:#0a0714;opacity:0.94;transparent:true"></a-plane>
+        <a-plane position="0 1.5 -2.11" width="2.58" height="2.08" material="color:#b04aff;opacity:0.18;transparent:true"></a-plane>
+        <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.6" position="0 2.32 -2.08"></a-text>
+        <a-text value="Schiet alles kapot terwijl de trip om je heen doorloopt.&#10;Kleine blokken leveren meer punten op dan grote.&#10;Raak binnen 2 seconden weer iets: je combo loopt door.&#10;Hoe langer de combo, hoe hoger je bonus.&#10;&#10;Een hand houdt altijd de mitrailleur.&#10;Schiet mitrailleur-blokken om die sterker te maken.&#10;Je andere hand krijgt het wapen dat je oppikt.&#10;Hetzelfde wapen nog eens pakken maakt het sterker.&#10;Je opgebouwde niveau blijft bij een ander wapen.&#10;Het paarse blok verdubbelt allebei je handen.&#10;&#10;Knijpknop = ultimate: een bal die alles opzuigt&#10;en dan ontploft. Je hebt er 3, en krijgt er&#10;een bij elke 10.000 punten."
+                align="center" color="#9aa8c0" width="1.55" position="0 1.72 -2.08"></a-text>
+        <a-text value="welke hand is je mitrailleur?" align="center" color="#7c8794" width="1.5" position="0 1.02 -2.08"></a-text>
+        <a-plane id="btnLinks" class="menu-btn" position="-0.42 0.88 -2.08" width="0.62" height="0.2" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="LINKS" align="center" color="#fff" width="1.9" position="-0.42 0.88 -2.07"></a-text>
+        <a-plane id="btnRechts" class="menu-btn" position="0.42 0.88 -2.08" width="0.62" height="0.2" material="color:#2a1442;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="RECHTS" align="center" color="#fff" width="1.9" position="0.42 0.88 -2.07"></a-text>
+        <a-plane id="btnStart" class="menu-btn" position="0 0.6 -2.08" width="1.3" height="0.26" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="START" align="center" color="#fff" width="3.4" position="0 0.6 -2.07"></a-text>
+        <a-text id="trkInfo" value="muziek zoeken..." align="center" color="#7c8794" width="1.4" position="0 0.4 -2.07"></a-text>
+        <a-text value="v65.0" align="right" color="#5ad0ff" width="1.3" position="1.15 0.38 -2.07"></a-text>
+      </a-entity>
+      <a-entity id="namePanel" visible="false">
+        <a-plane position="0 1.5 -2.1" width="2.3" height="1.75" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
+        <a-plane position="0 1.5 -2.11" width="2.38" height="1.83" material="color:#b04aff;opacity:0.2;transparent:true"></a-plane>
+        <a-text id="nmScore" value="" align="center" color="#ffd98a" width="3.4" position="0 2.2 -2.08"></a-text>
+        <a-text id="nmDetail" value="" align="center" color="#6ad1a0" width="1.5" position="0 2.06 -2.08"></a-text>
+        <a-text value="je naam" align="center" color="#7c8794" width="1.5" position="0 1.92 -2.08"></a-text>
+        <a-text id="nmNaam" value="_" align="center" color="#ffffff" width="4.2" position="0 1.88 -2.08"></a-text>
+        <a-entity id="nameKeys"></a-entity>
+      </a-entity>
+      <a-entity id="boardPanel" visible="false">
+        <a-plane position="0 1.5 -2.1" width="2.3" height="1.85" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
+        <a-plane position="0 1.5 -2.11" width="2.38" height="1.93" material="color:#b04aff;opacity:0.2;transparent:true"></a-plane>
+        <a-text value="TOP 20" align="center" color="#d8b0ff" width="3.2" position="0 2.28 -2.08"></a-text>
+        <a-text id="bdLinks" value="" align="left" color="#9aa8c0" width="1.45" position="-0.95 1.6 -2.08"></a-text>
+        <a-text id="bdRechts" value="" align="left" color="#9aa8c0" width="1.45" position="0.08 1.6 -2.08"></a-text>
+        <a-plane id="btnAgain2" class="menu-btn" position="0 0.72 -2.08" width="1.2" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="NOG EEN KEER" align="center" color="#fff" width="2.4" position="0 0.72 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
@@ -1716,7 +1864,7 @@
           <a-text id="rndPunten" value="" align="center" color="#6ad1a0" width="2.0" position="0 -0.42 0.01"></a-text>
           <a-text id="rndTotaal" value="" align="center" color="#ffd98a" width="2.6" position="0 -0.62 0.01"></a-text>
         </a-entity>
-        <a-text id="dbgTxt" value="" align="center" color="#4a5560" width="0.7" position="0 -0.62 -1.3"></a-text>
+        <a-text id="dbgTxt" value="" align="center" color="#7d8ba0" width="0.85" position="0 -0.60 -1.3"></a-text>
         <a-text id="errTxt" value="" align="center" color="#ff5a6a" width="1.0" position="0 -0.55 -1.3"></a-text>
         <a-plane id="flash" position="0 0 -0.32" width="2.6" height="2.6" material="color:#dfe8ff;opacity:0;transparent:true;shader:flat"></a-plane>
       </a-camera>
@@ -1738,12 +1886,20 @@
         else { sc.addEventListener('loaded',function(){ window.SCENE_LOADED=true; });
                sc.addEventListener('renderstart',function(){ window.SCENE_LOADED=true; }); }
         tryTrack();
+        window.PRIMHAND=window.PRIMHAND||'leftHand';
+        const kies=function(h){ window.PRIMHAND=h;
+          const L=document.querySelector('#btnLinks'), R=document.querySelector('#btnRechts');
+          if(L) L.setAttribute('material','color:'+(h==='leftHand'?'#5a1f7a':'#2a1442')+';opacity:0.97;transparent:true');
+          if(R) R.setAttribute('material','color:'+(h==='rightHand'?'#5a1f7a':'#2a1442')+';opacity:0.97;transparent:true'); };
+        document.querySelector('#btnLinks').addEventListener('click',function(){ kies('leftHand'); });
+        document.querySelector('#btnRechts').addEventListener('click',function(){ kies('rightHand'); });
         document.querySelector('#btnStart').addEventListener('click',function(){ startTrip(); });
-        document.querySelector('#btnAgain').addEventListener('click',function(){ if(window.PHASE==='end'&&window.ENDOK) location.reload(); });
+        document.querySelector('#btnAgain').addEventListener('click',function(){ if(window.PHASE==='end'&&window.ENDOK&&window.NAMEDONE) location.reload(); });
+        document.querySelector('#btnAgain2').addEventListener('click',function(){ if(window.PHASE==='end'&&window.ENDOK) location.reload(); });
         ['#leftHand','#rightHand'].forEach(function(id){ var h=document.querySelector(id); if(!h) return;
           ['triggerdown','selectstart'].forEach(function(ev){ h.addEventListener(ev,function(){
             if(window.PHASE==='menu') startTrip();
-            else if(window.PHASE==='end'&&window.ENDOK) location.reload(); }); }); });
+            else if(window.PHASE==='end'&&window.ENDOK&&window.NAMEDONE) location.reload(); }); }); });
 
       }catch(e){ var el=document.getElementById('ldErr'); if(el) el.textContent+='FOUT: '+e.message+'\n'; } });
     </script>
