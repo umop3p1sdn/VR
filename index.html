@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v49.2
+  //  DIEPE TRIP v50.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -888,8 +888,7 @@
       const self=this;
       const boltGeo=new THREE.SphereGeometry(0.55,12,10);
       this.bolts=[];
-      for(let i=0;i<16;i++){ const m=new THREE.Mesh(boltGeo,new THREE.MeshBasicMaterial({
-          color:0xc44cff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+      for(let i=0;i<16;i++){ const m=new THREE.Mesh(boltGeo,new THREE.MeshBasicMaterial({color:0xc44cff}));
         m.visible=false; m.renderOrder=8; this.g.add(m);
         this.bolts.push({m:m,o:new THREE.Vector3(),dir:new THREE.Vector3(),d:0,md:0}); }
       // wapensymbolen op de oppikblokken
@@ -916,7 +915,7 @@
           new THREE.MeshBasicMaterial({map:sym(k),color:this.WCOL[k+1]}));
         m.visible=false; m.renderOrder=4; this.g.add(m);
         this.picks.push({m:m,k:k+1,live:false,z:0,x:0,y:0,sp:0}); }
-      this.pickT=40;
+      this.pickT=25; this.pickBag=[];
       // raketten
       const rg=new THREE.CylinderGeometry(0.22,0.10,1.5,8,1); rg.rotateX(Math.PI/2);
       this.rockets=[];
@@ -958,6 +957,8 @@
         const g=A.createGain(); g.gain.value=0; let out=g,p=null;
         if(A.createStereoPanner){ p=A.createStereoPanner(); g.connect(p); out=p; }
         o.connect(fl); fl.connect(g); out.connect(MASTER); o.start(); G.hm={o:o,g:g,p:p}; }catch(e){} },
+    release:function(c){ if(c.freed) return; c.freed=true; c.alive=false;
+      c.m.visible=false; c.m.scale.setScalar(1); this.free.push(c.m); },
     stopHum:function(G){ if(G&&G.hm){ try{ G.hm.o.stop(); }catch(e){}
       try{ G.hm.g.disconnect(); }catch(e){} if(G.hm.p){ try{ G.hm.p.disconnect(); }catch(e){} } G.hm=null; } },
     spawn:function(gi,form){
@@ -1024,6 +1025,7 @@
         for(let i=0;i<n;i++) this.piece(G,i,4.2,2,{split:4,gen:0});
       }
       if(G.laps===undefined){ G.laps=(Math.random()<0.7)?2:1; G.lap=0; }
+      for(let q=0;q<G.cubes.length;q++) G.cubes[q].freed=false;
       if(!G.cubes.length) return false;
       // invliegen vanaf een willekeurige kant, daarna meteen normaal gedrag
       const side=Math.floor(Math.random()*6);
@@ -1119,7 +1121,7 @@
           this.piece(G,0,ns,1,{ind:true,gen:c.gen+1,hits:3,pAge:0,
             vx:Math.cos(a)*4.2,vy:Math.sin(a)*4.2,vz:1.2+Math.random()*1.6,
             px:p.x,py:p.y,pz:p.z}); } }
-      c.m.visible=false; this.free.push(c.m); return pts; },
+      this.release(c); return pts; },
     hit:function(G,c){
       let pts=0; const px=c.m.position.x/9, csz=c.m.scale.x||1;
       if(c.special){
@@ -1136,7 +1138,7 @@
         B.o.copy(o); B.dir.copy(d); B.d=0; B.md=135;
         B.m.material.color.setHex(col);
         B.m.position.copy(o); B.m.lookAt(o.clone().add(d));
-        B.m.material.opacity=1; B.m.scale.set(1,1,3.4); B.m.visible=true; return; } },
+        B.m.scale.set(1,1,2.6); B.m.visible=true; return; } },
     grab:function(o,d,h){
       for(let i=0;i<this.picks.length;i++){ const P=this.picks[i]; if(!P.live) continue;
         const vx=P.m.position.x-o.x, vy=P.m.position.y-o.y, vz=P.m.position.z-o.z;
@@ -1211,9 +1213,8 @@
       const on=(window.PHASE==='trip'&&!window.OUTRO); this.T+=s;
       if(on&&this.held.length) for(let i=0;i<this.held.length;i++) this.fire(this.held[i]);
       for(let i=0;i<this.bolts.length;i++){ const B=this.bolts[i]; if(B.d>=B.md) continue;
-        B.d+=300*s; B.m.position.copy(B.o).addScaledVector(B.dir,B.d);
-        const sc=1+B.d*0.045; B.m.scale.set(sc,sc,sc*3.4);
-        B.m.material.opacity=(B.d<B.md*0.75)?1:Math.max(0,1-(B.d-B.md*0.75)/(B.md*0.25));
+        B.d+=120*s; B.m.position.copy(B.o).addScaledVector(B.dir,B.d);
+        const sc=1+B.d*0.03; B.m.scale.set(sc,sc,sc*2.6);
         if(B.d>=B.md){ B.m.visible=false; } }
       for(let i=0;i<this.shards.length;i++){ const F=this.shards[i]; if(F.life<=0) continue;
         F.life-=s*1.5;
@@ -1231,7 +1232,7 @@
         this.blastD.rotation.y-=s*0.5; this.blastD.rotation.x+=s*0.3;
         if(this.blastLife<=0){ this.blast.visible=false; this.blastW.visible=false; this.blastD.visible=false; } }
       if(!on){ for(let a=0;a<this.groups.length;a++){ const G=this.groups[a]; this.stopHum(G);
-          for(let b=0;b<G.cubes.length;b++){ const c=G.cubes[b]; if(c.alive){ c.alive=false; c.m.visible=false; this.free.push(c.m); } } }
+          for(let b=0;b<G.cubes.length;b++) this.release(G.cubes[b]); }
         this.groups.length=0; this.pending.length=0; this.boss=null; this.bMesh.count=0;
         this.level=0; this.state='wacht'; return; }
 
@@ -1272,7 +1273,8 @@
       for(let a=this.groups.length-1;a>=0;a--){ const G=this.groups[a];
         G.age+=s;
         if(G.ent>0) G.ent=Math.max(0,G.ent-s*1.35);
-        if(G.form==='snake') G.headZ+=G.speed*s;
+        if(G.form==='snake'){ G.headZ+=G.speed*s;
+          if(G.headZ-(G.cubes.length-1)*G.gap>13&&G.lap<G.laps-1){ G.lap++; G.headZ=-64; G.ph+=1.7; } }
         else if(G.form==='grid'){ G.speed-=s*0.5; G.cz+=G.speed*s;
           G.cx=Math.sin(this.T*0.22)*3.6; G.cy=1.6+Math.cos(this.T*0.17)*2.2; }
         else if(G.slide){ G.cx=Math.sin(this.T*G.sw)*15; G.cz+=G.speed*s; }
@@ -1288,9 +1290,7 @@
             x=c.px; y=c.py; z=c.pz;
           } else if(G.form==='snake'){
             z=G.headZ-c.i*G.gap;
-            if(z>16){ if(c.i===G.cubes.length-1&&G.lap<G.laps-1){ G.lap++; G.headZ=-64; G.ph+=1.7; z=G.headZ; }
-              else if(G.lap>=G.laps-1){ c.alive=false; c.m.visible=false; this.free.push(c.m); continue; }
-              else continue; }
+            if(z>13){ this.release(c); continue; }
             x=Math.sin(z*G.fx+G.ph)*G.R; y=1.6+Math.sin(z*G.fy+G.ph2)*G.R2;
           } else if(G.form==='ring'){
             const a2=G.ph+c.i/G.n*6.283;
@@ -1308,7 +1308,7 @@
             const N=G.gw||4;
             x=G.cx+((c.i%N)-(N-1)/2)*G.gap; y=G.cy+(Math.floor(c.i/N)-(N-1)/2)*G.gap; z=G.cz;
           } else { x=G.cx+(c.i?9:-9); y=1.6; z=G.cz; }
-          if(z>18||z<-165){ c.alive=false; c.m.visible=false; this.free.push(c.m); continue; }
+          if(z>13||z<-165){ this.release(c); continue; }
           living++;
           if(G.ent>0){ const e=G.ent*G.ent; x+=G.ex*e; y+=G.ey*e; z+=G.ez*e; }
           const r2=Math.hypot(x,y-1.6), cl=5.0+(c.size||1)*0.6;
@@ -1328,7 +1328,9 @@
         if(G.hm){ const v=Math.pow(Math.max(0,1-minD/22),2)*0.16;
           G.hm.g.gain.value+=(v-G.hm.g.gain.value)*Math.min(1,s*8);
           if(G.hm.p) G.hm.p.pan.value=Math.max(-1,Math.min(1,hx/9)); }
-        if(living===0){ this.stopHum(G); this.groups.splice(a,1); } }
+        if(living===0){ this.stopHum(G);
+          for(let b=0;b<G.cubes.length;b++) this.release(G.cubes[b]);
+          this.groups.splice(a,1); } }
       // brokstukken die iets raken slopen het, en kunnen doorvliegen
       for(let i=0;i<proj.length;i++){ const P=proj[i]; if(!P.c.alive) continue;
         const pp=P.c.m.position;
@@ -1358,8 +1360,11 @@
       // oppikblokken
       if(on){ this.pickT-=s;
         if(this.pickT<=0){ this.pickT=55+Math.random()*22;
-          const vrij=[];
-          for(let i=0;i<this.picks.length;i++) if(!this.picks[i].live) vrij.push(i);
+          if(!this.pickBag.length){ this.pickBag=[1,2,3];
+            for(let i=2;i>0;i--){ const j=Math.floor(Math.random()*(i+1));
+              const t2=this.pickBag[i]; this.pickBag[i]=this.pickBag[j]; this.pickBag[j]=t2; } }
+          const kind=this.pickBag.pop(), vrij=[];
+          for(let i=0;i<this.picks.length;i++) if(!this.picks[i].live&&this.picks[i].k===kind) vrij.push(i);
           if(vrij.length){ const P=this.picks[vrij[Math.floor(Math.random()*vrij.length)]];
             P.live=true; P.m.visible=true; P.sp=4+Math.random()*3;
             P.x=(Math.random()-0.5)*16; P.y=1.6+(Math.random()-0.5)*9; P.z=-58; } } }
@@ -1447,7 +1452,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v49.2</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v50.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1473,7 +1478,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v49.2" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v50.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
