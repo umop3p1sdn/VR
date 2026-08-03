@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v35.0
+  //  DIEPE TRIP v35.1
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -54,6 +54,15 @@
   let A=null,MASTER=null,DUCK=null,DELAY=null,DRONE=null;
   let PLAY=[], PIDX=0, CUR=null, ANA=null, ANAD=null;
   const TRACK_URLS=['Music/Track.mp3','music/Track.mp3','Music/Track2.mp3','Music/Track1.mp3'];
+  function AC(){ if(A) return A; A=new (window.AudioContext||window.webkitAudioContext)();
+    MASTER=A.createGain(); MASTER.gain.value=0.5; MASTER.connect(A.destination);
+    DUCK=A.createGain(); DUCK.gain.value=1; DUCK.connect(MASTER);
+    DELAY=A.createDelay(1.2); DELAY.delayTime.value=0.32;
+    const fb=A.createGain(); fb.gain.value=0.42;
+    const fl=A.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=3200;
+    const dw=A.createGain(); dw.gain.value=0.5;
+    DELAY.connect(fl).connect(fb).connect(DELAY); DELAY.connect(dw).connect(DUCK);
+    return A; }
   function markFound(){ const el=$('#trkInfo'); if(!el) return;
     if(!PLAY.length){ el.setAttribute('value','muziek zoeken...'); el.setAttribute('color','#c08a5a'); return; }
     el.setAttribute('value',PLAY.length+' track'+(PLAY.length>1?'s':'')+': '+PLAY[0].name);
@@ -1091,7 +1100,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v35.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v35.1</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1117,7 +1126,7 @@
         <a-text id="trkInfo" value="tracks zoeken..." align="center" color="#7c8794" width="1.5" position="0 1.52 -2.08"></a-text>
         <a-plane id="btnStart" class="menu-btn" position="0 1.3 -2.08" width="1.3" height="0.34" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.4" position="0 1.3 -2.07"></a-text>
-        <a-text value="v35.0" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
+        <a-text value="v35.1" align="right" color="#5ad0ff" width="1.4" position="0.86 1.02 -2.07"></a-text>
       </a-entity>
       <a-entity id="endscreen" visible="false">
         <a-plane position="0 1.55 -2.1" width="1.9" height="1.05" material="color:#0a0714;opacity:0.95;transparent:true"></a-plane>
