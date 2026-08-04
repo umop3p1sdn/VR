@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v84.1
+  //  DIEPE TRIP v85.2
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1314,6 +1314,11 @@
         if(!c) break; }
       if(G.cubes.length) this.groups.push(G); },
     baasNamen:['','STARFISH','TWIN ORBS','BURGER','MEGA SNAKE','FIVE CUBES','SPIN CUBE','RING CASTER','THE FINAL'],
+    tekenBuffers:function(){
+      for(let g=0;g<this.imesh.length;g++){ if(!this.idirty[g]) continue;
+        this.imesh[g].instanceMatrix.needsUpdate=true;
+        if(this.imesh[g].instanceColor) this.imesh[g].instanceColor.needsUpdate=true;
+        this.idirty[g]=false; } },
     lesTekst:function(a,b){
       const t1=document.querySelector('#lesTxt'), t2=document.querySelector('#lesSub');
       if(t1) t1.setAttribute('value',a||''); if(t2) t2.setAttribute('value',b||''); },
@@ -1346,62 +1351,75 @@
     lesDoos:function(k){
       for(let i=0;i<this.picks.length;i++){ const P=this.picks[i];
         if(P.live||P.k!==k) continue;
-        P.live=true; P.m.visible=true; P.sp=2.2; P.x=0; P.y=1.6; P.z=-34; return; } },
+        P.live=true; P.m.visible=true; P.sp=1.6; P.x=0; P.y=1.6; P.z=-26; return; } },
+    lesVul:function(min){
+      let b=0;
+      for(let a=0;a<this.groups.length;a++)
+        for(let c=0;c<this.groups[a].cubes.length;c++) if(this.groups[a].cubes[c].alive) b++;
+      if(b>=min) return;
+      this.level=4;
+      if(!this.groups.some(function(g){ return g.form==='kern'; })) this.spawn(0,'kern');
+      this.spawn(1,'snake'); this.spawn(2,'snake'); this.spawn(3,'zwerm'); },
     lesTick:function(s){
-      if(this.les===undefined){ this.les=0; this.lesT=0; this.lesN=0; this.ults=Math.max(this.ults,4);
+      if(this.les===undefined){ this.les=0; this.lesT=0; this.lesN=0; this.lesHands={};
+        this.level=4; this.ults=Math.max(this.ults,4);
         const e=document.querySelector('#lesSkip'); if(e) e.setAttribute('visible',true); }
       this.lesT+=s;
       const prim=this.prim(), spec=this.spec();
       let blokken=0;
       for(let a=0;a<this.groups.length;a++)
         for(let b=0;b<this.groups[a].cubes.length;b++) if(this.groups[a].cubes[b].alive) blokken++;
+      const H=this.lesHands||{};
       switch(this.les){
-        case 0:
-          this.lesTekst('PULL THE TRIGGER','shoot with either hand');
+        case 0:                                   // beide triggers
           this.lesRing('both','trigger');
-          if(this.lesSchot){ this.les=1; this.lesT=0; this.lesSchot=0; }
+          if(!H.leftHand&&!H.rightHand) this.lesTekst('PULL BOTH TRIGGERS','left and right');
+          else if(!H.leftHand) this.lesTekst('NOW THE LEFT TRIGGER','');
+          else if(!H.rightHand) this.lesTekst('NOW THE RIGHT TRIGGER','');
+          if(H.leftHand&&H.rightHand){ this.lesLeeg(); this.les=1; this.lesT=0; this.lesN=0; }
           break;
-        case 1:
+        case 1:                                   // slangen opruimen
           this.lesRing('none');
           if(this.lesT<0.4) break;
-          if(!this.lesN){ this.spawn(0,'snake'); this.lesN=1; }
-          this.lesTekst('DESTROY THE WHOLE SNAKE','clear every block for a PERFECT');
+          if(!this.lesN){ this.spawn(0,'snake'); this.spawn(1,'snake'); this.lesN=1; }
+          this.lesTekst('DESTROY THE SNAKES','clear every block for a PERFECT');
           if(this.lesN&&blokken===0){ this.toonPerfect(500); this.score+=500;
             this.lesLeeg(); this.les=2; this.lesT=0; this.lesN=0; }
           break;
-        case 2:
-          this.lesTekst('SHOOT THE WEAPON BOX','it arms your other hand');
-          if(!this.lesN){ this.lesDoos(1); this.lesN=1; }
-          if(this.wep[spec]&&this.wep[spec].t>=1&&this.wep[spec].t<=4){ this.lesLeeg(); this.les=3; this.lesT=0; this.lesN=0; }
-          break;
-        case 3:
-          this.lesTekst('GRAB THE SAME WEAPON AGAIN','same weapon = level up');
-          if(!this.lesN){ this.lesDoos(1); this.lesN=1; }
-          if(this.wep[spec]&&(this.wep[spec].lvl||1)>=2){ this.lesLeeg(); this.les=4; this.lesT=0; this.lesN=0; }
-          break;
-        case 4:
-          if(!this.lesN){ this.spawn(0,'snake'); this.spawn(1,'snake'); this.lesN=1; }
-          this.lesTekst('SQUEEZE THE GRIP','machine gun hand: 50 homing rockets find their own targets');
+        case 2:                                   // ultimate op je hoofdhand
+          this.lesVul(120);
           this.lesRing(prim,'grip');
-          if(this.ultRak||this.lesUlt===prim){ this.les=5; this.lesT=0; this.lesUlt=0; this.lesN=0; }
+          this.lesTekst('SQUEEZE THE GRIP','each hand has its own ultimate - start with your machine gun hand');
+          if(this.ultRak||this.lesUlt===prim){ this.les=3; this.lesT=0; this.lesUlt=0; }
           break;
-        case 5:
-          if(this.ultRak){ this.lesTekst('NICE','wait for the salvo to finish'); this.lesRing('none'); break; }
-          if(!this.lesN){ this.spawn(0,'snake'); this.spawn(2,'zwerm'); this.spawn(1,'snake'); this.lesN=1; }
+        case 3:                                   // ultimate op je andere hand
+          if(this.ultRak){ this.lesTekst('NICE','50 homing rockets, each on its own target');
+            this.lesRing('none'); break; }
+          this.lesVul(140);
           this.lesRing(spec,'grip');
-          if(!this.lesUlt&&!this.ult)
-            this.lesTekst('NOW THE OTHER HAND','the orb pulls them into one clump');
+          if(!this.lesUlt&&!this.ult) this.lesTekst('NOW THE OTHER HAND','this one pulls them into one clump');
           else this.lesTekst('SHOOT THE CLUMP','bunched up they are easy to hit');
           if(this.lesUlt===spec&&!this.ult&&this.lesT>2){
-            this.les=6; this.lesT=0; this.lesUlt=0; this.lesN=0;
-            for(let a=this.groups.length-1;a>=0;a--){ const G=this.groups[a]; this.stopHum(G);
-              for(let b=0;b<G.cubes.length;b++) this.release(G.cubes[b]); this.groups.splice(a,1); } }
+            this.lesLeeg(); this.les=4; this.lesT=0; this.lesUlt=0; this.lesN=0; }
           break;
-        case 6:
+        case 4:                                   // wapen oppakken
           this.lesRing('none');
-          if(!this.lesN){ this.baasSpawn(1); this.lesN=1; }
+          this.lesTekst('SHOOT THE WEAPON BOX','it arms your other hand');
+          if(!this.picks.some(function(p){ return p.live; })) this.lesDoos(1);
+          if(this.wep[spec]&&this.wep[spec].t>=1&&this.wep[spec].t<=4){
+            this.lesLeeg(); this.les=5; this.lesT=0; this.lesN=0; }
+          break;
+        case 5:                                   // upgraden
+          this.lesTekst('GRAB THE SAME WEAPON AGAIN','same weapon = level up');
+          if(!this.picks.some(function(p){ return p.live; })) this.lesDoos(1);
+          if(this.wep[spec]&&(this.wep[spec].lvl||1)>=2){
+            this.lesLeeg(); this.les=6; this.lesT=0; this.lesN=0; }
+          break;
+        case 6:                                   // demo-baas
+          if(!this.lesN){ this.level=1; this.baasSpawn(1); this.lesN=1; }
           this.lesTekst('BOSS: ARMS FIRST, THEN THE CORE','the core is shielded while arms remain');
-          if(this.lesN&&!this.groups.some(function(g){ return g.form==='baas'; })){ this.lesLeeg(); this.les=7; this.lesT=0; }
+          if(this.lesN&&!this.groups.some(function(g){ return g.form==='baas'; })){
+            this.lesLeeg(); this.les=7; this.lesT=0; }
           break;
         default:
           this.lesTekst('READY','the trip begins');
@@ -1749,6 +1767,7 @@
     fire:function(h){
       if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.OUTRO||window.PAUSED) return;
       const W=this.wp(h), now=performance.now(); this.lesSchot=1;
+      if(!this.lesHands) this.lesHands={}; this.lesHands[h.id]=1;
       const CD=[110,760,360,1100,300,60];
       const snel=((W.t===5||W.t===0)?(1/(1+0.12*this.kracht(W))):1);
       if(now-W.last<CD[W.t]*snel) return;
@@ -1878,14 +1897,15 @@
         this.level=0; this.state='wacht'; return; }
 
       // ---- levels en golven; vormen komen er gaandeweg bij ----
-      const L=(window.PHASE==='les')?-9:(window.LEVEL||0);
-      if(L<=0){ if(this.groups.length){
+      const les=(window.PHASE==='les');
+      const L=(window.LEVEL||0);
+      if(!les&&L<=0){ if(this.groups.length){
           for(let a3=this.groups.length-1;a3>=0;a3--){ const G3=this.groups[a3]; this.stopHum(G3);
             for(let b3=0;b3<G3.cubes.length;b3++) this.release(G3.cubes[b3]); this.groups.splice(a3,1); } }
         this.level=L; this.wave=0; this.waves=0; this.state='wacht'; }
       else if(L!==this.level){ this.level=L; this.wave=0; this.waves=(18+L*2);
         this.gap=1.0; this.state='pauze'; if(L===2) this.pickT=16; }
-      {
+      if(!les){
         if(this.state==='pauze'){ this.gap-=s;
           if(this.gap<=0){ this.wave++; this.ontsnapt=0;
             let menu=(this.level<=0)?['snake']:['snake','kern'];
@@ -2214,10 +2234,7 @@
       this.bossTick(s);
       if(this.blastLife>0&&this.bosses.length) this.bossDamage(this.blast.position.x,this.blast.position.y,
         this.blast.position.z,this.blast.scale.x,10);
-      for(let g=0;g<this.imesh.length;g++){ if(!this.idirty[g]) continue;
-        this.imesh[g].instanceMatrix.needsUpdate=true;
-        if(this.imesh[g].instanceColor) this.imesh[g].instanceColor.needsUpdate=true;
-        this.idirty[g]=false; }
+      this.tekenBuffers();
       const dbg=document.querySelector('#dbgTxt');
       if(dbg){ const N=this.WNAME;
         const naam=function(pre,W){ if(!W) return pre+'-';
@@ -2358,7 +2375,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v84.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v85.2</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -2397,7 +2414,7 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v84.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v85.2" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
         <a-plane id="btnSkip" class="menu-btn" position="1.35 1.15 -2.0" width="0.8" height="0.18" material="color:#2a1442;opacity:0.95;transparent:true"></a-plane>
