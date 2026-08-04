@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v73.0
+  //  DIEPE TRIP v75.4
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1100,6 +1100,13 @@
         G.tilt=(Math.random()-0.5)*1.3; G.spin=(Math.random()<0.5?-1:1)*(0.25+Math.random()*0.45); G.slide=(Math.random()<0.4); G.sw=0.18+Math.random()*0.12;
         G.speed=G.slide?1.2:(5.5+Math.random()*3); G.cz=G.slide?-24:-48;
         for(let i=0;i<n;i++) this.piece(G,i,size,this.taai());
+      } else if(form==='bol'){
+        if(vrij<14) return false;
+        G.size=3.8; G.speed=0; G.laps=1; G.lap=0;
+        G.bx=0; G.by=1.6; G.bz=-40; G.tx=0; G.ty=1.6; G.tz=-40;
+        G.lanceer=2.2; G.ph=0;
+        const c0=this.piece(G,0,3.8,4,{baas:1});
+        if(!c0) return false;
       } else if(form==='kern'){
         const L1=[[3,3,3],[3,3,3],[3,5,3],[5,3,3]];
         const L2=[[3,3,3],[3,5,3],[5,3,3],[5,5,3],[3,3,5],[5,3,5]];
@@ -1280,7 +1287,7 @@
       if(sz<1.5) this.klein=(this.klein||0)+1; else this.groot=(this.groot||0)+1; },
     miniSlang:function(x,y,z,gi){
       if(this.ifree[gi].length<6) return;
-      const G={form:'mini',gi:gi,cubes:[],cx:0,cy:1.6,cz:z,ph:0,age:0,laps:1,lap:0,
+      const G={form:'mini',gi:gi,cubes:[],cx:0,cy:1.6,cz:z,ph:0,age:0,laps:1,lap:0,speed:0,
         hue:this.themaHue(),hueSp:0.06,match:false,size:0.7};
       // eerst weg van de slang, daarna draaien ze naar je toe
       const wa=Math.random()*6.283, wsp=9+Math.random()*5;
@@ -1292,7 +1299,185 @@
           vx:wx*wsp, vy:wy*wsp, vz:wz*wsp});
         if(!c) break; }
       if(G.cubes.length) this.groups.push(G); },
+    baasNamen:['','ZEESTER','TWEELINGBOLLEN','HAMBURGER','MEGASLANG','VIJF KUBUSSEN','DRAAIKUBUS','RINGSCHIETER','ALLES'],
+    baasSpawn:function(t){
+      const G={form:'baas',bt:t,gi:Math.max(0,this.level-1),cubes:[],age:0,fase:0,tim:0,ph:0,speed:0,
+        cx:0,cy:1.6,cz:-42,tx:0,ty:1.6,tz:-42,laps:1,lap:0,size:2,
+        hue:this.themaHue(),hueSp:0.03,match:false,leeg:1};
+      const kern=function(S,hp,gr){ return S.piece(G,0,gr,hp,{kern:1}); };
+      if(t===1){ if(!kern(this,20,3.2)) return false;
+        G.armen=6; G.armLen=8;
+        for(let a=0;a<G.armen;a++) for(let i=0;i<G.armLen;i++)
+          this.piece(G,1+a*G.armLen+i,1.1,2,{arm:a,pos:i}); }
+      else if(t===2){ if(!kern(this,50,3.4)) return false; G.tweede=1;
+        const K2=this.piece(G,1,3.4,50,{kern:2}); if(K2){ K2.bx=14; } }
+      else if(t===3){ if(!kern(this,150,3.0)) return false;
+        for(let i=0;i<24;i++) this.piece(G,1+i,1.3,20,{schil:1,idx:i}); }
+      else if(t===4){ G.slang=1;
+        for(let i=0;i<8;i++) this.piece(G,i,2.2,50,{bal:i,kern:1}); }
+      else if(t===5){ G.kubs=5;
+        for(let k=0;k<5;k++){ this.piece(G,k*40,1.8,150,{kern:1,kub:k});
+          for(let i=0;i<26;i++) this.piece(G,k*40+1+i,1.0,2,{kub:k,schil:1,idx:i}); } }
+      else if(t===6){ if(!kern(this,350,3.4)) return false;
+        for(let i=0;i<48;i++) this.piece(G,1+i,1.0,3,{schil:1,idx:i}); }
+      else if(t===7){ if(!kern(this,500,2.8)) return false; G.snel=1; }
+      else { if(!kern(this,200,3.0)) return false; G.eind=1; G.beurt=1; }
+      if(!G.cubes.length) return false;
+      G.maxhp=0; for(let i=0;i<G.cubes.length;i++) if(G.cubes[i].kern) G.maxhp+=G.cubes[i].hp;
+      G.hp0=G.maxhp;
+      this.groups.push(G);
+      const bb=document.querySelector('#baasBalk'); if(bb) bb.setAttribute('visible',true);
+      const bn=document.querySelector('#baasNaam');
+      if(bn) bn.setAttribute('value',this.baasNamen[Math.max(1,Math.min(8,t))]);
+      boomSnd(0); window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.7);
+      return true; },
+    werpBaas:function(G,c,snel){
+      const q=c.m.position;
+      c.ind=1; c.hurt=1; c.px=q.x; c.py=q.y; c.pz=q.z;
+      const dx=-q.x, dy=1.6-q.y, dz=-q.z;
+      const L=Math.max(0.001,Math.sqrt(dx*dx+dy*dy+dz*dz)), sp=snel||14;
+      c.vx=dx/L*sp; c.vy=dy/L*sp; c.vz=dz/L*sp; gunSnd(q.x/9); },
+    baasTick:function(G,s){
+      G.age+=s; G.tim-=s; G.ph+=s*(G.snel?1.6:0.7);
+      const t=G.bt, E=G.age;
+      const k=Math.min(1,s*2.2);
+      G.cx+=(G.tx-G.cx)*k; G.cy+=(G.ty-G.cy)*k; G.cz+=(G.tz-G.cz)*k;
+      let kernLeeft=0, schilLeeft=0;
+      for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+        if(c.kern) kernLeeft++; else schilLeeft++; }
+      if(t===1){                                   // zeester
+        for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+          if(c.kern){ c.bx=G.cx; c.by=G.cy; c.bz=G.cz; }
+          else { const a=G.ph+c.arm*(6.283/G.armen), r=3.2+c.pos*1.5;
+            c.bx=G.cx+Math.cos(a)*r; c.by=G.cy+Math.sin(a)*r; c.bz=G.cz+Math.sin(a*0.7)*1.5; } }
+        if(G.tim<=0){ G.tim=2.6;
+          let n=0;
+          for(let i=G.cubes.length-1;i>=0&&n<3;i--){ const c=G.cubes[i];
+            if(c.alive&&!c.ind&&!c.kern){ this.werpBaas(G,c,9); n++; } } } }
+      else if(t===2){                              // twee bollen die wegflitsen
+        for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+          if(c.kern){ c.bx=(c.kern===2?G.cx+13:G.cx-13); c.by=G.cy; c.bz=G.cz; }
+          else { const a=G.ph*2+c.i*0.8, r=c.baan||6;
+            const b=G.cubes[c.bij||0];
+            c.bx=(b?b.bx:0)+Math.cos(a)*r; c.by=(b?b.by:1.6)+Math.sin(a)*r*0.8; c.bz=(b?b.bz:G.cz); } }
+        if(G.tim<=0){ G.tim=1.1;
+          for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i];
+            if(c.alive&&!c.ind&&!c.kern){ this.werpBaas(G,c,17); break; } } } }
+      else if(t===3){                              // hamburger
+        if(G.fase===0&&schilLeeft===0){ G.fase=1; G.tim=4.0; }
+        if(G.fase===1&&G.tim<=0){ G.fase=2; G.tim=3.0;
+          for(let r=0;r<12;r++){ const c=this.piece(G,900+r,1.2,1,{});
+            if(!c) break; const a=r*0.5236;
+            c.ind=1; c.hurt=1; c.px=G.cx; c.py=G.cy; c.pz=G.cz;
+            c.vx=Math.cos(a)*10; c.vy=Math.sin(a)*10; c.vz=6; }
+          boomSnd(0); }
+        if(G.fase===2&&G.tim<=0){ G.fase=0;
+          for(let i=0;i<24;i++) this.piece(G,1+i,1.3,20,{schil:1,idx:i}); }
+        const open=(G.fase>0)?3.2:0;
+        for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+          if(c.kern){ c.bx=G.cx; c.by=G.cy; c.bz=G.cz; }
+          else { const rij=(c.idx<12)?1:-1, j=c.idx%12, a=G.ph*0.4+j*0.5236;
+            c.bx=G.cx+Math.cos(a)*5.0; c.by=G.cy+rij*(2.0+open); c.bz=G.cz+Math.sin(a)*5.0; } } }
+      else if(t===4){                              // megaslang
+        const sn=(Math.sin(E*0.3)>0.5)?2.4:1.0;
+        G.kop=(G.kop||0)+s*7*sn;
+        for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+          const T=G.kop-c.bal*3.2;
+          c.bx=Math.sin(T*0.08)*17; c.by=1.6+Math.sin(T*0.06+1.2)*9; c.bz=-34+Math.cos(T*0.05)*16; }
+        if(G.tim<=0){ G.tim=3.2;
+          for(let r=0;r<6;r++){ const c=this.piece(G,800+r,1.1,1,{broedbal:1});
+            if(!c) break; const b=G.cubes[r%8];
+            c.ind=1; c.hurt=1; c.px=(b?b.bx:0); c.py=(b?b.by:1.6); c.pz=(b?b.bz:-40);
+            const dx=-c.px, dy=1.6-c.py, dz=-c.pz, L=Math.max(0.001,Math.sqrt(dx*dx+dy*dy+dz*dz));
+            c.vx=dx/L*12; c.vy=dy/L*12; c.vz=dz/L*12; } } }
+      else if(t===5){                              // vijf kubussen
+        for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+          const a=G.ph*0.5+c.kub*1.2566, R=15;
+          const cx=Math.cos(a)*R, cy=1.6+Math.sin(a)*R*0.6, cz=-40+Math.sin(a*1.7)*8;
+          if(c.kern){ c.bx=cx; c.by=cy; c.bz=cz; }
+          else { const ix=(c.idx%3)-1, iy=(Math.floor(c.idx/3)%3)-1, iz=Math.floor(c.idx/9)-1;
+            c.bx=cx+ix*1.9; c.by=cy+iy*1.9; c.bz=cz+iz*1.9; } }
+        if(G.tim<=0){ G.tim=2.4;
+          let n=0;
+          for(let i=0;i<G.cubes.length&&n<4;i++){ const c=G.cubes[i];
+            if(c.alive&&!c.ind&&!c.kern){ this.werpBaas(G,c,13); n++; } }
+          if(schilLeeft<6) for(let k2=0;k2<5;k2++) for(let i=0;i<8;i++)
+            this.piece(G,k2*40+1+i,1.0,2,{kub:k2,schil:1,idx:i}); } }
+      else if(t===6){                              // draaikubus
+        for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+          if(c.kern){ c.bx=G.cx; c.by=G.cy; c.bz=G.cz; }
+          else { const a=G.ph*3+c.idx*0.6, r=5.5+Math.sin(G.ph*2+c.idx)*1.5;
+            c.bx=G.cx+Math.cos(a)*r; c.by=G.cy+Math.sin(a)*r; c.bz=G.cz+Math.sin(a*2.1)*r*0.5; } }
+        if(G.tim<=0){ G.tim=1.8;
+          let n=0;
+          for(let i=0;i<G.cubes.length&&n<6;i++){ const c=G.cubes[i];
+            if(c.alive&&!c.ind&&!c.kern){ this.werpBaas(G,c,15); n++; } }
+          if(schilLeeft<10) for(let i=0;i<24;i++) this.piece(G,1+i,1.0,3,{schil:1,idx:i}); } }
+      else if(t===7){                              // ringschieter
+        G.tx=Math.sin(E*0.6)*20; G.ty=1.6+Math.cos(E*0.45)*10; G.tz=-30-Math.abs(Math.sin(E*0.3))*20;
+        for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+          c.bx=G.cx; c.by=G.cy; c.bz=G.cz; }
+        if(G.tim<=0){ G.tim=2.2;
+          for(let r=0;r<8;r++){ const c=this.piece(G,700+r,1.4,5,{});
+            if(!c) break; const a=r*0.7854;
+            c.ind=1; c.hurt=1; c.px=G.cx+Math.cos(a)*3; c.py=G.cy+Math.sin(a)*3; c.pz=G.cz;
+            const dx=-c.px, dy=1.6-c.py, dz=-c.pz, L=Math.max(0.001,Math.sqrt(dx*dx+dy*dy+dz*dz));
+            c.vx=dx/L*19; c.vy=dy/L*19; c.vz=dz/L*19; } } }
+      else {                                       // ronde 8: alle bazen op volgorde, dan de tunnel
+        for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind) continue;
+          if(c.kern){ c.bx=G.cx; c.by=G.cy; c.bz=G.cz; }
+          else { const a=G.ph*2+c.i*0.4, r=4+ (c.ring||0)*2.2;
+            c.bx=G.cx+Math.cos(a)*r; c.by=G.cy+Math.sin(a)*r; c.bz=(c.tz!==undefined)?c.tz:G.cz; } }
+        if(G.tim<=0&&G.beurt<8){ G.beurt++; G.tim=6.0;
+          for(let r=0;r<8;r++){ const c=this.piece(G,600+G.beurt*10+r,1.3,3,{ring:r%3});
+            if(c){ c.ind=1; c.hurt=1; c.px=G.cx; c.py=G.cy; c.pz=G.cz;
+              const a=r*0.7854; c.vx=Math.cos(a)*9; c.vy=Math.sin(a)*9; c.vz=8; } } }
+        if(G.beurt>=8&&!G.tunnel){ G.tunnel=1; G.tz=-26; boomSnd(0);
+          for(let ring=0;ring<10;ring++) for(let j=0;j<10;j++)
+            this.piece(G,1000+ring*10+j,1.2,1+Math.floor(ring*0.6),{tun:1,ring:ring,hoek:j}); }
+        if(G.tunnel){ G.knijp=Math.max(3.5,10-(G.age-(G.tunT||(G.tunT=G.age)))*0.25);
+          for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(!c.alive||c.ind||!c.tun) continue;
+            const a=c.hoek*0.6283+G.ph*0.3;
+            c.bx=Math.cos(a)*G.knijp; c.by=1.6+Math.sin(a)*G.knijp; c.bz=-4-c.ring*3.2; } } }
+      // krachtbalk bijwerken
+      let hpNu=0; for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i];
+        if(c.kern&&c.alive) hpNu+=c.hp; }
+      const vul=document.querySelector('#baasVul');
+      if(vul){ const f=Math.max(0,Math.min(1,hpNu/Math.max(1,G.hp0)));
+        vul.setAttribute('width',(1.2*f).toFixed(3));
+        vul.setAttribute('position',(-(1.2*(1-f))/2).toFixed(3)+' 0.42 -1.59'); }
+      if(kernLeeft===0){ const bb=document.querySelector('#baasBalk');
+        if(bb) bb.setAttribute('visible',false);
+        this.score+=2000;
+        for(let i=0;i<G.cubes.length;i++) this.release(G.cubes[i]);
+        this.fireBlast(new THREE.Vector3(G.cx,G.cy,G.cz),26);
+        window.SHOOTFLASH=1; return true; }
+      return false; },
+    baasKernGeraakt:function(G,c){
+      const t=G.bt;
+      if(t===2){                                   // flitst weg en roept beschermers
+        G.tx=(Math.random()-0.5)*26; G.ty=1.6+(Math.random()-0.5)*13;
+        G.tz=-28-Math.random()*24;
+        G.cx=G.tx; G.cy=G.ty; G.cz=G.tz;           // bijna teleport
+        let n=0;
+        for(let i=0;i<G.cubes.length&&n<4;i++){ if(G.cubes[i].alive&&!G.cubes[i].kern&&!G.cubes[i].ind) n++; }
+        if(n<8){ const idx=G.cubes.indexOf(c);
+          for(let r=0;r<4;r++) this.piece(G,50+G.cubes.length,1.1,1,{bij:idx,baan:5+Math.random()*2}); }
+        boomSnd(c.m.position.x/9); }
+      else if(t===7){                              // schiet razendsnel naar een nieuwe plek
+        G.cx=Math.sin(G.age*3.1)*22; G.cy=1.6+Math.cos(G.age*2.3)*11; G.cz=-28-Math.random()*22; }
+      else if(t===4){ G.kop+=6; }                  // slang schiet vooruit
+    },
+    balGeraakt:function(G,c){
+      G.tx=(Math.random()-0.5)*30; G.ty=1.6+(Math.random()-0.5)*15;
+      G.tz=-26-Math.random()*26;
+      const n6=6+Math.floor(Math.random()*3);
+      for(let i=0;i<n6;i++) this.piece(G,i+1,1.0,1,{baan:5.5+Math.random()*2.5});
+      boomSnd(c.m.position.x/9);
+      window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.35); },
     kill:function(G,c,pts){ if(!c.alive) return 0; c.alive=false;
+      if(c.baas){ for(let i=0;i<G.cubes.length;i++){ const o=G.cubes[i];
+        if(o!==c&&o.alive&&!o.ind) this.release(o); } }
       const p=c.m.position, col=c.m.material.color;
       this.burst(p.x,p.y,p.z,col,c.big0>=2?14:7,(c.big0>=2?18:11));
       if(G.broed&&!c.ind&&this.groups.length<9) this.miniSlang(p.x,p.y,p.z,G.gi);
@@ -1313,7 +1498,9 @@
         this.pending.push({p:p,t:0});
       } else { c.hp=(c.hp||1)-1;
         if(c.hp<=0){ pts+=this.kill(G,c,this.waarde(c)); killSnd(px,csz); }
-        else { c.flash=1; pts+=5; hitSnd(px,(c.big0-c.hp)/Math.max(1,c.big0)); } }
+        else { c.flash=1; pts+=5; hitSnd(px,(c.big0-c.hp)/Math.max(1,c.big0));
+          if(c.baas) this.balGeraakt(G,c);
+          else if(G.form==='baas'&&c.kern) this.baasKernGeraakt(G,c); } }
       this.score+=pts; },
     wp:function(h){ let W=this.wep[h.id]; if(!W){ W={t:5,lvl:1,up:0,last:0,h:h}; this.wep[h.id]=W; } return W; },
     prim:function(){ return window.PRIMHAND||'leftHand'; },
@@ -1402,7 +1589,7 @@
         for(let b=0;b<G.cubes.length;b++) this.release(G.cubes[b]); }
       this.groups.length=0;
       const inf=document.querySelector('#ovInfo');
-      if(inf) inf.setAttribute('value','score '+(this.score+(this.bonus||0))+
+      if(inf) inf.setAttribute('value','score '+(this.score+(this.totBonus||0)+(this.bonus||0))+
         (this.levens>0?('        nog '+this.levens+' keer verder'):'        geen levens meer'));
       const ja=document.querySelector('#btnJa');
       if(ja) ja.setAttribute('material','color:'+(this.levens>0?'#1f5a3a':'#2a2a2a')+';opacity:0.97;transparent:true');
@@ -1586,7 +1773,7 @@
               const gi2=this.level-1;
               const k2=Math.min((this.level<=1)?1:((this.level<=3)?2:3),uniq.length);
               for(let i=0;i<k2;i++) this.spawn(gi2+i,uniq[i]);
-              if(this.level>=3&&Math.random()<0.22){ this.spawnBoss(); if(this.level>=8) this.spawnBoss(); }
+              this.baasSpawn(Math.max(1,Math.min(8,this.level)));
               if(this.level>=2) for(let i=0;i<this.picks.length;i++){ const P=this.picks[i]; if(P.live) continue;
                 P.live=true; P.m.visible=true; P.sp=4;
                 const a3=Math.random()*6.283, r3=13+Math.random()*6;
@@ -1621,9 +1808,10 @@
           if(this.wave>=this.waves){ this.state='klaar'; this.gap=8.0; }
           else { this.state='pauze'; this.gap=(this.level>=8)?0.08:0.15; } }
         else if(this.state==='klaar'){
-          if(this.gap>7.9) this.toonRonde();
+          if(!this.getoond){ this.getoond=1; this.toonRonde(); }
           this.gap-=s;
-          if(this.gap<=0){ window.LEVELDONE=true; this.state='wacht'; this.verbergRonde(); } } }
+          if(this.gap<=0){ window.LEVELDONE=true; this.state='wacht';
+            this.getoond=0; this.verbergRonde(); } } }
 
       const col=new THREE.Color();
       for(let a=this.groups.length-1;a>=0;a--){ const G=this.groups[a];
@@ -1632,6 +1820,20 @@
           if(G.schiet<=0){ G.schiet=3.5+Math.random()*5;
             G.werp=(G.werp||0)+(1+((this.level>=5)?1:0))*(window.MOEILIJK||1); } }
         if(G.ent>0) G.ent=Math.max(0,G.ent-s*1.35);
+        if(G.form==='baas'){ if(this.baasTick(G,s)){ this.groups.splice(a,1); continue; } }
+        if(G.form==='bol'){ G.ph+=s*1.5;
+          const k5=Math.min(1,s*2.0);
+          G.bx+=(G.tx-G.bx)*k5; G.by+=(G.ty-G.by)*k5; G.bz+=(G.tz-G.bz)*k5;
+          G.lanceer-=s;
+          if(G.lanceer<=0){ G.lanceer=1.2+Math.random()*0.8;
+            for(let b5=0;b5<G.cubes.length;b5++){ const c5=G.cubes[b5];
+              if(!c5.alive||c5.baas||c5.ind) continue;
+              const q5=c5.m.position;
+              c5.ind=1; c5.hurt=1; c5.px=q5.x; c5.py=q5.y; c5.pz=q5.z;
+              const dx5=-q5.x, dy5=1.6-q5.y, dz5=-q5.z;
+              const L5=Math.max(0.001,Math.sqrt(dx5*dx5+dy5*dy5+dz5*dz5)), sp5=15+Math.random()*7;
+              c5.vx=dx5/L5*sp5; c5.vy=dy5/L5*sp5; c5.vz=dz5/L5*sp5;
+              gunSnd(q5.x/9); break; } } }
         if(G.form==='mini'){ G.mt=(G.mt||0)+s;
           if(!G.gedraaid&&G.mt>1.1){ G.gedraaid=1;
             for(let b3=0;b3<G.cubes.length;b3++){ const c3=G.cubes[b3]; if(!c3.alive) continue;
@@ -1663,6 +1865,15 @@
           } else if(G.form==='line'){
             const o=(c.i-(G.n-1)/2)*G.gap;
             x=G.cx+o*Math.cos(G.tilt); y=1.6+o*Math.sin(G.tilt); z=G.cz;
+          } else if(G.form==='baas'){
+            x=c.bx; y=c.by; z=c.bz;
+            if(!(x===x)) x=0; if(!(y===y)) y=1.6; if(!(z===z)) z=-40;
+          } else if(G.form==='bol'){
+            if(c.baas){ x=G.bx; y=G.by; z=G.bz; }
+            else { const a5=G.ph+c.i*0.85;
+              x=G.bx+Math.cos(a5)*(c.baan||6);
+              y=G.by+Math.sin(a5)*(c.baan||6)*0.8;
+              z=G.bz+Math.sin(a5*1.3)*2.2; }
           } else if(G.form==='kern'){
             const gx=G.gx, gy=G.gy;
             const ix=(c.i%gx)-(gx-1)/2, iy=(Math.floor(c.i/gx)%gy)-(gy-1)/2,
@@ -1698,7 +1909,11 @@
           c.m.rotation.x+=c.sx*s; c.m.rotation.y+=c.sy*s; c.m.rotation.z+=c.sz*s;
           if(G.match){ this.pal(G.hue+c.i*0.05+this.T*G.hueSp,col); col.multiplyScalar(0.72); }
           else col.setHSL((G.hue+c.i*0.035+this.T*G.hueSp)%1,0.8,0.4);
-          if(c.core){ const k=0.5+0.5*Math.sin(this.T*5+c.i); col.lerp(this.white,0.6+0.3*k); }
+          if(c.kern){ const k=0.5+0.5*Math.sin(this.T*3.5);
+            col.lerp(this.gold,0.5+0.4*k); }
+          else if(c.baas){ const k=0.5+0.5*Math.sin(this.T*4);
+            col.lerp(this.gold,0.45+0.35*k); }
+          else if(c.core){ const k=0.5+0.5*Math.sin(this.T*5+c.i); col.lerp(this.white,0.6+0.3*k); }
           else if(G.taaislang){ col.lerp(this.gold,0.25+0.2*Math.sin(this.T*3+c.i)); }
           if(c.flash>0){ col.lerp(this.white,Math.min(1,c.flash)); c.flash-=s*4; }
           c.m.material.color.copy(col);
@@ -1892,7 +2107,7 @@
   function rondAf(){
     if(window.NAMEDONE) return;
     const sc=$('#rig').components.shooter;
-    const punten=sc?((sc.score||0)+(sc.bonus||0)):0;
+    const punten=sc?((sc.score||0)+(sc.totBonus||0)+(sc.bonus||0)):0;
     toonBord(bewaarScore(NAAM,punten)); }
 
   // knoppen aanwijzen met de controller-straal (werkt ook in VR)
@@ -1948,7 +2163,7 @@
     $('#reticle').setAttribute('visible',true);
     const sc=$('#rig').components.shooter;
     if(sc&&sc.sluitCombo) sc.sluitCombo();
-    const punten=sc?((sc.score||0)+(sc.bonus||0)):0;
+    const punten=sc?((sc.score||0)+(sc.totBonus||0)+(sc.bonus||0)):0;
     NAAM=''; window.NAMEDONE=false;
     bouwToetsen(); toonNaam();
     const ns=$('#nmScore'); if(ns) ns.setAttribute('value','SCORE  '+punten);
@@ -1962,7 +2177,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v73.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v75.4</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -2001,7 +2216,7 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="muziek zoeken..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v73.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v75.4" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="overPanel" visible="false">
         <a-plane position="0 1.5 -2.1" width="2.1" height="1.1" material="color:#180608;opacity:0.96;transparent:true"></a-plane>
@@ -2049,6 +2264,11 @@
           <a-text id="rndRechts" value="" align="left" color="#ffffff" width="1.7" position="0.15 0.15 0.01"></a-text>
           <a-text id="rndPunten" value="" align="center" color="#6ad1a0" width="2.0" position="0 -0.42 0.01"></a-text>
           <a-text id="rndTotaal" value="" align="center" color="#ffd98a" width="2.6" position="0 -0.62 0.01"></a-text>
+        </a-entity>
+        <a-entity id="baasBalk" visible="false">
+          <a-plane position="0 0.42 -1.6" width="1.22" height="0.07" material="color:#000;opacity:0.6;transparent:true"></a-plane>
+          <a-plane id="baasVul" position="0 0.42 -1.59" width="1.2" height="0.05" material="color:#ff4a5a;shader:flat"></a-plane>
+          <a-text id="baasNaam" value="" align="center" color="#ffb0b8" width="1.1" position="0 0.49 -1.59"></a-text>
         </a-entity>
         <a-text id="dbgTxt" value="" align="center" color="#7d8ba0" width="0.85" position="0 -0.60 -1.3"></a-text>
         <a-text id="errTxt" value="" align="center" color="#ff5a6a" width="1.0" position="0 -0.55 -1.3"></a-text>
