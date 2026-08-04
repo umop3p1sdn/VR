@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v72.0
+  //  DIEPE TRIP v73.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1282,11 +1282,14 @@
       if(this.ifree[gi].length<6) return;
       const G={form:'mini',gi:gi,cubes:[],cx:0,cy:1.6,cz:z,ph:0,age:0,laps:1,lap:0,
         hue:this.themaHue(),hueSp:0.06,match:false,size:0.7};
-      const dx=-x, dy=1.6-y, dz=-z, L=Math.max(0.001,Math.sqrt(dx*dx+dy*dy+dz*dz)), sp=11+Math.random()*6;
+      // eerst weg van de slang, daarna draaien ze naar je toe
+      const wa=Math.random()*6.283, wsp=9+Math.random()*5;
+      const wx=Math.cos(wa), wy=Math.sin(wa)*0.7, wz=-0.35;
+      G.mt=0; G.gedraaid=0;
       for(let i=0;i<5;i++){
         const c=this.piece(G,i,0.7,1,{ind:1,hurt:1,
-          px:x-dx/L*i*1.1, py:y-dy/L*i*1.1, pz:z-dz/L*i*1.1,
-          vx:dx/L*sp, vy:dy/L*sp, vz:dz/L*sp});
+          px:x-wx*i*0.9, py:y-wy*i*0.9, pz:z-wz*i*0.9,
+          vx:wx*wsp, vy:wy*wsp, vz:wz*wsp});
         if(!c) break; }
       if(G.cubes.length) this.groups.push(G); },
     kill:function(G,c,pts){ if(!c.alive) return 0; c.alive=false;
@@ -1629,6 +1632,12 @@
           if(G.schiet<=0){ G.schiet=3.5+Math.random()*5;
             G.werp=(G.werp||0)+(1+((this.level>=5)?1:0))*(window.MOEILIJK||1); } }
         if(G.ent>0) G.ent=Math.max(0,G.ent-s*1.35);
+        if(G.form==='mini'){ G.mt=(G.mt||0)+s;
+          if(!G.gedraaid&&G.mt>1.1){ G.gedraaid=1;
+            for(let b3=0;b3<G.cubes.length;b3++){ const c3=G.cubes[b3]; if(!c3.alive) continue;
+              const dx3=-c3.px, dy3=1.6-c3.py, dz3=-c3.pz;
+              const L3=Math.max(0.001,Math.sqrt(dx3*dx3+dy3*dy3+dz3*dz3)), sp3=13+Math.random()*6;
+              c3.vx=dx3/L3*sp3; c3.vy=dy3/L3*sp3; c3.vz=dz3/L3*sp3; } } }
         if(G.form==='snake'){ G.headZ+=G.speed*s;
           if(G.headZ-(G.cubes.length-1)*G.gap>13&&G.lap<G.laps-1){ G.lap++; G.headZ=-64; G.ph+=1.7; } }
         else if(G.form==='grid'){ G.speed-=s*0.5; G.cz+=G.speed*s;
@@ -1886,6 +1895,29 @@
     const punten=sc?((sc.score||0)+(sc.bonus||0)):0;
     toonBord(bewaarScore(NAAM,punten)); }
 
+  // knoppen aanwijzen met de controller-straal (werkt ook in VR)
+  let KLIKT=0;
+  function menuKlik(h){
+    if(!h||!h.object3D) return;
+    const nu=performance.now(); if(nu-KLIKT<250) return; KLIKT=nu;
+    const o=new THREE.Vector3(), q=new THREE.Quaternion();
+    h.object3D.getWorldPosition(o); h.object3D.getWorldQuaternion(q);
+    const d=new THREE.Vector3(0,-0.7071,-0.7071).applyQuaternion(q).normalize();
+    if(Math.abs(d.z)<0.002) return;
+    let best=null, bt=1e9;
+    const wp=new THREE.Vector3();
+    document.querySelectorAll('.menu-btn').forEach(function(el){
+      if(!el.object3D) return;
+      let p=el.object3D, zicht=true;
+      while(p){ if(p.visible===false){ zicht=false; break; } p=p.parent; }
+      if(!zicht) return;
+      const w=parseFloat(el.getAttribute('width'))||1, hh=parseFloat(el.getAttribute('height'))||1;
+      el.object3D.getWorldPosition(wp);
+      const t=(wp.z-o.z)/d.z; if(t<=0.1||t>=bt) return;
+      const px=o.x+d.x*t, py=o.y+d.y*t;
+      if(Math.abs(px-wp.x)<=w*0.6&&Math.abs(py-wp.y)<=hh*0.75){ bt=t; best=el; } });
+    if(best) best.emit('click'); }
+
   // =========================================================
   //  START / EINDE
   // =========================================================
@@ -1930,7 +1962,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v72.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v73.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1969,7 +2001,7 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="muziek zoeken..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v72.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v73.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="overPanel" visible="false">
         <a-plane position="0 1.5 -2.1" width="2.1" height="1.1" material="color:#180608;opacity:0.96;transparent:true"></a-plane>
@@ -2068,7 +2100,7 @@
           window.PAUSED=false; endTrip(); });
         ['#leftHand','#rightHand'].forEach(function(id){ var h=document.querySelector(id); if(!h) return;
           ['triggerdown','selectstart'].forEach(function(ev){ h.addEventListener(ev,function(){
-            if(window.PHASE==='end'&&window.ENDOK&&window.NAMEDONE) location.reload(); }); }); });
+            if(window.PHASE==='menu'||window.PHASE==='end'||window.PAUSED) menuKlik(h); }); }); });
 
       }catch(e){ var el=document.getElementById('ldErr'); if(el) el.textContent+='FOUT: '+e.message+'\n'; } });
     </script>
