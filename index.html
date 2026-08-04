@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v68.1
+  //  DIEPE TRIP v70.1
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1048,21 +1048,31 @@
     verbergRonde:function(){ const p=document.querySelector('#scorePanel');
       if(p) p.setAttribute('visible',false); },
     taai:function(){ return (this.level>=8)?3:((this.level>=5)?2:1); },
+    themaHue:function(){
+      const H=[0.55,0.55,0.33,0.75,0.07,0.90,0.14,0.47,0.99];
+      const b=H[Math.max(0,Math.min(8,this.level))];
+      return (b+(Math.random()-0.5)*0.14+1)%1; },
     tempo:function(){ const L=this.level;
       return (L<=4)?1:((L===5)?1.15:((L===6)?1.2:((L===7)?1.25:1.35))); },
     spawn:function(gi,form){
       const gidx=((gi%this.GEO.length)+this.GEO.length)%this.GEO.length;
       const vrij=this.ifree[gidx].length;
       const G={form:form,gi:gidx,cubes:[],cx:0,cy:1.6,cz:-120,ph:Math.random()*6.28,age:0,
-        hue:Math.random(),hueSp:0.04+Math.random()*0.18,match:(Math.random()<0.3)};
+        hue:this.themaHue(),hueSp:0.02+Math.random()*0.08,match:(Math.random()<0.25)};
       if(form==='snake'){
         const roll=Math.random(); let size,hp,spd;
         if(roll<0.45){ size=1.0+Math.random()*0.4; hp=1; spd=9+Math.random()*6; }
         else if(roll<0.78){ size=1.5+Math.random()*0.5; hp=1; spd=7+Math.random()*5; }
         else if(roll<0.92){ size=2.7; hp=2; spd=5+Math.random()*3; }
         else { size=3.8; hp=3; spd=4+Math.random()*2.5; }
-        const len=(size>=2.5)?(5+Math.floor(Math.random()*4)):(8+Math.floor(Math.random()*7));
-        if(vrij<len) return false;
+        let len=(size>=2.5)?(5+Math.floor(Math.random()*4)):(8+Math.floor(Math.random()*7));
+        const M=window.MOEILIJK||1;
+        // taaie slang: veel meer treffers nodig, komt vanaf ronde 4 en vaker bij zwaardere stand
+        const taaiK=(this.level>=7)?0.45:((this.level>=4)?0.10:0);
+        const broedK=(this.level===3)?0.55:((this.level>=6)?0.30:((this.level>=4)?0.10:0));
+        if(Math.random()<Math.min(0.8,taaiK*M)){ hp=4; size=Math.max(size,1.8); spd*=0.7; G.taaislang=1; }
+        if(Math.random()<Math.min(0.8,broedK*M)){ G.broed=1; }
+        if(vrij<len+10) return false;
         G.size=size; G.speed=spd; G.gap=(3.6+Math.random()*2.2)*Math.max(1,size*0.7);
         G.R=5.0+Math.random()*3.4; G.R2=3.4+Math.random()*3.0;
         G.fx=0.016+Math.random()*0.026; G.fy=0.014+Math.random()*0.026;
@@ -1091,9 +1101,12 @@
         const L4=[[3,3,3],[5,5,3],[5,3,5],[3,9,3],[7,3,3],[3,3,7],[5,5,5],[7,5,3],[7,5,5],[9,9,3],[7,7,3],[9,5,3],[7,7,5],[9,3,9]];
         const L8=L4.concat([[9,9,5],[9,7,5],[9,9,5],[7,7,7]]);
         const DIMS=(this.level<=1)?L1:((this.level===2)?L2:((this.level===3)?L3:((this.level>=8)?L8:L4)));
-        const D=DIMS[Math.floor(Math.random()*DIMS.length)];
+        let D=DIMS[Math.floor(Math.random()*DIMS.length)];
+        if(vrij<D[0]*D[1]*D[2]+8){
+          const kan=DIMS.filter(function(d){ return d[0]*d[1]*d[2]+8<=vrij; });
+          if(!kan.length) return false;
+          D=kan[Math.floor(Math.random()*kan.length)]; }
         const gx=D[0], gy=D[1], gz=D[2], cnt=gx*gy*gz;
-        if(vrij<cnt+8) return false;
         G.gx=gx; G.gy=gy; G.gz=gz;
         G.size=1.45; G.gap=1.72; G.speed=2.4+Math.random()*2; G.cz=-58;
         G.spin=(Math.random()<0.5?-1:1)*(0.22+Math.random()*0.3);
@@ -1125,6 +1138,7 @@
         for(let i=0;i<n;i++) this.piece(G,i,4.2,2,{split:4,gen:0});
       }
       if(G.laps===undefined){ G.laps=(Math.random()<0.7)?2:1; G.lap=0; }
+      if(G.form==='snake') G.laps=Math.max(G.laps,2);
       for(let q=0;q<G.cubes.length;q++) G.cubes[q].freed=false;
       G.speed*=this.tempo();
       if(!G.cubes.length) return false;
@@ -1258,9 +1272,21 @@
       if(this.combo>(this.beste||0)) this.beste=this.combo;
       this.hits=(this.hits||0)+1;
       if(sz<1.5) this.klein=(this.klein||0)+1; else this.groot=(this.groot||0)+1; },
+    miniSlang:function(x,y,z,gi){
+      if(this.ifree[gi].length<6) return;
+      const G={form:'mini',gi:gi,cubes:[],cx:0,cy:1.6,cz:z,ph:0,age:0,laps:1,lap:0,
+        hue:this.themaHue(),hueSp:0.06,match:false,size:0.7};
+      const dx=-x, dy=1.6-y, dz=-z, L=Math.max(0.001,Math.sqrt(dx*dx+dy*dy+dz*dz)), sp=11+Math.random()*6;
+      for(let i=0;i<5;i++){
+        const c=this.piece(G,i,0.7,1,{ind:1,hurt:1,
+          px:x-dx/L*i*1.1, py:y-dy/L*i*1.1, pz:z-dz/L*i*1.1,
+          vx:dx/L*sp, vy:dy/L*sp, vz:dz/L*sp});
+        if(!c) break; }
+      if(G.cubes.length) this.groups.push(G); },
     kill:function(G,c,pts){ if(!c.alive) return 0; c.alive=false;
       const p=c.m.position, col=c.m.material.color;
       this.burst(p.x,p.y,p.z,col,c.big0>=2?14:7,(c.big0>=2?18:11));
+      if(G.broed&&!c.ind&&this.groups.length<9) this.miniSlang(p.x,p.y,p.z,G.gi);
       if(c.split&&c.gen<((this.level>=7)?2:1)){ const ns=c.size*0.42;
         if(Math.random()<0.4){ this.burst(p.x,p.y,p.z,this.white,18,26);
           window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.38);
@@ -1370,12 +1396,19 @@
       const ja=document.querySelector('#btnJa');
       if(ja) ja.setAttribute('material','color:'+(this.levens>0?'#1f5a3a':'#2a2a2a')+';opacity:0.97;transparent:true');
       document.querySelectorAll('.hand').forEach(function(h){
-        h.setAttribute('raycaster','objects: .menu-btn; far: 12; lineColor: #ff8a9a; lineOpacity: 0.8'); });
+        h.setAttribute('raycaster','objects: .menu-btn; far: 30');
+        h.setAttribute('cursor','fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity');
+        if(!h.querySelector('.menu-laser')){
+          const l=document.createElement('a-entity'); l.setAttribute('class','menu-laser');
+          l.setAttribute('rotation','-45 0 0');
+          l.setAttribute('line','start: 0 0 0; end: 0 0 -30; color: #ff8a9a; opacity: 1');
+          h.appendChild(l); } });
       const p=document.querySelector('#overPanel'); if(p) p.setAttribute('visible',true); },
     verder:function(){
       if(this.levens<=0) return false;
       this.levens--; this.hp=100; this.hurtCd=1.5; window.PAUSED=false;
-      document.querySelectorAll('.hand').forEach(function(h){ h.removeAttribute('raycaster'); });
+      document.querySelectorAll('.hand').forEach(function(h){ h.removeAttribute('raycaster'); h.removeAttribute('cursor');
+        const l=h.querySelector('.menu-laser'); if(l&&l.parentNode) l.parentNode.removeChild(l); });
       const p=document.querySelector('#overPanel'); if(p) p.setAttribute('visible',false);
       return true; },
     ultimate:function(h){
@@ -1521,12 +1554,18 @@
         if(this.state==='pauze'){ this.gap-=s;
           if(this.gap<=0){ this.wave++;
             let menu=(this.level<=0)?['snake']:['snake','kern'];
-            if(this.level>=2){ menu.push('kern'); menu.push('zwerm'); menu.push('ring'); }
-            if(this.level>=3){ menu.push('kern'); menu.push('line'); menu.push('grid'); }
-            if(this.level>=4){ menu.push('kern'); menu.push('ring'); menu.push('grid'); menu.push('big'); }
+            if(this.level>=2){ menu.push('kern'); menu.push('zwerm'); }
+            if(this.level>=3){ menu.push('ring'); }
+            if(this.level>=4){ menu.push('line'); menu.push('grid'); }
+            if(this.level>=5){ menu.push('grid'); menu.push('big'); }
+            // elke ronde heeft een eigen hoofdvorm
+            const HOOF=['snake','snake','kern','snake','grid','ring','zwerm','snake','kern'];
+            const hoofd=HOOF[Math.max(0,Math.min(8,this.level))];
+            if(menu.indexOf(hoofd)<0) menu.push(hoofd);
             let form='snake';
-            const kans=(this.level<=0)?0:((this.level===1)?0.45:((this.level===2)?0.6:0.75));
-            if(menu.length>1&&Math.random()<kans) form=menu[1+Math.floor(Math.random()*(menu.length-1))];
+            if(Math.random()<0.6) form=hoofd;
+            else { const kans=(this.level<=0)?0:((this.level===1)?0.45:0.75);
+              if(menu.length>1&&Math.random()<kans) form=menu[1+Math.floor(Math.random()*(menu.length-1))]; }
             if(this.wave>=this.waves){                      // slotgolf van het level
               const uniq=[];
               for(let i=0;i<menu.length;i++) if(uniq.indexOf(menu[i])<0) uniq.push(menu[i]);
@@ -1554,7 +1593,7 @@
             if(this.level<=1) n=1;
             if(form==='kern'||form==='grid') n=1;   // grote dingen komen alleen
             const gi=this.level-1+((this.wave%2)?0:1);
-            const maxG=(this.level<=1)?2:((this.level<=3)?3:((this.level<=5)?4:5));
+            const maxG=(this.level<=1)?2:((this.level<=3)?3:((this.level<=5)?4:3));
             for(let i=0;i<n;i++){ if(this.groups.length<maxG) this.spawn(gi,form); }
             if(this.level>=6&&menu.length>2&&form!=='kern'&&form!=='grid'){
               let f2=form, poging=0;
@@ -1578,7 +1617,8 @@
       for(let a=this.groups.length-1;a>=0;a--){ const G=this.groups[a];
         G.age+=s;
         if(this.level>=2&&!G.leeg){ G.schiet=(G.schiet===undefined)?(3.5+Math.random()*4):(G.schiet-s);
-          if(G.schiet<=0){ G.schiet=3.5+Math.random()*5; G.werp=(G.werp||0)+1+((this.level>=5)?1:0); } }
+          if(G.schiet<=0){ G.schiet=3.5+Math.random()*5;
+            G.werp=(G.werp||0)+(1+((this.level>=5)?1:0))*(window.MOEILIJK||1); } }
         if(G.ent>0) G.ent=Math.max(0,G.ent-s*1.35);
         if(G.form==='snake'){ G.headZ+=G.speed*s;
           if(G.headZ-(G.cubes.length-1)*G.gap>13&&G.lap<G.laps-1){ G.lap++; G.headZ=-64; G.ph+=1.7; } }
@@ -1641,6 +1681,7 @@
           if(G.match){ this.pal(G.hue+c.i*0.05+this.T*G.hueSp,col); col.multiplyScalar(0.72); }
           else col.setHSL((G.hue+c.i*0.035+this.T*G.hueSp)%1,0.8,0.4);
           if(c.core){ const k=0.5+0.5*Math.sin(this.T*5+c.i); col.lerp(this.white,0.6+0.3*k); }
+          else if(G.taaislang){ col.lerp(this.gold,0.25+0.2*Math.sin(this.T*3+c.i)); }
           if(c.flash>0){ col.lerp(this.white,Math.min(1,c.flash)); c.flash-=s*4; }
           c.m.material.color.copy(col);
           c.m.scale.setScalar((c.size||1)*(c.core?1.3:1)*(1+0.35*Math.max(0,c.flash||0)));
@@ -1845,7 +1886,15 @@
     window.ENDOK=false; setTimeout(function(){ window.ENDOK=true; },5000);
     if(MASTER) MASTER.gain.linearRampToValueAtTime(0.12,A.currentTime+3);
     document.querySelectorAll('.hand').forEach(function(h){ h.setAttribute('visible',true);
-      h.setAttribute('raycaster','objects: .menu-btn; far: 12; lineColor: #ffd98a; lineOpacity: 0.8'); });
+      h.setAttribute('raycaster','objects: .menu-btn; far: 30');
+      h.setAttribute('cursor','fuse: false; downEvents: triggerdown; upEvents: triggerup; rayOrigin: entity');
+      if(!h.querySelector('.menu-laser')){
+        const l=document.createElement('a-entity'); l.setAttribute('class','menu-laser');
+        l.setAttribute('rotation','-45 0 0');
+        l.setAttribute('line','start: 0 0 0; end: 0 0 -30; color: #ffd98a; opacity: 1');
+        h.appendChild(l); } });
+    setTimeout(function(){ document.querySelectorAll('.hand').forEach(function(h){
+      const r=h.components&&h.components.raycaster; if(r&&r.refreshObjects) r.refreshObjects(); }); },300);
     $('#reticle').setAttribute('visible',true);
     const sc=$('#rig').components.shooter;
     if(sc&&sc.sluitCombo) sc.sluitCombo();
@@ -1863,7 +1912,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v68.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v70.1</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">laden…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -1882,20 +1931,27 @@
            background="color: #000000">
     <a-entity id="rig" position="0 0 0" shaderworld shooter>
       <a-entity id="menu">
-        <a-plane position="0 1.5 -2.1" width="2.5" height="2.0" material="color:#0a0714;opacity:0.94;transparent:true"></a-plane>
-        <a-plane position="0 1.5 -2.11" width="2.58" height="2.08" material="color:#b04aff;opacity:0.18;transparent:true"></a-plane>
+        <a-plane position="0 1.52 -2.1" width="2.5" height="2.35" material="color:#0a0714;opacity:0.94;transparent:true"></a-plane>
+        <a-plane position="0 1.52 -2.11" width="2.58" height="2.43" material="color:#b04aff;opacity:0.18;transparent:true"></a-plane>
         <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.6" position="0 2.32 -2.08"></a-text>
         <a-text value="Schiet alles kapot terwijl de trip om je heen doorloopt.&#10;Kleine blokken leveren meer punten op dan grote.&#10;Raak binnen 2 seconden weer iets: je combo loopt door.&#10;Hoe langer de combo, hoe hoger je bonus.&#10;&#10;Een hand houdt altijd de mitrailleur.&#10;Schiet mitrailleur-blokken om die sterker te maken.&#10;Je andere hand krijgt het wapen dat je oppikt.&#10;Hetzelfde wapen nog eens pakken maakt het sterker.&#10;Je opgebouwde niveau blijft bij een ander wapen.&#10;Het paarse blok verdubbelt allebei je handen.&#10;&#10;Knijpknop = ultimate: een bal die alles opzuigt&#10;en dan ontploft. Je hebt er 3, en krijgt er&#10;een bij elke 10.000 punten."
                 align="center" color="#9aa8c0" width="1.55" position="0 1.72 -2.08"></a-text>
         <a-text value="welke hand is je mitrailleur?" align="center" color="#7c8794" width="1.5" position="0 1.02 -2.08"></a-text>
-        <a-plane id="btnLinks" class="menu-btn" position="-0.42 0.88 -2.08" width="0.62" height="0.2" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
-        <a-text value="LINKS" align="center" color="#fff" width="1.9" position="-0.42 0.88 -2.07"></a-text>
-        <a-plane id="btnRechts" class="menu-btn" position="0.42 0.88 -2.08" width="0.62" height="0.2" material="color:#2a1442;opacity:0.97;transparent:true"></a-plane>
-        <a-text value="RECHTS" align="center" color="#fff" width="1.9" position="0.42 0.88 -2.07"></a-text>
-        <a-plane id="btnStart" class="menu-btn" position="0 0.6 -2.08" width="1.3" height="0.26" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
-        <a-text value="START" align="center" color="#fff" width="3.4" position="0 0.6 -2.07"></a-text>
-        <a-text id="trkInfo" value="muziek zoeken..." align="center" color="#7c8794" width="1.4" position="0 0.4 -2.07"></a-text>
-        <a-text value="v68.1" align="right" color="#5ad0ff" width="1.3" position="1.15 0.38 -2.07"></a-text>
+        <a-plane id="btnLinks" class="menu-btn" position="-0.42 0.94 -2.08" width="0.62" height="0.18" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="LINKS" align="center" color="#fff" width="1.8" position="-0.42 0.94 -2.07"></a-text>
+        <a-plane id="btnRechts" class="menu-btn" position="0.42 0.94 -2.08" width="0.62" height="0.18" material="color:#2a1442;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="RECHTS" align="center" color="#fff" width="1.8" position="0.42 0.94 -2.07"></a-text>
+        <a-text value="hoe zwaar?" align="center" color="#7c8794" width="1.4" position="0 0.79 -2.08"></a-text>
+        <a-plane id="btnEasy" class="menu-btn" position="-0.5 0.66 -2.08" width="0.45" height="0.17" material="color:#1f5a3a;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="RUSTIG" align="center" color="#fff" width="1.5" position="-0.5 0.66 -2.07"></a-text>
+        <a-plane id="btnMed" class="menu-btn" position="0 0.66 -2.08" width="0.45" height="0.17" material="color:#2a1442;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="PITTIG" align="center" color="#fff" width="1.5" position="0 0.66 -2.07"></a-text>
+        <a-plane id="btnHard" class="menu-btn" position="0.5 0.66 -2.08" width="0.45" height="0.17" material="color:#2a1442;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="ZWAAR" align="center" color="#fff" width="1.5" position="0.5 0.66 -2.07"></a-text>
+        <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
+        <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
+        <a-text id="trkInfo" value="muziek zoeken..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
+        <a-text value="v70.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="overPanel" visible="false">
         <a-plane position="0 1.5 -2.1" width="2.1" height="1.1" material="color:#180608;opacity:0.96;transparent:true"></a-plane>
@@ -1935,7 +1991,7 @@
       </a-entity>
       <a-camera wasd-controls-enabled="false" far="400">
         <a-entity id="reticle" cursor="rayOrigin: mouse; fuse: false" raycaster="objects: .menu-btn"></a-entity>
-        <a-entity id="scorePanel" visible="false" position="0 0 -3">
+        <a-entity id="scorePanel" visible="false" position="0 1.6 -3">
           <a-plane width="2.5" height="1.5" material="color:#0a0714;opacity:0.9;transparent:true"></a-plane>
           <a-plane width="2.58" height="1.58" position="0 0 -0.01" material="color:#b04aff;opacity:0.25;transparent:true"></a-plane>
           <a-text id="rndTitel" value="" align="center" color="#d8b0ff" width="3.2" position="0 0.58 0.01"></a-text>
@@ -1974,6 +2030,14 @@
           if(R) R.setAttribute('material','color:'+(h==='rightHand'?'#5a1f7a':'#2a1442')+';opacity:0.97;transparent:true'); };
         document.querySelector('#btnLinks').addEventListener('click',function(){ kies('leftHand'); });
         document.querySelector('#btnRechts').addEventListener('click',function(){ kies('rightHand'); });
+        window.MOEILIJK=window.MOEILIJK||1;
+        const zwaar=function(m){ window.MOEILIJK=m;
+          const ids=['#btnEasy','#btnMed','#btnHard'], w=[1,2,4];
+          for(let i=0;i<3;i++){ const e=document.querySelector(ids[i]);
+            if(e) e.setAttribute('material','color:'+(w[i]===m?'#1f5a3a':'#2a1442')+';opacity:0.97;transparent:true'); } };
+        document.querySelector('#btnEasy').addEventListener('click',function(){ zwaar(1); });
+        document.querySelector('#btnMed').addEventListener('click',function(){ zwaar(2); });
+        document.querySelector('#btnHard').addEventListener('click',function(){ zwaar(4); });
         document.querySelector('#btnStart').addEventListener('click',function(){ startTrip(); });
         document.querySelector('#btnAgain').addEventListener('click',function(){ if(window.PHASE==='end'&&window.ENDOK&&window.NAMEDONE) location.reload(); });
         document.querySelector('#btnAgain2').addEventListener('click',function(){ if(window.PHASE==='end'&&window.ENDOK) location.reload(); });
