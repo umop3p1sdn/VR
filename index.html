@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v97.1
+  //  DIEPE TRIP v99.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1051,7 +1051,7 @@
       this.wisT=1.6; },
     wissel:function(h){
       if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.PAUSED) return;
-      if(h.id!==this.spec()) return;
+      if(h.id!==this.spec()){ this.focusKnop(h); return; }
       const W=this.wp(h), volg=[1,2,3,4,5];
       let i=volg.indexOf(W.t); if(i<0) i=4;
       for(let k=1;k<=5;k++){ const t=volg[(i+k)%5];
@@ -1361,7 +1361,7 @@
           r.scale.setScalar(1+0.35*Math.sin(this.T*7)); } } },
     reset:function(){
       this.wep={}; this.ults=3; this.ult=null; this.ultRak=null;
-      this.suck=null; this.suckK=0; this.hp=100; this.rushQ=null; this.tussenB=0;
+      this.suck=null; this.suckK=0; this.hp=100; this.rushQ=null; this.tussenB=0; this.fmode=0;
       for(const id in this.hands) this.wp(this.hands[id]); },
     lesKlaar:function(){
       this.lesTekst('',''); this.lesRing('none'); this.reset();
@@ -1887,12 +1887,41 @@
         const l=h.querySelector('.menu-laser'); if(l&&l.parentNode) l.parentNode.removeChild(l); });
       const p=document.querySelector('#overPanel'); if(p) p.setAttribute('visible',false);
       return true; },
+    salvoDoelen:function(hand){
+      let L=this.targets();
+      if(!L.length){                                  // niets meer over: pak het sterkste dat nog leeft
+        let st=null;
+        for(let a=0;a<this.groups.length;a++){ const G=this.groups[a];
+          for(let b=0;b<G.cubes.length;b++){ const c=G.cubes[b];
+            if(c.alive&&!c.ind&&(!st||((c.hp||1)>(st.hp||1)))) st=c; } }
+        return st?[{c:st,p:st.m.position}]:[]; }
+      if(this.fmode&&hand){                           // gericht: alles recht voor je eerst
+        const o=new THREE.Vector3(), q=new THREE.Quaternion(), d=new THREE.Vector3();
+        hand.object3D.getWorldPosition(o); hand.object3D.getWorldQuaternion(q);
+        d.set(0,-0.7071,-0.7071).applyQuaternion(q).normalize();
+        L.sort(function(a,b){
+          const va=a.p.clone().sub(o).normalize().dot(d);
+          const vb=b.p.clone().sub(o).normalize().dot(d);
+          return vb-va; });
+      } else {
+        for(let x=L.length-1;x>0;x--){ const y=Math.floor(Math.random()*(x+1));
+          const t=L[x]; L[x]=L[y]; L[y]=t; } }
+      return L; },
+    focusKnop:function(h){
+      if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.PAUSED) return;
+      if(this.fprev!==undefined&&(this.T-this.fprev)<2.0) this.fmode=this.fmode?0:1;
+      this.fprev=this.T;
+      const L=this.salvoDoelen(h);
+      for(let i=0;i<L.length&&i<50;i++) if(L[i].c) L[i].c.fmark=2.0;
+      const e=document.querySelector('#wisselTxt');
+      if(e) e.setAttribute('value','FOCUS: '+(this.fmode?'AIMED':'AUTO')+'\n'+Math.min(50,L.length)+' DOELEN');
+      this.wisT=2.0; gunSnd(0); },
     ultimate:function(h){
       if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.OUTRO||window.PAUSED) return;
       if(this.ult||this.ultRak||this.ults<=0) return;
       this.ults--; this.lesUlt=h.id;
       if(h.id===this.prim()){                    // mitrailleurhand: 50 zoekende raketten
-        this.ultRak={n:50,t:0,h:h,lijst:this.targets(),i:0}; boomSnd(0);
+        this.ultRak={n:50,t:0,h:h,lijst:null,i:0}; boomSnd(0);
         window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.5); return; }
       h.object3D.getWorldPosition(this.ori); h.object3D.getWorldQuaternion(this.q);
       this.dir.set(0,-0.7071,-0.7071).applyQuaternion(this.q).normalize();
@@ -2282,6 +2311,7 @@
           else if(c.baas){ const k=0.5+0.5*Math.sin(this.T*4);
             col.lerp(this.gold,0.45+0.35*k); }
           else if(c.core){ const k=0.5+0.5*Math.sin(this.T*5+c.i); col.lerp(this.white,0.6+0.3*k); }
+          if(c.fmark>0){ c.fmark-=s; col.lerp(this.white,0.55+0.4*Math.sin(this.T*12)); }
           else if(G.taaislang){ col.lerp(this.gold,0.25+0.2*Math.sin(this.T*3+c.i)); }
           if(c.flash>0){ col.lerp(this.white,Math.min(1,c.flash)); c.flash-=s*4; }
           c.m.material.color.copy(col);
@@ -2377,15 +2407,17 @@
           if(best) R.zoek=best; }
         if(R.zoek&&R.zoek.c&&!R.zoek.c.alive) R.zoek=null;
         if(R.zoek&&R.zoek.c&&R.zoek.c.alive){
-          const g2=R.zoek.c.m.position.clone().sub(R.m.position).normalize();
-          R.dir.lerp(g2,Math.min(1,s*6.0)).normalize();
+          const dv=R.zoek.c.m.position.clone().sub(R.m.position);
+          const na=dv.x*dv.x+dv.y*dv.y+dv.z*dv.z, g2=dv.normalize();
+          if(na<49) R.dir.copy(g2);
+          else R.dir.lerp(g2,Math.min(1,s*22)).normalize();
           R.o.copy(R.m.position); R.d=0; }
         R.d+=52*s; R.tot=(R.tot||0)+52*s;
         R.m.position.copy(R.o).addScaledVector(R.dir,R.d);
         if(R.swarm){ R.ph+=s*3.4; const w2=R.swarm*Math.min(1,(R.tot||0)*0.05);
           R.m.position.x+=Math.cos(R.ph)*w2; R.m.position.y+=Math.sin(R.ph)*w2; }
         R.m.rotation.z+=s*8;
-        const dr=(R.rad||4.5), dr2=2.4;   // ontploft bij contact (1.5 m), klap = dr
+        const dr=(R.rad||4.5), dr2=R.klein?4.0:2.4;   // ontploft bij contact (1.5 m), klap = dr
         let boom=((R.tot||0)>150);
         const p=R.m.position;
         if(!boom){ for(let a=0;a<this.groups.length&&!boom;a++){ const G=this.groups[a];
@@ -2411,15 +2443,13 @@
           for(let i=0;i<this.rockets.length;i++){ const R=this.rockets[i]; if(R.live) continue;
             R.o.copy(this.ori); R.dir.copy(this.dir); R.d=0; R.tot=0; R.live=true;
             R.hom=1; R.rad=3.2; R.klein=1; R.zoek=null;
-            if(!Q.lijst||!Q.lijst.length||Q.i>=Q.lijst.length) { Q.lijst=this.targets(); Q.i=0;
-              for(let x=Q.lijst.length-1;x>0;x--){ const y=Math.floor(Math.random()*(x+1));
-                const tmp=Q.lijst[x]; Q.lijst[x]=Q.lijst[y]; Q.lijst[y]=tmp; } }
+            if(!Q.lijst||!Q.lijst.length||Q.i>=Q.lijst.length){ Q.lijst=this.salvoDoelen(Q.h); Q.i=0; }
             for(let p=0;p<Q.lijst.length;p++){ const tg=Q.lijst[(Q.i+p)%Q.lijst.length];
               if(tg&&tg.c&&tg.c.alive){ R.zoek=tg; Q.i=Q.i+p+1; break; } }
             if(R.zoek){                                  // meteen op het doel richten
               R.dir.copy(R.zoek.p).sub(this.ori).normalize();
               R.swarm=0; }
-            R.ph=Q.n*0.8; R.swarm=2.6+Math.random()*1.4;
+            R.ph=Q.n*0.8; R.swarm=0;                     // geen spiraal: recht op het doel
             R.m.position.copy(this.ori); R.m.scale.setScalar(0.55); R.m.visible=true; break; }
           if(Q.n%6===0) gunSnd(this.dir.x*0.5); }
         if(Q.n<=0) this.ultRak=null; }
@@ -2590,7 +2620,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v97.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v99.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -2629,7 +2659,7 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v97.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v99.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
         <a-plane id="btnSkip" class="menu-btn" position="1.35 1.15 -2.0" width="0.8" height="0.18" material="color:#2a1442;opacity:0.95;transparent:true"></a-plane>
