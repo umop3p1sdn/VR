@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v100.0
+  //  DIEPE TRIP v100.1
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -57,10 +57,14 @@
   function AC(){ if(A) return A; A=new (window.AudioContext||window.webkitAudioContext)();
     MASTER=A.createGain(); MASTER.gain.value=0.5;
     LIM=A.createDynamicsCompressor();
-    LIM.threshold.value=-6; LIM.knee.value=3; LIM.ratio.value=20;
+    LIM.threshold.value=-10; LIM.knee.value=6; LIM.ratio.value=20;
     LIM.attack.value=0.002; LIM.release.value=0.25;
-    const eindG=A.createGain(); eindG.gain.value=0.9;
-    MASTER.connect(LIM); LIM.connect(eindG); eindG.connect(A.destination);
+    const eindG=A.createGain(); eindG.gain.value=0.8;
+    const MUUR=A.createWaveShaper();                    // kan wiskundig niet boven 0.92
+    { const N=2048, crv=new Float32Array(N), K=1.4, T=Math.tanh(K);
+      for(let i=0;i<N;i++){ const x=(i/(N-1))*2-1; crv[i]=0.92*Math.tanh(x*K)/T; }
+      MUUR.curve=crv; MUUR.oversample='2x'; }
+    MASTER.connect(LIM); LIM.connect(eindG); eindG.connect(MUUR); MUUR.connect(A.destination);
     DUCK=A.createGain(); DUCK.gain.value=1; DUCK.connect(MASTER);
     DELAY=A.createDelay(1.2); DELAY.delayTime.value=0.32;
     const fb=A.createGain(); fb.gain.value=0.42;
@@ -229,7 +233,7 @@
   function killSnd(pan,size,t0){ if(!sfxOk(4)) return; const a=AC(); const t=t0||a.currentTime; SFXSEQ++;
     const pv=1+0.07*Math.sin(SFXSEQ*1.31);
     const bus=sfxBus(pan,t,0.18);
-    bus.gain.setValueAtTime(1.2,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.3);
+    bus.gain.setValueAtTime(0.95,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.3);
     const n=a.createBufferSource(); n.buffer=ruis(a,0.1,1); n.playbackRate.value=pv;
     const fl=a.createBiquadFilter(); fl.type='highpass'; fl.frequency.value=1600;
     n.connect(fl); fl.connect(bus); n.start(t);
@@ -239,7 +243,7 @@
       o.connect(g); g.connect(bus); o.start(t); o.stop(t+0.22); } }
   function boomSnd(pan){ const a=AC(); const t=a.currentTime;
     const bus=sfxBus(pan,t,0.55);
-    bus.gain.setValueAtTime(1.8,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.8);
+    bus.gain.setValueAtTime(1.2,t); bus.gain.exponentialRampToValueAtTime(0.01,t+0.8);
     const n=a.createBufferSource(); n.buffer=ruis(a,0.5,1);
     const fl=a.createBiquadFilter(); fl.type='bandpass'; fl.Q.value=1.1;
     fl.frequency.setValueAtTime(1700,t); fl.frequency.exponentialRampToValueAtTime(160,t+0.5);
@@ -2620,7 +2624,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v100.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v100.1</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -2659,7 +2663,7 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v100.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v100.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
         <a-plane id="btnSkip" class="menu-btn" position="1.35 1.15 -2.0" width="0.8" height="0.18" material="color:#2a1442;opacity:0.95;transparent:true"></a-plane>
