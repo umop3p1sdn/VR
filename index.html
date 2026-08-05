@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v107.1
+  //  DIEPE TRIP v108.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1080,6 +1080,7 @@
     wissel:function(h){
       if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.PAUSED) return;
       if(h.id!==this.spec()){ this.focusKnop(h); return; }
+      if(window.PHASE==='les') this.lesWis=1;
       const W=this.wp(h), volg=[1,2,3,4,5];
       let i=volg.indexOf(W.t); if(i<0) i=4;
       for(let k=1;k<=5;k++){ const t=volg[(i+k)%5];
@@ -1404,10 +1405,10 @@
       for(let a=this.groups.length-1;a>=0;a--){ const G=this.groups[a]; this.stopHum(G);
         for(let b=0;b<G.cubes.length;b++) this.release(G.cubes[b]); this.groups.splice(a,1); }
       for(let i=0;i<this.picks.length;i++){ this.picks[i].live=false; this.picks[i].m.visible=false; } },
-    lesDoos:function(k){
+    lesDoos:function(k,x9){
       for(let i=0;i<this.picks.length;i++){ const P=this.picks[i];
         if(P.live||P.k!==k) continue;
-        P.live=true; P.m.visible=true; P.sp=1.6; P.x=0; P.y=1.6; P.z=-26; return; } },
+        P.live=true; P.m.visible=true; P.sp=0; P.x=(x9||0); P.y=1.6; P.z=-22; return; } },
     lesVul:function(min){
       let b=0;
       for(let a=0;a<this.groups.length;a++)
@@ -1417,7 +1418,7 @@
       if(!this.groups.some(function(g){ return g.form==='kern'; })) this.spawn(0,'kern');
       this.spawn(1,'snake'); this.spawn(2,'snake'); this.spawn(3,'zwerm'); },
     lesTick:function(s){
-      if(this.les===undefined){ this.les=0; this.lesT=0; this.lesN=0; this.lesHands={};
+      if(this.les===undefined){ this.les=0; this.lesT=0; this.lesN=0; this.lesHands={}; this.lesFreeze=0; this.lesWis=0;
         this.level=4; this.ults=Math.max(this.ults,4);
         const e=document.querySelector('#lesSkip'); if(e) e.setAttribute('visible',true); }
       this.lesT+=s;
@@ -1427,59 +1428,96 @@
         for(let b=0;b<this.groups[a].cubes.length;b++) if(this.groups[a].cubes[b].alive) blokken++;
       const H=this.lesHands||{};
       const ti9=document.querySelector('#introTitel');
-      if(ti9) ti9.setAttribute('value', this.les>=7?'':'I N T R O');
+      if(ti9) ti9.setAttribute('value', this.les>=8?'':'I N T R O');
       switch(this.les){
-        case 0:                                   // beide triggers
-          this.lesRing('both','trigger');
-          if(this.lesT<0.9){ this.lesHands={};
-            this.lesTekst('PULL BOTH TRIGGERS','left and right'); break; }
-          if(!H.leftHand&&!H.rightHand) this.lesTekst('PULL BOTH TRIGGERS','left and right');
-          else if(!H.leftHand) this.lesTekst('NOW THE LEFT TRIGGER','');
-          else if(!H.rightHand) this.lesTekst('NOW THE RIGHT TRIGGER','');
-          if(H.leftHand&&H.rightHand){ this.lesLeeg(); this.les=1; this.lesT=0; this.lesN=0; }
+        case 0:                                   // main-trigger: alles wacht op jou
+          this.lesFreeze=(this.lesT>0.6)?1:0;
+          this.lesRing(prim,'trigger');
+          this.lesTekst('MAIN HAND: PULL THE TRIGGER','everything waits until you shoot');
+          if(this.lesT<0.6){ this.lesHands={}; break; }
+          if(H[prim]){ this.lesFreeze=0; this.lesLeeg(); this.les=1; this.lesT=0; this.lesHands={}; }
           break;
-        case 1:                                   // slangen opruimen
+        case 1:                                   // 3s vrij knallen, dan de andere hand
+          if(this.lesT<3.0){ this.lesRing('none');
+            this.lesTekst('NICE - KEEP SHOOTING',''); this.lesHands={}; break; }
+          this.lesFreeze=1;
+          this.lesRing(spec,'trigger');
+          this.lesTekst('OTHER HAND: PULL THE TRIGGER','');
+          if(H[spec]){ this.lesFreeze=0; this.lesLeeg(); this.les=2; this.lesT=0; }
+          break;
+        case 2:                                   // raketdoos, rechts buiten het midden
           this.lesRing('none');
-          if(this.lesT<0.4) break;
-          if(!this.lesN){ this.spawn(0,'snake'); this.spawn(1,'snake'); this.lesN=1; }
-          this.lesTekst('DESTROY THE SNAKES','clear every block for a PERFECT');
-          if(this.lesN&&blokken===0){ this.toonPerfect(500); this.score+=500;
-            this.lesLeeg(); this.les=2; this.lesT=0; this.lesN=0; }
+          if(this.lesT<1.6){ this.lesFreeze=1;
+            this.lesTekst('WEAPON BOX INCOMING','look right'); break; }
+          this.lesFreeze=0;
+          if(!this.picks.some(function(p){ return p.live; })) this.lesDoos(1,9);
+          this.lesTekst('SHOOT THE ROCKET BOX','any trigger - it arms your other hand');
+          if(this.wep[spec]&&this.wep[spec].t===1){ this.lesLeeg(); this.les=3; this.lesT=0; }
           break;
-        case 2:                                   // ultimate op je hoofdhand
-          this.lesVul(120);
-          this.lesRing(prim,'grip');
-          this.lesTekst('MAIN HAND: SQUEEZE THE GRIP','grip = 50 rockets - top buttons = focus targets');
-          if(this.ultRak||this.lesUlt===prim){ this.les=3; this.lesT=0; this.lesUlt=0; }
-          break;
-        case 3:                                   // ultimate op je andere hand
-          if(this.ultRak){ this.lesTekst('NICE','one rocket per target - top buttons show and aim the focus');
-            this.lesRing('none'); break; }
-          this.lesVul(140);
-          this.lesRing(spec,'grip');
-          if(!this.lesUlt&&!this.ult) this.lesTekst('OTHER HAND: SQUEEZE THE GRIP','grip = suck ball - top buttons = swap weapon');
-          else this.lesTekst('SHOOT THE CLUMP','bunched up they are easy to hit');
-          if(this.lesUlt===spec&&!this.ult&&this.lesT>2){
-            this.lesLeeg(); this.les=4; this.lesT=0; this.lesUlt=0; this.lesN=0; }
-          break;
-        case 4:                                   // wapen oppakken
-          this.lesRing('none');
-          this.lesTekst('SHOOT THE WEAPON BOX','it arms your other hand');
-          if(!this.picks.some(function(p){ return p.live; })) this.lesDoos(1);
-          if(this.wep[spec]&&this.wep[spec].t>=1&&this.wep[spec].t<=4){
-            this.lesLeeg(); this.les=5; this.lesT=0; this.lesN=0; }
-          break;
-        case 5:                                   // upgraden
-          this.lesTekst('GRAB THE SAME WEAPON AGAIN','same weapon = level up');
-          if(!this.picks.some(function(p){ return p.live; })) this.lesDoos(1);
+        case 3:                                   // upgrade: zelfde doos nogmaals
+          if(this.lesT<1.6){ this.lesFreeze=1; this.lesRing('none');
+            this.lesTekst('ROCKETS ARMED','same box again = level up'); break; }
+          this.lesFreeze=0;
+          if(!this.picks.some(function(p){ return p.live; })) this.lesDoos(1,-9);
+          this.lesTekst('SHOOT THE SAME BOX AGAIN','now on your left');
           if(this.wep[spec]&&(this.wep[spec].lvl||1)>=2){
-            this.lesLeeg(); this.les=6; this.lesT=0; this.lesN=0; }
+            this.lesLeeg(); this.les=4; this.lesT=0; this.lesN=0; this.lesWis=0; }
           break;
-        case 6:                                   // demo-baas
-          if(!this.lesN){ this.level=1; this.baasSpawn(1); this.lesN=1; }
-          this.lesTekst('BOSS: ARMS FIRST, THEN THE CORE','the core is shielded while arms remain');
-          if(this.lesN&&!this.groups.some(function(g){ return g.form==='baas'; })){
-            this.lesLeeg(); this.les=7; this.lesT=0; }
+        case 4:                                   // tweede wapen + wisselen + vuren
+          if(this.lesT<1.6){ this.lesFreeze=1; this.lesRing('none');
+            this.lesTekst('MORE WEAPONS','all boxes incoming'); break; }
+          this.lesFreeze=0;
+          if(this.lesN===0){
+            if(!this.picks.some(function(p){ return p.live; })){
+              this.lesDoos(2,9); this.lesDoos(3,-9); this.lesDoos(4,13); }
+            this.lesTekst('SHOOT ANOTHER WEAPON BOX','it goes into your pocket');
+            const W4=this.wep[spec]; let srt=0;
+            if(W4) for(const k4 in W4.mag) if(k4>=1&&k4<=4&&W4.mag[k4]>0) srt++;
+            if(srt>=2){ this.lesN=1; this.lesWis=0; this.lesHands={}; }
+          } else if(this.lesN===1){
+            this.lesFreeze=1;
+            this.lesRing(spec,'trigger');
+            this.lesTekst('PRESS A TOP BUTTON TO CHANGE GUNS','A B X or Y - cycles your weapons');
+            if(this.lesWis){ this.lesFreeze=0; this.lesN=2; this.lesHands={}; }
+          } else {
+            this.lesTekst('NOW FIRE THAT GUN','');
+            if(H[spec]){ this.lesLeeg(); this.les=5; this.lesT=0; this.lesN=0; this.lesUlt=0; }
+          }
+          break;
+        case 5:                                   // vijanden + raketsalvo
+          if(this.lesN===0){ this.lesVul(120); this.lesRing('none');
+            this.lesTekst('ENEMIES INCOMING','get ready');
+            if(this.lesT>2.2) this.lesN=1; break; }
+          if(this.lesN===1){ this.lesFreeze=1; this.lesVul(120);
+            this.lesRing(prim,'grip');
+            this.lesTekst('MAIN HAND: SQUEEZE THE GRIP','grip = 50 rockets - top buttons = focus targets');
+            if(this.ultRak||this.lesUlt===prim){ this.lesFreeze=0; this.lesN=2; } break; }
+          this.lesRing('none');
+          this.lesTekst('50 ROCKETS!','one per target');
+          if(!this.ultRak&&!this.rockets.some(function(r){ return r.live; })){
+            this.lesLeeg(); this.les=6; this.lesT=0; this.lesN=0; this.lesUlt=0; }
+          break;
+        case 6:                                   // zuigbal + klomp kapotschieten
+          if(this.lesN===0){ this.lesVul(140); this.lesRing('none');
+            this.lesTekst('MORE ENEMIES','');
+            if(this.lesT>1.8) this.lesN=1; break; }
+          if(this.lesN===1){ this.lesFreeze=1; this.lesVul(140);
+            this.lesRing(spec,'grip');
+            this.lesTekst('OTHER HAND: SQUEEZE THE GRIP','grip = suck ball - top buttons = swap weapon');
+            if(this.lesUlt===spec||this.ult){ this.lesFreeze=0; this.lesN=2; } break; }
+          this.lesRing('none');
+          if(this.suckK>0.5) this.lesTekst('SHOOT ALL WHEN SUCKED IN!','bunched up = easy points');
+          else this.lesTekst('WATCH THE BALL','it pulls everything in');
+          if(this.lesN===2&&!this.ult){ this.lesLeeg(); this.les=7; this.lesT=0; this.lesN=0; this.lesHands={}; }
+          break;
+        case 7:                                   // examen: de baas
+          if(!this.lesN){ this.level=1; this.baasSpawn(1); this.lesN=1; this.lesHands={}; }
+          if(this.lesN===1){ this.lesFreeze=1;
+            this.lesTekst('BOSS: SHOOT THE ARMS FIRST','the core opens when the arms are gone');
+            if(H[prim]||H[spec]){ this.lesFreeze=0; this.lesN=2; } break; }
+          this.lesTekst('KILL THE BOSS','to start the trip');
+          if(!this.groups.some(function(g){ return g.form==='baas'; })){
+            this.lesLeeg(); this.les=8; this.lesT=0; }
           break;
         default:
           this.lesTekst('THE TRIP BEGINS!','good luck');
@@ -2086,7 +2124,8 @@
       const on=((window.PHASE==='trip'||window.PHASE==='les')&&!window.OUTRO&&!window.PAUSED);
       if(window.PAUSED) return;                     // pauze of game-over: de wereld staat volledig stil
       this.T+=s;
-      if(window.PHASE==='les') this.lesTick(s);
+      if(window.PHASE==='les'){ this.lesTick(s);
+        if(this.lesFreeze) return; }
       if(this.hurtCd>0) this.hurtCd-=s;
       if(this.perfT>0){ this.perfT-=s;
         if(this.perfT<=0){ const e2=document.querySelector('#perfectTxt');
@@ -2840,7 +2879,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v107.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v108.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -2879,7 +2918,7 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v107.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v108.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
         <a-plane id="btnSkip" class="menu-btn" position="1.35 1.15 -2.0" width="0.8" height="0.18" material="color:#2a1442;opacity:0.95;transparent:true"></a-plane>
