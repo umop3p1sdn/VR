@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v100.1
+  //  DIEPE TRIP v104.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -64,7 +64,8 @@
     { const N=2048, crv=new Float32Array(N), K=1.4, T=Math.tanh(K);
       for(let i=0;i<N;i++){ const x=(i/(N-1))*2-1; crv[i]=0.92*Math.tanh(x*K)/T; }
       MUUR.curve=crv; MUUR.oversample='2x'; }
-    MASTER.connect(LIM); LIM.connect(eindG); eindG.connect(MUUR); MUUR.connect(A.destination);
+    MASTER.connect(MUUR);                               // muziek rechtstreeks: schieten drukt hem nooit meer weg
+    LIM.connect(eindG); eindG.connect(MUUR); MUUR.connect(A.destination);
     DUCK=A.createGain(); DUCK.gain.value=1; DUCK.connect(MASTER);
     DELAY=A.createDelay(1.2); DELAY.delayTime.value=0.32;
     const fb=A.createGain(); fb.gain.value=0.42;
@@ -197,6 +198,26 @@
     for(let i=0;i<len;i++){ const f=1-i/len;
       d[i]=(Math.random()*2-1)*((vorm===2)?Math.pow(f,2):((vorm===1)?Math.pow(f,1.2):f)); }
     RUIS[k]=b; return b; }
+  const RAT={};
+  function ratelAan(id){ const a=AC(); let r=RAT[id];
+    if(!r){ const g=a.createGain(); g.gain.value=0;
+      const n=a.createBufferSource(); n.buffer=ruis(a,0.5,1); n.loop=true;
+      const f=a.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1100; f.Q.value=0.7;
+      const am=a.createOscillator(); am.type='square'; am.frequency.value=13;
+      const ag=a.createGain(); ag.gain.value=0.45;
+      const vg=a.createGain(); vg.gain.value=0.55;
+      am.connect(ag); ag.connect(vg.gain);
+      const lo=a.createOscillator(); lo.type='sine'; lo.frequency.value=52;
+      const lg=a.createGain(); lg.gain.value=0.4;
+      n.connect(f); f.connect(vg); lo.connect(lg); lg.connect(vg);
+      vg.connect(g); g.connect(sfxOut());
+      n.start(); am.start(); lo.start();
+      r=RAT[id]={g:g,laatst:0};
+      if(!RAT._iv) RAT._iv=setInterval(function(){ const b2=A; if(!b2) return;
+        for(const k2 in RAT){ if(k2==='_iv') continue; const r2=RAT[k2];
+          if(b2.currentTime-r2.laatst>0.16) r2.g.gain.setTargetAtTime(0,b2.currentTime,0.07); } },80); }
+    r.laatst=a.currentTime;
+    r.g.gain.setTargetAtTime(0.5,a.currentTime,0.03); }
   function zeg(txt){ try{ const ss=window.speechSynthesis; if(!ss) return;
     const u=new SpeechSynthesisUtterance(txt); u.lang='en-US'; u.rate=1.05; u.volume=0.9;
     ss.speak(u); }catch(e){} }
@@ -840,9 +861,9 @@
    {n:'oog-blauw',p:['dcccbd','d5b4a3','d0a897','c89886','bb9f92','b68777','828e95','9d6c5d','4e5a66','5d382f','272c36','140f13','050001','000005','000000'],e:[[7,8],[17,9]],g:'000000000000000000000000000000000000000000000004443000000000000000000000000468888888864000000000000000003688684668888a8860000000000000068868688aaaaaaaaaa840000000000388668accddfddccbaaba840000000048868aceecccccefeddccaba60000003888acdccc917cbbbebcfcbab8600003886acc99b9707eeb9cc9bddbba80002688acc919b79beeeb99b78bddca8600486aca8219979cefc979b779cccba802668ca85117b77bbbb7799279aacca86338a8885111997799977b728a8aca88624a864641117b977799995788abaa86004468666421179999bb95558aaaa86400022224664322127775568aaaaa8640000003332322358866688aa8888844000000000323322255558668888664000000000000023333344466666446400000000000000002233334444444000000000000000000000003333300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000055556000000000000000000000003332222225660000000000000000003322111111123556000000000000000332211111111223566000000000000000000000000000000000000000'},
    {n:'oog-reptiel',p:['b1b84e','999d22','938814','618229','6f6722','536c23','445f1c','424e17','3f3f23','2d3d13','282c1d','1a2b08','192007','0d0e02','000000'],e:[[8,8],[26,8]],g:'00000000000044446777000000000000000000000464444447677770000000000000000466444211412247787000000000000076644411216464487a7a00000000000677444266adeeeddc8a8aa0000000006774227adededddeefedccaa00000006772278de8119c338ceffeecca00000788648dfd3100de2235ceeefedcc00068866aefd81111ff22338dcbefedcc009867aeeec83111ff22337ab69eeedc078768ed5d853223ff21237ab56deeddc7788de51d832222ee22238c945bdeddc888ced119d53322cd22358c955bbcdcc888666515ea3332882337ad5568aaac0076446212be7533533358ce556788cc00aa8644422aec88858acdda667aaad00008a874444248addddda6446c87cc0000000c888667222244124488a6acc000000000dcaa7647677677aaa7accd000000000000dccaaa88acaaaacdde0000000000000000dddcccccccddee00000000000000000000000eeeed000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000099bbbbb9000000000000000000000699bbbbbbbb9bb0000000000000000699b99999999bbbbbb000000000000069bbb96555699999bbbb000000'},
    {n:'oog-paars',p:['ba8aab','a85b60','a2474e','5e3f77','802a71','4d2c65','332247','5c0f88','2c1048','171223','100a1c','090314','15002d','000003','000000'],e:[[14,8],[23,8]],g:'0000000000000000000000000000000000000000000000000000000000000000000000000000aaaaa000000000000000000000000aa7aaaaabbbb0000000000000000007a9779aaaaabbbbb000000000000000777aacfffffeebaccba000000000000a77befecdceeffffeccbb0000000000a7aeffd811ce99ddeefecec0000000077aefe98101ff96989ceffeec000000777eedd88119ffd9888ddbefeec0000077cf6499889dff98818974aeffec00077ae61188888dff981118646aeecb0066ae7211888889fc8811194449eea00067a21111698888e6811589447bcb0000677644411998888888889649ceca00000044446744698888889d967ceba00000000004449964469699767acca700000000000004469976666699dd970000000000000000444469679997776000000000000000000004444446440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001022000000000000000000000000000033320000000000000000000000222233a730000000000000000000033333333777a3200022300000000000333333333733b3330233000000000000000000000000000000000000000000000000000000000000000000000'},
-   {n:'schedel-bot',p:['f7e3ca','eacfb1','e1c4a5','d8ba9b','cdae90','c0a183','b29174','a38062','98795e','8a6b51','7b5b43','604532','2d1c11','060000','000000'],e:[[14,12],[17,10]],g:'0000005433221112234567900000000000000544321111122345667a00000000000065543211111122346789a000000000006645321111222346679aa000000000006744322111234456778cab00000000065763421112343234668cab00000000076793321112531234659cbc000000000768b12479635369a9626dcc00000000086777cdddb879bcdddc6ccc0000000009788dddddca18ddddddccdc000000000aa95ccdded515cfeddc9bdc0000000000bb2b9cdeb3db6ddcb95adc0000000000ca268cc729fe859c973ad00000000000845243313deec423446ab00000000000953436b86edec6cb88a9bc00000000000b6897763dcdc5b988acd000000000000bcde946375967a9ddddd000000000000bbbec644123488cfddc00000000000000c9dd7666658abcecd00000000000000008bd86543358addbc000000000000000097dba9788abccbbc0000000000000000967876789bccb9cb000000000000000078457888abcc89cb0000000000000000896477779abb8bcc00000000000000000b96743367888bc00000000000000000000964243458c00000000000000000000000b97aa9bc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000'},
-   {n:'schedel-groen',p:['aec862','858b65','6f6962','4c612c','444933','36392d','312f2b','282823','1c2a19','1e231e','1e1f1c','141d16','0e120f','030603','000000'],e:[[14,12],[20,17]],g:'000003687755323536678a8000000000000056a76532222235788aa80000000000005b8753321112337778ca7000000000036aa7533111223677accaa00000000003898875321233578abcc9900000000005796a75332235578abb9d460000000005666963123363358899999a000000000787444532353237bb99699a0000000009c65449b75775bdd9444dca0000000009c7de419dd86eee94449dca000000000cd8d91119d32bf92114ccdc0000000009e8d911297335d911149ce00000000006f78e94983df778444968d00000000005a85553236fed5533457a70000000000666557865cfefb6bb888b880000000000c57bdcd6ed8fcddbaa8ac00000000000dcdfdb8676568abbdded000000000000bbeeec753355667cfeec0000000000000adce8655565567dfdd000000000000000cceb55324446cdecd000000000000000c9c94422124499e9d000000000000000cb59411111149dbcd000000000000000bc6596444448ccad8000000000000000abcb8668babbbcdc80000000000000000caba5355668abbc0000000000000000000c752333578c0000000000000000000000c755658bc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000021111012000'},
-   {n:'schedel-vuur',p:['d1a06c','bb7647','b35b2a','805848','9e3d16','663b2b','79270a','5a2313','48251c','411910','2b1613','1c0705','0c0000','000001','000000'],e:[[7,9],[19,9]],g:'00000046753255757b757333000000000000045573115667ba55b555500000000000453863134469988775a7700000000004673a641224467375578a000000000005587a641124466337dbaa6300000000035ab964244466877aacb8550000000003589b422464446adb9db5550000000005564642116414abb9bd83530000000007744697649669cdcb9b55530000000008a9dffdcc9adcdddfca5333000000000899ccdcea26cedccc7a5220000000000866c8ccd468adda53282330000000000842ca5844fd88a8311a3570000000000642493229eeb6463149577000000000069446462cddc9bb9669898000000000009889752cabb9aab969aa8000000000009bb9841224667bdc7ab700000000000008dd73211346bdd77db0000000000000066d7221124accc5cdb0000000000000003c82211268ad77cb000000000000000027a86446abbb7aca0000000000000006238664669baabbba000000000000000655889999abccb8bb0000000000000000988a8349cbcccabb00000000000000000b9b54246aacbbb0000000000000000000b64444999bb0000000000000000000000b99bbbbc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111000'},
+   {n:'schedel-bot',p:['f7e3ca','eacfb1','e1c4a5','d8ba9b','cdae90','c0a183','b29174','a38062','98795e','8a6b51','7b5b43','604532','2d1c11','060000','000000'],e:[[14,12],[17,10]],g:'0000005433221112234567900000000000000544321111122345667a00000000000065543211111122346789a000000000006645321111222346679aa000000000006744322111234456778cab00000000065763421112343234668cab00000000076793321112531234659cbc000000000768b12479635369a9626dcc00000000086777cdddb879bcdddc6ccc0000000009788dddddca18ddddddccdc000000000aa95ccdded515cfeddc9bdc0000000000bb2b9cdeb3db6ddcb95adc0000000000ca268cc729fe859c973ad00000000000845243313deec423446ab00000000000953436b86edec6cb88a9bc00000000000b6897763dcdc5b988acd000000000000bcde946375967a9ddddd000000000000bbbec644123488cfddc00000000000000c9dd7666658abcecd00000000000000008bd86543358addbc000000000000000097dba9788abccbbc0000000000000000967876789bccb9cb000000000000000078457888abcc89cb0000000000000000896477779abb8bcc00000000000000000b96743367888bc00000000000000000000964243458c00000000000000000000000b97aa9bc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'},
+   {n:'schedel-groen',p:['aec862','858b65','6f6962','4c612c','444933','36392d','312f2b','282823','1c2a19','1e231e','1e1f1c','141d16','0e120f','030603','000000'],e:[[14,12],[20,17]],g:'000003687755323536678a8000000000000056a76532222235788aa80000000000005b8753321112337778ca7000000000036aa7533111223677accaa00000000003898875321233578abcc9900000000005796a75332235578abb9d460000000005666963123363358899999a000000000787444532353237bb99699a0000000009c65449b75775bdd9444dca0000000009c7de419dd86eee94449dca000000000cd8d91119d32bf92114ccdc0000000009e8d911297335d911149ce00000000006f78e94983df778444968d00000000005a85553236fed5533457a70000000000666557865cfefb6bb888b880000000000c57bdcd6ed8fcddbaa8ac00000000000dcdfdb8676568abbdded000000000000bbeeec753355667cfeec0000000000000adce8655565567dfdd000000000000000cceb55324446cdecd000000000000000c9c94422124499e9d000000000000000cb59411111149dbcd000000000000000bc6596444448ccad8000000000000000abcb8668babbbcdc80000000000000000caba5355668abbc0000000000000000000c752333578c0000000000000000000000c755658bc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'},
+   {n:'schedel-vuur',p:['d1a06c','bb7647','b35b2a','805848','9e3d16','663b2b','79270a','5a2313','48251c','411910','2b1613','1c0705','0c0000','000001','000000'],e:[[7,9],[19,9]],g:'00000046753255757b757333000000000000045573115667ba55b555500000000000453863134469988775a7700000000004673a641224467375578a000000000005587a641124466337dbaa6300000000035ab964244466877aacb8550000000003589b422464446adb9db5550000000005564642116414abb9bd83530000000007744697649669cdcb9b55530000000008a9dffdcc9adcdddfca5333000000000899ccdcea26cedccc7a5220000000000866c8ccd468adda53282330000000000842ca5844fd88a8311a3570000000000642493229eeb6463149577000000000069446462cddc9bb9669898000000000009889752cabb9aab969aa8000000000009bb9841224667bdc7ab700000000000008dd73211346bdd77db0000000000000066d7221124accc5cdb0000000000000003c82211268ad77cb000000000000000027a86446abbb7aca0000000000000006238664669baabbba000000000000000655889999abccb8bb0000000000000000988a8349cbcccabb00000000000000000b9b54246aacbbb0000000000000000000b64444999bb0000000000000000000000b99bbbbc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'},
   ];
 
   // =========================================================
@@ -1012,8 +1033,9 @@
           if(self.held.indexOf(h)<0) self.held.push(h); self.fire(h); }); });
         ['gripdown','squeezestart'].forEach(function(ev){
           h.addEventListener(ev,function(){ self.ultimate(h); }); });
-        ['thumbstickdown','abuttondown','bbuttondown','xbuttondown','ybuttondown'].forEach(function(ev){
+        ['abuttondown','bbuttondown','xbuttondown','ybuttondown'].forEach(function(ev){
           h.addEventListener(ev,function(){ self.wissel(h); }); });
+        h.addEventListener('thumbstickdown',function(){ self.pauzeKnop(); });
         ['triggerup','selectend','gripup'].forEach(function(ev){ h.addEventListener(ev,function(){
           const i=self.held.indexOf(h); if(i>=0) self.held.splice(i,1); }); }); });
       }catch(e){ this.dead=true; window.SHOOTDEAD=true; window.onerror('SHOOTER-INIT: '+e.message,'',0,0); }
@@ -1365,7 +1387,7 @@
           r.scale.setScalar(1+0.35*Math.sin(this.T*7)); } } },
     reset:function(){
       this.wep={}; this.ults=3; this.ult=null; this.ultRak=null;
-      this.suck=null; this.suckK=0; this.hp=100; this.rushQ=null; this.tussenB=0; this.fmode=0;
+      this.suck=null; this.suckK=0; this.hp=100; this.rushQ=null; this.tussenB=0; this.fmode=0; this.sierAf=0;
       for(const id in this.hands) this.wp(this.hands[id]); },
     lesKlaar:function(){
       this.lesTekst('',''); this.lesRing('none'); this.reset();
@@ -1400,6 +1422,8 @@
       for(let a=0;a<this.groups.length;a++)
         for(let b=0;b<this.groups[a].cubes.length;b++) if(this.groups[a].cubes[b].alive) blokken++;
       const H=this.lesHands||{};
+      const ti9=document.querySelector('#introTitel');
+      if(ti9) ti9.setAttribute('value', this.les>=7?'':'I N T R O');
       switch(this.les){
         case 0:                                   // beide triggers
           this.lesRing('both','trigger');
@@ -1454,8 +1478,9 @@
             this.lesLeeg(); this.les=7; this.lesT=0; }
           break;
         default:
-          this.lesTekst('READY','the trip begins');
-          if(this.lesT>2.2) this.lesKlaar();
+          this.lesTekst('THE TRIP BEGINS!','good luck');
+          if(ti9) ti9.setAttribute('value','THE TRIP BEGINS!');
+          if(this.lesT>5.0) this.lesKlaar();
       } },
     baasSpawn:function(t){
       const G={form:'baas',bt:t,gi:Math.max(0,this.level-1),cubes:[],age:0,fase:0,tim:0,ph:0,speed:0,
@@ -1479,7 +1504,10 @@
         for(let i=0;i<48;i++) this.piece(G,1+i,1.0,3,{schil:1,idx:i}); }
       else if(t===7){ if(!kern(this,1500,2.8)) return false; G.snel=1; }
       else { if(!kern(this,1500,3.0)) return false; G.eind=1; G.beurt=8;
-        this.schild8(G); this.tentakel8(G); }
+        this.schild8(G); this.tentakel8(G);
+        window.SKWAKKER=0;
+        for(let s8=0;s8<4;s8++)
+          this.skullSpawn(3+(s8%3),s8,{R:15,hoek:s8*1.5708,snel:0.16,blok:0.55,hoog:2.6,hp:2,sk8:1}); }
       if(!G.cubes.length) return false;
       G.maxhp=0; for(let i=0;i<G.cubes.length;i++) if(G.cubes[i].kern) G.maxhp+=G.cubes[i].hp;
       G.hp0=G.maxhp;
@@ -1721,6 +1749,26 @@
       for(let i=0;i<n6;i++) this.piece(G,i+1,1.0,1,{baan:5.5+Math.random()*2.5});
       boomSnd(c.m.position.x/9);
       window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.35); },
+    skullSpawn:function(fi,gi,o){
+      const F=BOSSES[fi]; if(!F) return null;
+      const G={form:'skull',gi:gi,cubes:[],age:0,size:1,speed:0,laps:1,lap:0,match:false,
+        hue:0.1,hueSp:0,ska:(o.hoek||0),skv:(o.snel||0.15),skR:(o.R||15),skR0:(o.R0||o.R||15),
+        skS:(o.blok||0.62),skH:(o.hoog||2.2),onst:1,sier:(o.sier||0),sk8:(o.sk8||0),
+        skT:0,skSch:0.7,ontsn:0};
+      const B=32, g=F.g, stap=2;
+      let minx=99,maxx=0,miny=99,maxy=0;
+      for(let y=0;y<Math.floor(g.length/B);y++) for(let x=0;x<B;x++)
+        if(g[y*B+x]!=='0'){ if(x<minx)minx=x; if(x>maxx)maxx=x; if(y<miny)miny=y; if(y>maxy)maxy=y; }
+      const cx=(minx+maxx)/2, cy=(miny+maxy)/2;
+      let id=0;
+      for(let y=miny;y<=maxy;y+=stap) for(let x=minx;x<=maxx;x+=stap){
+        const ch=g[y*B+x]; if(ch==='0') continue;
+        const kl=parseInt(F.p[Math.min(F.p.length-1,parseInt(ch,16))],16);
+        const c=this.piece(G,id++,(o.blok||0.62)*0.98,(o.hp||2),
+          {vast:kl,gx:(x-cx)/stap,gy:(y-cy)/stap});
+        if(!c) break; }
+      if(!G.cubes.length) return null;
+      this.groups.push(G); return G; },
     pendelSplits:function(G){
       const lev=[];
       for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i];
@@ -1754,6 +1802,7 @@
             px:p.x,py:p.y,pz:p.z}); } }
       this.release(c); return pts; },
     hit:function(G,c){
+      if(G.onst){ c.flash=Math.max(c.flash||0,0.5); return 0; }
       if(G.form==='baas'&&c.kern&&(G.bt===1||G.bt===3||G.bt===6)){
         let armen=0;
         for(let i=0;i<G.cubes.length;i++){ const o=G.cubes[i];
@@ -1791,9 +1840,12 @@
           const hp=this.hands[this.prim()]||h, hs=this.hands[this.spec()]||h;
           if(P.am){ const Wa=this.wp(hs);
             if(Wa.t===5&&Wa.vorig) Wa.t=Wa.vorig;
-            const k4=(Wa.t>=1&&Wa.t<=4)?Wa.t:(Wa.vorig||1);
-            Wa.mag[k4]=Math.min(99,(Wa.mag[k4]||0)+10);
-            if(Wa.t===5) Wa.t=k4;
+            if(Wa.t===5&&!Wa.vorig){                    // nog geen wapen? dan geeft de doos er een
+              Wa.t=1+Math.floor(Math.random()*4);
+              Wa.mag[Wa.t]=Math.min(99,(Wa.mag[Wa.t]||0)+20); }
+            else { const k4=(Wa.t>=1&&Wa.t<=4)?Wa.t:(Wa.vorig||1);
+              Wa.mag[k4]=Math.min(99,(Wa.mag[k4]||0)+10);
+              if(Wa.t===5) Wa.t=k4; }
             this.toonWissel(Wa); }
           else if(P.up){ const u1=this.wp(hp), u2=this.wp(hs);
             if(u1.up&&u2.up){ this.ults++; zeg('Extra ult');
@@ -1868,8 +1920,8 @@
     gameOver:function(){
       window.PAUSED=true;
       for(let a=0;a<this.groups.length;a++){ const G=this.groups[a]; this.stopHum(G);
-        for(let b=0;b<G.cubes.length;b++) this.release(G.cubes[b]); }
-      this.groups.length=0;
+        for(let b=0;b<G.cubes.length;b++){ const c=G.cubes[b];
+          if(c.alive&&c.ind) this.release(c); } }   // alleen projectielen weg: je gaat verder waar je was
       const inf=document.querySelector('#ovInfo');
       if(inf) inf.setAttribute('value','score '+(this.score+(this.totBonus||0)+(this.bonus||0))+
         (this.levens>0?('        '+this.levens+' continues left'):'        no continues left'));
@@ -1891,6 +1943,14 @@
         const l=h.querySelector('.menu-laser'); if(l&&l.parentNode) l.parentNode.removeChild(l); });
       const p=document.querySelector('#overPanel'); if(p) p.setAttribute('visible',false);
       return true; },
+    pauzeKnop:function(){
+      if(window.PHASE!=='trip'&&window.PHASE!=='les') return;
+      if(window.PAUSED&&!this.pz) return;           // game-over-scherm heeft voorrang
+      const e=document.querySelector('#pauzeTxt');
+      if(!this.pz){ this.pz=1; window.PAUSED=true;
+        if(e) e.setAttribute('value','P A U Z E'); }
+      else { this.pz=0; window.PAUSED=false;
+        if(e) e.setAttribute('value',''); } },
     salvoDoelen:function(hand){
       let L=this.targets();
       if(!L.length){                                  // niets meer over: pak het sterkste dat nog leeft
@@ -1996,7 +2056,7 @@
         this.zap(pts); killSnd(this.dir.x*0.5,1.6);
         if(pts.length>1) W.mag[4]=Math.max(0,(W.mag[4]||0)-1); }
       else { this.mg=(this.mg||0)+1;
-        if(this.mg%3===0) gunSnd(this.dir.x*0.5);
+        ratelAan('mg'+h.id);
         const dd=this.dir.clone();
         dd.x+=(Math.random()-0.5)*0.04; dd.y+=(Math.random()-0.5)*0.04; dd.normalize();
         this.bolt(this.ori,dd,col,135,0.55,0.3); }
@@ -2004,6 +2064,7 @@
     tick:function(t,dt){ if(this.dead) return; try{
       const s=Math.min(0.08,(dt||16)/1000);
       const on=((window.PHASE==='trip'||window.PHASE==='les')&&!window.OUTRO&&!window.PAUSED);
+      if(window.PAUSED) return;                     // pauze of game-over: de wereld staat volledig stil
       this.T+=s;
       if(window.PHASE==='les') this.lesTick(s);
       if(this.hurtCd>0) this.hurtCd-=s;
@@ -2073,8 +2134,12 @@
       const les=(window.PHASE==='les');
       const L=(window.LEVEL||0);
       if(!les&&L<=0){ if(this.groups.length){
-          for(let a3=this.groups.length-1;a3>=0;a3--){ const G3=this.groups[a3]; this.stopHum(G3);
+          for(let a3=this.groups.length-1;a3>=0;a3--){ const G3=this.groups[a3]; if(G3.sier) continue;
+            this.stopHum(G3);
             for(let b3=0;b3<G3.cubes.length;b3++) this.release(G3.cubes[b3]); this.groups.splice(a3,1); } }
+        if(L===0&&!this.sierAf){ this.sierAf=1;
+          for(let s8=0;s8<3;s8++)
+            this.skullSpawn(3+s8,s8,{R:17,R0:17,hoek:s8*2.094,snel:0.22,blok:0.9,hoog:3.4,hp:9,sier:1}); }
         this.level=L; this.wave=0; this.waves=0; this.state='wacht'; }
       else if(L!==this.level){ this.level=L; this.wave=0; this.waves=(18+L*2); this.rushQ=null; this.tussenB=0;
         this.gap=1.0; this.state='pauze'; if(L===2) this.pickT=16; }
@@ -2153,11 +2218,11 @@
           const st8=this.rushQ.shift();
           for(let q8=0;q8<st8.length;q8++) this.baasSpawn(st8[q8]); }
         if(this.state==='golf'&&this.groups.length===0&&!this.bosses.length){ this.waveT=0;
-          if(this.wave>=this.waves){ this.state='klaar'; this.gap=8.0; }
+          if(this.wave>=this.waves){ this.state='klaar'; this.gap=9.0; }
           else { this.state='pauze'; this.gap=(this.level>=8)?0.08:0.15; } }
         else if(this.state==='klaar'){
-          if(!this.getoond){ this.getoond=1; this.toonRonde(); }
           this.gap-=s;
+          if(!this.getoond&&this.gap<=5.0){ this.getoond=1; this.toonRonde(); }
           if(this.gap<=0){ window.LEVELDONE=true; this.state='wacht';
             this.getoond=0; this.verbergRonde(); } } }
 
@@ -2182,6 +2247,42 @@
               const L5=Math.max(0.001,Math.sqrt(dx5*dx5+dy5*dy5+dz5*dz5)), sp5=15+Math.random()*7;
               c5.vx=dx5/L5*sp5; c5.vy=dy5/L5*sp5; c5.vz=dz5/L5*sp5;
               gunSnd(q5.x/9); break; } } }
+        if(G.form==='skull'){
+          G.ska+=(G.skv||0.15)*s; G.skT+=s;
+          if(G.sier){
+            if(window.LEVEL>0) G.skT=Math.max(G.skT,20);
+            if(G.skT<4) G.skR=46+(G.skR0-46)*(G.skT/4);
+            else if(G.skT>20){ G.skR=G.skR0+(G.skT-20)*9; G.ontsn=1;
+              if(G.skR>75) for(let b7=0;b7<G.cubes.length;b7++)
+                if(G.cubes[b7].alive) this.release(G.cubes[b7]); } }
+          if(G.sk8){
+            let B8=null;
+            for(let b7=0;b7<this.groups.length;b7++){ const g7=this.groups[b7];
+              if(g7.form==='baas'&&g7.bt===8){ B8=g7; break; } }
+            if(!B8){ G.ontsn=1; G.skR=(G.skR||15)+s*16;
+              if(G.skR>70) for(let b7=0;b7<G.cubes.length;b7++)
+                if(G.cubes[b7].alive) this.release(G.cubes[b7]); }
+            else if(G.onst){
+              let kh=0,kt=0;
+              for(let b7=0;b7<B8.cubes.length;b7++){ const c7=B8.cubes[b7];
+                if(c7.kern){ kt+=(c7.big0||0); if(c7.alive) kh+=c7.hp; } }
+              if(kt&&kh<=kt*0.5){ G.onst=0; if(!window.SKWAKKER){ window.SKWAKKER=1; zeg('The skulls awaken'); } } }
+            if(!G.onst&&!G.ontsn){ G.skSch-=s;
+              if(G.skSch<=0){ G.skSch=0.55+Math.random()*0.35;
+                if(Math.cos(G.ska)>0.55){
+                  const st7=Math.floor(Math.random()*G.cubes.length);
+                  let n8=0;
+                  for(let b7=0;b7<G.cubes.length&&n8<2;b7++){
+                    const c7=G.cubes[(st7+b7)%G.cubes.length];
+                    if(c7.alive&&!c7.vlucht){
+                      const q7=c7.m.position;
+                      c7.vlucht=1; c7.hurt=1; c7.afMin=undefined;
+                      c7.px=q7.x; c7.py=q7.y; c7.pz=q7.z;
+                      const w7=Math.random()*6.283, r7=0.4+Math.random()*2.0;
+                      const dx7=Math.cos(w7)*r7-q7.x, dy7=1.6+Math.sin(w7)*r7-q7.y, dz7=-q7.z,
+                        L7=Math.max(0.001,Math.sqrt(dx7*dx7+dy7*dy7+dz7*dz7)), sp7=15+Math.random()*6;
+                      c7.vx=dx7/L7*sp7; c7.vy=dy7/L7*sp7; c7.vz=dz7/L7*sp7; n8++; } }
+                  if(n8) gunSnd(0.3); } } } } }
         if(G.form==='kern'){ let co0=null;
           for(let b7=0;b7<G.cubes.length;b7++) if(G.cubes[b7].core){ co0=G.cubes[b7]; break; }
           if(co0&&co0.alive){ G.regT=(G.regT||0)+s;
@@ -2195,7 +2296,11 @@
                   if(!this.piece(G,oud.i,oud.size,oud.big0,
                     (oud.split!==undefined&&oud.split)?{split:oud.split,gen:oud.gen||0}:null)) break; }
                 window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.3); } } }
-          else G.regT=0; }
+          else { G.regT=0;
+            if(co0){ G.avT=(G.avT||0)-s;                // kern kapot: de rest stormt op je af
+              if(G.avT<=0){ G.avT=0.12; let n9=0;
+                for(let b7=0;b7<G.cubes.length&&n9<5;b7++){ const c7=G.cubes[b7];
+                  if(c7.alive&&!c7.ind&&!c7.core){ this.werpBaas(G,c7,11+Math.random()*5); n9++; } } } } } }
         if(G.form==='pendel'){ G.psch-=s;
           if(G.psch<=0){ G.psch=3.5+Math.random()*2.5;
             let kop=null;
@@ -2234,6 +2339,25 @@
             if(z>13){ if(!c.ind) G.ontsn=1;
               this.release(c); continue; }
             x=Math.sin(z*G.fx+G.ph)*G.R; y=1.6+Math.sin(z*G.fy+G.ph2)*G.R2;
+          } else if(G.form==='skull'){
+            const a9=G.ska, ra=(G.skR||15);
+            const fx9=Math.sin(a9), fz9=-Math.cos(a9);
+            const cx9=fx9*ra, cz9=fz9*ra, cy9=(G.skH||2.2);
+            const rx9=-fz9, rz9=fx9, S9=(G.skS||0.62);
+            const tx9=cx9+rx9*c.gx*S9, ty9=cy9-c.gy*S9, tz9=cz9+rz9*c.gx*S9;
+            if(c.vlucht===1){
+              c.px+=c.vx*s; c.py+=c.vy*s; c.pz+=c.vz*s;
+              x=c.px; y=c.py; z=c.pz;
+              const af9=x*x+(y-1.6)*(y-1.6)+z*z;
+              if(c.afMin===undefined||af9<c.afMin) c.afMin=af9;
+              if(af9>c.afMin+9||z>6) c.vlucht=2;
+            } else if(c.vlucht===2){
+              c.px+=(tx9-c.px)*Math.min(1,s*3.5); c.py+=(ty9-c.py)*Math.min(1,s*3.5);
+              c.pz+=(tz9-c.pz)*Math.min(1,s*3.5);
+              x=c.px; y=c.py; z=c.pz;
+              if(((tx9-x)*(tx9-x)+(ty9-y)*(ty9-y)+(tz9-z)*(tz9-z))<0.4){
+                c.vlucht=0; c.hurt=0; c.afMin=undefined; }
+            } else { x=tx9; y=ty9; z=tz9; }
           } else if(G.form==='pendel'){
             const u=G.age*0.9+G.pf-c.pi*0.45;
             x=Math.sin(u*0.62)*14+G.px0;
@@ -2279,7 +2403,7 @@
             const N=G.gw||4;
             x=G.cx+((c.i%N)-(N-1)/2)*G.gap; y=G.cy+(Math.floor(c.i/N)-(N-1)/2)*G.gap; z=G.cz;
           } else { x=G.cx+(c.i?9:-9); y=1.6; z=G.cz; }
-          if(z>13||z<-165){
+          if((z>13||z<-165)&&G.form!=='skull'){
             if(G.form==='ring'&&!G.ret&&!c.ind&&z>13){
               G.ret=1; G.retT=0; let rk=0;
               for(let b7=0;b7<G.cubes.length;b7++){ const c7=G.cubes[b7];
@@ -2306,9 +2430,11 @@
           c.m.position.set(x,y,z);
 
           const dd=Math.sqrt(x*x+(y-1.6)*(y-1.6)+z*z); if(dd<minD){ minD=dd; hx=x; }
-          if(G.form==='baas'||G.form==='bol'){ c.m.rotation.set(0,c.m.rotation.y+2.4*s,0); }
+          if(G.form==='skull'){ c.m.rotation.set(0,0,0); }
+          else if(G.form==='baas'||G.form==='bol'){ c.m.rotation.set(0,c.m.rotation.y+2.4*s,0); }
           else { c.m.rotation.x+=c.sx*s; c.m.rotation.y+=c.sy*s; c.m.rotation.z+=c.sz*s; }
-          if(G.match){ this.pal(G.hue+c.i*0.05+this.T*G.hueSp,col); col.multiplyScalar(0.72); }
+          if(c.vast!==undefined) col.setHex(c.vast);
+          else if(G.match){ this.pal(G.hue+c.i*0.05+this.T*G.hueSp,col); col.multiplyScalar(0.72); }
           else col.setHSL((G.hue+c.i*0.035+this.T*G.hueSp)%1,0.8,0.4);
           if(c.kern){ const k=0.5+0.5*Math.sin(this.T*3.5);
             col.lerp(this.gold,0.5+0.4*k); }
@@ -2593,7 +2719,7 @@
       const l=h.querySelector('.menu-laser'); if(l&&l.parentNode) l.parentNode.removeChild(l); });
     $('#reticle').setAttribute('visible',false);
     const sc0=$('#rig').components.shooter; if(sc0&&sc0.reset) sc0.reset();
-    window.PHASE=window.LESKLAAR?'trip':'les'; }
+    window.PHASE='les'; }
   function endTrip(){ if(window.PHASE!=='trip') return; window.PHASE='end';
     window.ENDOK=false; setTimeout(function(){ window.ENDOK=true; },5000);
     if(MASTER) MASTER.gain.linearRampToValueAtTime(0.12,A.currentTime+3);
@@ -2624,7 +2750,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v100.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v104.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -2642,7 +2768,7 @@
   <a-scene loading-screen="enabled: false" renderer="colorManagement: true; antialias: true; foveationLevel: 1"
            background="color: #000000">
     <a-entity id="rig" position="0 0 0" shaderworld shooter>
-      <a-entity id="menu">
+      <a-entity id="menu" position="0 0 -0.7">
         <a-plane position="0 1.52 -2.1" width="2.5" height="2.35" material="color:#0a0714;opacity:0.94;transparent:true"></a-plane>
         <a-plane position="0 1.52 -2.11" width="2.58" height="2.43" material="color:#b04aff;opacity:0.18;transparent:true"></a-plane>
         <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.2" position="0 2.55 -2.08"></a-text>
@@ -2663,7 +2789,7 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v100.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v104.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
         <a-plane id="btnSkip" class="menu-btn" position="1.35 1.15 -2.0" width="0.8" height="0.18" material="color:#2a1442;opacity:0.95;transparent:true"></a-plane>
@@ -2721,8 +2847,10 @@
           <a-plane id="baasVul" position="0 0.42 -1.59" width="1.2" height="0.05" material="color:#ff4a5a;shader:flat"></a-plane>
           <a-text id="baasNaam" value="" align="center" color="#ffb0b8" width="1.1" position="0 0.49 -1.59"></a-text>
         </a-entity>
-        <a-text id="lesTxt" value="" align="center" color="#ffffff" width="1.35" position="0 0.22 -1.5"></a-text>
-        <a-text id="lesSub" value="" align="center" color="#8ad4ff" width="0.95" position="0 0.05 -1.5"></a-text>
+        <a-text id="introTitel" value="" align="center" color="#ffd24a" width="2.4" position="0 0.62 -1.5"></a-text>
+        <a-text id="lesTxt" value="" align="center" color="#ffffff" width="1.8" position="0 0.32 -1.5"></a-text>
+        <a-text id="lesSub" value="" align="center" color="#8ad4ff" width="1.25" position="0 0.14 -1.5"></a-text>
+        <a-text id="pauzeTxt" value="" align="center" color="#ffd24a" width="2.6" position="0 0.34 -1.6"></a-text>
         <a-text id="wisselTxt" value="" align="center" color="#9ae0ff" width="0.95" position="-0.52 0.16 -1.4"></a-text>
         <a-text id="perfectTxt" value="" align="center" color="#ffd24a" width="1.1" position="0.52 0.16 -1.4"></a-text>
         <a-text id="dbgTxt" value="" align="center" color="#7d8ba0" width="0.85" position="0 -0.60 -1.3"></a-text>
