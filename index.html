@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v99.0
+  //  DIEPE TRIP v100.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1006,9 +1006,9 @@
         self.hands[h.id]=h;
         ['triggerdown','selectstart'].forEach(function(ev){ h.addEventListener(ev,function(){
           if(self.held.indexOf(h)<0) self.held.push(h); self.fire(h); }); });
-        ['gripdown','squeezestart','abuttondown','xbuttondown'].forEach(function(ev){
+        ['gripdown','squeezestart'].forEach(function(ev){
           h.addEventListener(ev,function(){ self.ultimate(h); }); });
-        ['thumbstickdown','bbuttondown','ybuttondown'].forEach(function(ev){
+        ['thumbstickdown','abuttondown','bbuttondown','xbuttondown','ybuttondown'].forEach(function(ev){
           h.addEventListener(ev,function(){ self.wissel(h); }); });
         ['triggerup','selectend','gripup'].forEach(function(ev){ h.addEventListener(ev,function(){
           const i=self.held.indexOf(h); if(i>=0) self.held.splice(i,1); }); }); });
@@ -1417,15 +1417,15 @@
         case 2:                                   // ultimate op je hoofdhand
           this.lesVul(120);
           this.lesRing(prim,'grip');
-          this.lesTekst('SQUEEZE THE GRIP','each hand has its own ultimate - start with your machine gun hand');
+          this.lesTekst('MAIN HAND: SQUEEZE THE GRIP','grip = 50 rockets - top buttons = focus targets');
           if(this.ultRak||this.lesUlt===prim){ this.les=3; this.lesT=0; this.lesUlt=0; }
           break;
         case 3:                                   // ultimate op je andere hand
-          if(this.ultRak){ this.lesTekst('NICE','50 homing rockets, each on its own target');
+          if(this.ultRak){ this.lesTekst('NICE','one rocket per target - top buttons show and aim the focus');
             this.lesRing('none'); break; }
           this.lesVul(140);
           this.lesRing(spec,'grip');
-          if(!this.lesUlt&&!this.ult) this.lesTekst('NOW THE OTHER HAND','this one pulls them into one clump');
+          if(!this.lesUlt&&!this.ult) this.lesTekst('OTHER HAND: SQUEEZE THE GRIP','grip = suck ball - top buttons = swap weapon');
           else this.lesTekst('SHOOT THE CLUMP','bunched up they are easy to hit');
           if(this.lesUlt===spec&&!this.ult&&this.lesT>2){
             this.lesLeeg(); this.les=4; this.lesT=0; this.lesUlt=0; this.lesN=0; }
@@ -2620,7 +2620,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v99.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v100.0</div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
     window.SCENE_LOADED=false; window.T0=Date.now();
@@ -2659,7 +2659,7 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v99.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v100.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
         <a-plane id="btnSkip" class="menu-btn" position="1.35 1.15 -2.0" width="0.8" height="0.18" material="color:#2a1442;opacity:0.95;transparent:true"></a-plane>
