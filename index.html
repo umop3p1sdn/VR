@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v114.0
+  //  DIEPE TRIP v114.1
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1140,7 +1140,7 @@
         let len=(size>=2.5)?(5+Math.floor(Math.random()*4)):(8+Math.floor(Math.random()*7));
         const M=window.MOEILIJK||2;
         // taaie slang: veel meer treffers nodig, komt vanaf ronde 4 en vaker bij zwaardere stand
-        const taaiK=(this.level>=10)?0.08:((this.level>=7)?0.45:((this.level>=4)?0.10:0));
+        const taaiK=(this.level>=7)?0.45:((this.level>=4)?0.10:0);
         const broedK=(this.level===3)?0.55:((this.level>=6)?0.30:((this.level>=4)?0.10:0));
         if(Math.random()<Math.min(0.8,taaiK*M)){ hp=4; size=Math.max(size,1.8); spd*=0.7; G.taaislang=1; }
         if(Math.random()<Math.min(0.8,broedK*M)){ G.broed=1; }
@@ -2386,7 +2386,7 @@
           for(let s8=0;s8<3;s8++)
             this.skullSpawn(3+s8,s8,{R:17,R0:17,hoek:s8*2.094,snel:0.22,blok:0.9,hoog:3.4,hp:9,sier:1}); }
         this.level=L; this.wave=0; this.waves=0; this.state='wacht'; }
-      else if(L!==this.level){ this.level=L; this.wave=0; this.waves=(L>=10)?22:(18+L*2); this.rushQ=null; this.tussenB=0; this.bWacht=0;
+      else if(L!==this.level){ this.level=L; this.wave=0; this.waves=(18+L*2); this.rushQ=null; this.tussenB=0; this.bWacht=0;
         this.gap=1.0; this.state='pauze'; if(L===2) this.pickT=16*this.pickF();
         if(this.cheatW&&this.cheatW.lvl===L){ const md=this.cheatW.mode; this.cheatW=null;
           for(let a3=this.groups.length-1;a3>=0;a3--){ const G3=this.groups[a3]; this.stopHum(G3);
@@ -2398,6 +2398,12 @@
             if(md==='skulls') this.cheatSkul=1; } } }
       if(!les){
         if(this.state==='pauze'){ this.gap-=s;
+          if(this.gap<=0&&this.level>=9){                 // grote rondes: eerst ruimte, dan de volgende golf
+            let druk=0;
+            for(let a0=0;a0<this.groups.length;a0++){ const g0=this.groups[a0];
+              for(let b0=0;b0<g0.cubes.length;b0++){ const c0=g0.cubes[b0];
+                if(c0.alive&&!c0.ind) druk++; } }
+            if(druk>85){ this.gap=0.6; } }
           if(this.gap<=0){ this.wave++; this.ontsnapt=0;
             if(!this.tussenB&&(this.level===3||this.level===4)&&this.wave===Math.floor(this.waves/2)){
               this.tussenB=1; this.baasSpawn(this.level-2); }
@@ -3174,7 +3180,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v114.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v114.1</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -3239,7 +3245,7 @@
         <a-plane id="btnDemo" class="menu-btn" position="0 0.14 -2.08" width="1.3" height="0.22" material="color:#1f3a5a;opacity:0.97;transparent:true"><a-text value="DEMO" align="center" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v114.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v114.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
