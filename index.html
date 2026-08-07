@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v120.0
+  //  DIEPE TRIP v123.1
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -49,7 +49,7 @@
      A:[0.12,0.05,0.14],B:[0.80,0.50,0.70],D:[0.00,0.33,0.67], mus:{root:123.5,mode:[0,3,5,7,10],bpm:144,goa:1,acid:1,bright:2600}},
     {n:'deep',  dur:26, sway:13, yaw:0, roll:0, back:0, ev:-1,orb:1, orbF:-1,orbNear:1,dome:0.3, wall:0, tex:[0,0], md:[0,0,2], fold:[6,6],  wave:[1.2,1.8], sp:[7,11], rip:0.12, white:0, light:0,
      A:[0.12,0.04,0.10],B:[0.80,0.45,0.75],D:[0.40,0.20,0.75], mus:{root:98.0,mode:[0,2,3,7,10],bpm:146,goa:1,bright:2600}},
-    {n:'orbit', dur:26, tintel:1, pipe:1, lay:1, sway:0, yaw:0, roll:14, back:0, ev:-1,orb:0, orbF:-1,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[3,0,4], fold:[6,6],  wave:[0.2,0.3], sp:[11,15],rip:0.12, white:0, light:1,
+    {n:'orbit', dur:26, tintel:1, pipe:1, pipeTex:-1, pipeMd:3, pipeFold:13, pipeSwap:1, pipeSharp:1.1, lay:1, sway:0, yaw:0, roll:14, back:0, ev:-1,orb:0, orbF:-1,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[3,0,4], fold:[6,6],  wave:[0.2,0.3], sp:[11,15],rip:0.12, white:0, light:1,
      A:[0.06,0.05,0.10],B:[0.60,0.50,0.85],D:[0.55,0.60,0.70], mus:{root:82.4,mode:[0,1,3,7,8],bpm:140,goa:1,bright:2200}},
     {n:'void', vlak:1, bol9:1, dur:26, sway:0, yaw:0, roll:0, back:0, ev:-1,orb:0, orbF:-1,orbNear:0,dome:0.0, wall:0, tex:[0,0], md:[0,3,4], fold:[6,6],  wave:[0.5,0.9], sp:[9,13], rip:0.10, white:0, light:1,
      A:[0.05,0.05,0.12],B:[0.55,0.55,0.90],D:[0.60,0.65,0.75], mus:{root:110.0,mode:[0,3,5,7,10],bpm:140,goa:1,bright:2200}},
@@ -352,6 +352,7 @@
   const SHELL_VS=[
    'uniform float uTime,uWave,uRipZ,uRipAmp,uScale;',
    'varying vec2 vUv; varying float vAxis;',
+   'uniform float uFeather;',
    'void main(){ vUv=uv; vec3 p=position; float az=p.y; vAxis=az;',
    '  float w=1.0+uWave*0.30*sin(az*0.026+uTime*0.55)+uWave*0.16*sin(az*0.062-uTime*0.4);',
    '  float dd=az-uRipZ; w+=uRipAmp*exp(-dd*dd*0.0035);',
@@ -409,6 +410,7 @@
    '  col=mix(col,vec3(1.0),clamp(uWhite+uFlash,0.0,1.0));',
    '  float a=uAlpha*clamp(pow(clamp(t,0.0,1.4),uSharp),0.0,1.0);',
    '  a*=smoothstep(0.0,0.05,pv)*smoothstep(1.0,0.95,pv);',
+   '  a*=mix(1.0, smoothstep(0.0,0.30,pu)*smoothstep(1.0,0.70,pu)*smoothstep(0.0,0.26,pv)*smoothstep(1.0,0.74,pv), uFeather);',
    '  float s1=smoothstep(uCut,uCut+24.0,vAxis);',
    '  a*=mix(1.0-s1,s1,step(0.0,uCutDir));',
    '  gl_FragColor=vec4(col,a); }'].join('\n');
@@ -470,7 +472,7 @@
     uAlpha:{value:0.7},uGain:{value:1},uWhite:{value:0},uSharp:{value:2.0},uFlash:{value:0},
     uWave:{value:0.4},uRipZ:{value:9999},uRipAmp:{value:0},uScale:{value:1},uDark:{value:1},
     uCut:{value:9999},uCutDir:{value:-1},uSwap:{value:0},uFreq:{value:1},
-    uMode2:{value:0},uMix:{value:0},
+    uMode2:{value:0},uMix:{value:0},uFeather:{value:0},
     uTexAmt:{value:0},uTexRep:{value:1},uTex:{value:null},
     uColA:{value:new THREE.Vector3(0.07,0.06,0.16)},
     uColB:{value:new THREE.Vector3(0.45,0.40,0.85)},
@@ -541,7 +543,7 @@
         pm.rotation.set(-Math.PI/2,0,0); pm.position.set(0,-2.2,-30); pm.renderOrder=-3;
         pm.visible=false; root.add(pm); this.plate={m:pm,u:pu}; }
       for(let hh=0;hh<2;hh++){ const hu=shellU(); hu.uCut.value=99999; hu.uWave.value=0;
-        hu.uSharp.value=1.4; hu.uSwap.value=0; hu.uAlpha.value=0.0;
+        hu.uSharp.value=1.4; hu.uSwap.value=0; hu.uAlpha.value=0.0; hu.uFeather.value=1;
         const hm=new THREE.Mesh(new THREE.CylinderGeometry(14,14,44,24,1,true,0,Math.PI),
           new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,
             uniforms:hu,side:THREE.DoubleSide,transparent:true,depthWrite:false}));
@@ -587,7 +589,7 @@
       // ---- noorderlicht: gelaagde gordijnen met eigen frequentie ----
       this.aurAmt=0; this.aurora=[];
       for(let q=0;q<4;q++){ const au=shellU(); au.uCut.value=99999; au.uWave.value=0;
-        au.uSharp.value=0.8; au.uSwap.value=0; au.uAlpha.value=0.0;
+        au.uSharp.value=0.8; au.uSwap.value=0; au.uAlpha.value=0.0; au.uFeather.value=1;
         const am=new THREE.Mesh(new THREE.PlaneGeometry(110,36,22,1),
           new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,
             uniforms:au,side:THREE.DoubleSide,transparent:true,depthWrite:false}));
@@ -824,7 +826,13 @@
           u.uSpeed.value=this.cur.sp*2.1; u.uFold.value=this.cur.fold;
           u.uBeat.value=beat; u.uWhite.value=Math.min(1,0.10+beat*0.45);
           u.uFlash.value=this.flash*0.5; u.uDark.value=1;
-          u.uTexAmt.value=0.7; u.uTexRep.value=3.2; u.uTex.value=getPrints()[2];
+          const pt9=(SC.pipeTex===undefined)?2:SC.pipeTex;
+          u.uTexAmt.value=(pt9<0)?0.0:0.7; u.uTexRep.value=(SC.pipeRep||3.2);
+          u.uTex.value=(pt9<0)?null:getPrints()[pt9];
+          if(SC.pipeMd!==undefined){ u.uMode.value=SC.pipeMd; u.uMode2.value=SC.pipeMd; u.uMix.value=0; }
+          if(SC.pipeFold!==undefined) u.uFold.value=SC.pipeFold;
+          if(SC.pipeSwap!==undefined) u.uSwap.value=SC.pipeSwap;
+          if(SC.pipeSharp!==undefined) u.uSharp.value=SC.pipeSharp;
           u.uAlpha.value=0.92*this.pipeAmt;
           u.uColA.value.copy(this.cur.A); u.uColB.value.copy(this.cur.B); u.uColD.value.copy(this.cur.D); }
         this.pipeInside+=(ins-this.pipeInside)*(1-Math.exp(-s/0.5)); }
@@ -1057,7 +1065,7 @@
           if(this.halfT<=0){ this.halfT=14+Math.random()*12;
             const H0=this.halfjes[(Math.random()<0.5)?0:1];
             if(H0&&H0.dur<=0){ H0.dur=7+Math.random()*3; H0.t=0;
-              H0.a0=0.2+Math.random()*0.25;            // soms scherp, soms een waas
+              H0.a0=0.17+Math.random()*0.20;           // soms scherp, soms een waas
               H0.vx=(Math.random()*2-1)*1.5; H0.vy=(Math.random()*2-1)*0.6;
               H0.m.position.set((Math.random()*2-1)*45, 16+Math.random()*14, -30-Math.random()*40);
               H0.m.rotation.set(Math.PI/2,0,(Math.random()*2-1)*0.5);
@@ -1355,7 +1363,8 @@
       const W=this.wp(h), volg=[1,2,3,4,5];
       let i=volg.indexOf(W.t); if(i<0) i=4;
       for(let k=1;k<=5;k++){ const t=volg[(i+k)%5];
-        if(t===5||((W.mag[t]||0)>0)){ W.t=t; break; } }
+        if(t===5||((W.mag[t]||0)>0)){ W.t=t;
+          if(W.lvlT&&W.lvlT[t]) W.lvl=W.lvlT[t]; break; } }
       this.toonWissel(W); gunSnd(0); },
     toonPerfect:function(n,extra){
       const e=document.querySelector('#perfectTxt');
@@ -1853,7 +1862,7 @@
           this.lesFreeze=0;
           if(!this.picks.some(function(p){ return p.live; })) this.lesDoos(1,9);
           this.lesTekst('SHOOT THE ROCKET BOX','any trigger - it arms your other hand');
-          if(this.wep[spec]&&this.wep[spec].t===1){ this.lesLeeg(); this.les=3; this.lesT=0; }
+          if(this.wep[spec]&&(this.wep[spec].mag[1]||0)>0){ this.lesLeeg(); this.les=3; this.lesT=0; }
           break;
         case 3:                                   // upgrade: zelfde doos nogmaals
           if(this.lesT<1.6){ this.lesFreeze=1; this.lesRing('none');
@@ -1861,7 +1870,7 @@
           this.lesFreeze=0;
           if(!this.picks.some(function(p){ return p.live; })) this.lesDoos(1,-9);
           this.lesTekst('SHOOT THE SAME BOX AGAIN','now on your left');
-          if(this.wep[spec]&&(this.wep[spec].lvl||1)>=2){
+          if(this.wep[spec]&&this.wep[spec].lvlT&&(this.wep[spec].lvlT[1]||1)>=2){
             this.lesLeeg(); this.les=4; this.lesT=0; this.lesN=0; this.lesWis=0; }
           break;
         case 4:                                   // tweede wapen + wisselen + vuren
@@ -2773,10 +2782,13 @@
           else if(P.k===5){ const Wp=this.wp(hp);
             if(P.ultBox||(Wp.lvl||1)>=3){ this.ults++; zeg('Extra ult');
               window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.5); }
-            else { Wp.t=5; Wp.lvl=Math.min(3,(Wp.lvl||1)+1); } }
+            else { Wp.t=5; Wp.lvl=Math.min(3,(Wp.lvl||1)+1);
+              if(!Wp.lvlT) Wp.lvlT={}; Wp.lvlT[5]=Wp.lvl; } }
           else { const Ws=this.wp(hs);
-            if(Ws.t===P.k) Ws.lvl=Math.min(3,(Ws.lvl||1)+1);
-            else if(Ws.t===5||((Ws.mag[Ws.t]||0)<=0)) Ws.t=P.k;
+            if(!Ws.lvlT) Ws.lvlT={};
+            const had9=((Ws.mag[P.k]||0)>0)||(Ws.lvlT[P.k]>=1);
+            Ws.lvlT[P.k]=had9?Math.min(3,(Ws.lvlT[P.k]||1)+1):1;   // niveau per wapensoort
+            if(Ws.t===P.k) Ws.lvl=Ws.lvlT[P.k];                    // actief wapen groeit meteen mee
             Ws.mag[P.k]=Math.min(99,(Ws.mag[P.k]||0)+20);
             this.toonWissel(Ws); }
           this.burst(P.m.position.x,P.m.position.y,P.m.position.z,
@@ -2927,6 +2939,8 @@
       const wilX=Math.max(-0.35,Math.min(0.35,Math.asin(dy/L9)));
       rot.x+=(wilX-rot.x)*Math.min(1,s*2.5);
       for(const id in this.hands) this.fire(this.hands[id]);
+      this.dmW=(this.dmW||0)+s;
+      if(this.dmW>12){ this.dmW=0; this.wisDeb=0; this.wissel(this.hands[this.spec()]); }
       this.dmU=(this.dmU||0)+s;
       if(this.dmU>17&&this.ults>0){ this.dmU=0;
         const sp=this.spec(), pr=(sp==='leftHand')?'rightHand':'leftHand';
@@ -3521,6 +3535,14 @@
         else G.cz+=G.speed*s;
         if(G.form!=='snake'&&G.form!=='grid'&&G.cz>19&&G.lap<G.laps-1){ G.lap++; G.cz=-52; }
         if(G.form==='ring'||G.form==='kern') G.ph+=G.spin*s;
+        const eigen9=(G.form==='komeet'||G.form==='bubbel'||G.form==='gordel'||G.form==='stelsel'||
+                      G.form==='mijn'||G.form==='raider'||G.form==='laser'||G.form==='hersteller'||
+                      G.form==='parasiet'||G.form==='deler'||G.form==='wachter'||G.form==='torret');
+        if((G.speed||0)>0&&G.form!=='baas'&&!eigen9&&G.cz>-52){
+          const M8=window.MOEILIJK||2;
+          const hk=((M8>=8)?0.60:((M8>=4)?0.45:0.30))*s;      // hoe hard ze op je insturen
+          if(typeof G.cx==='number') G.cx+=(0-G.cx)*hk;
+          if(typeof G.cy==='number') G.cy+=(1.6-G.cy)*hk; }
         if(G.phantom){ G.faseK+=s; G.faseUit=((G.faseK%2.6)>1.6)?1:0; }
         if(G.laserS){
           const kop=G.cubes[0];
@@ -3866,10 +3888,12 @@
             G.werp--; c.ind=1; c.hurt=1; c.px=x; c.py=y; c.pz=z;
             const dx=-x, dy=1.6-y, dz=-z, L2=Math.max(0.001,Math.sqrt(dx*dx+dy*dy+dz*dz)), sp2=13+Math.random()*8;
             c.vx=dx/L2*sp2; c.vy=dy/L2*sp2; c.vz=dz/L2*sp2; }
-          const r2=Math.hypot(x,y-1.6), cl=5.0+(c.size||1)*0.6;
+          const M9=window.MOEILIJK||2;
+          const rr9=1.6+(c.size||1)*0.7;                       // contactstraal van dit blok
+          const r2=Math.hypot(x,y-1.6), cl=rr9*((M9>=8)?0.72:((M9>=4)?0.88:1.12));
           if(!G.door&&!c.hurt&&Math.abs(z)<14&&r2<cl){ const q=cl/Math.max(0.001,r2); x*=q; y=1.6+(y-1.6)*q; }
           const dm=x*x+(y-1.6)*(y-1.6)+z*z;
-          if(dm<2.0){ this.raakMij(2+Math.round((c.size||1)*2));
+          if(dm<rr9*rr9){ this.raakMij(2+Math.round((c.size||1)*2));
             this.burst(x,y,z,this.white,8,14); this.release(c);
             if(window.PAUSED) return;
             continue; }
@@ -4216,7 +4240,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v120.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v123.1</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4296,7 +4320,7 @@
         <a-plane id="btnCont" class="menu-btn" position="0 -0.12 -2.08" width="1.3" height="0.22" material="color:#26262a;opacity:0.97;transparent:true"><a-text id="contTxt" value="CONTINUE" align="center" color="#5a5a62" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v120.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v123.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
