@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v118.2
+  //  DIEPE TRIP v118.3
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -543,10 +543,10 @@
       this.aurAmt=0; this.aurora=[];
       for(let q=0;q<4;q++){ const au=shellU(); au.uCut.value=99999; au.uWave.value=0;
         au.uSharp.value=0.8; au.uSwap.value=0; au.uAlpha.value=0.0;
-        const am=new THREE.Mesh(new THREE.PlaneGeometry(150,40,26,1),
+        const am=new THREE.Mesh(new THREE.PlaneGeometry(110,36,22,1),
           new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,
             uniforms:au,side:THREE.DoubleSide,transparent:true,depthWrite:false}));
-        am.position.set(0,20+q*5,-96+q*13); am.rotation.set(0,0,0);
+        am.position.set(0,20+q*5,-85+q*11); am.rotation.set(0,0,0);
         am.renderOrder=-7; am.visible=false; root.add(am);
         this.aurora.push({m:am,u:au,f:0.5+q*0.28,q:q}); }
       // ---- witte bol: kruipt over de hele ronde van rechts naar links ----
@@ -556,7 +556,7 @@
         const wm=new THREE.Mesh(new THREE.SphereGeometry(7,24,18),
           new THREE.ShaderMaterial({vertexShader:SHELL_VS,fragmentShader:SHELL_FS,
             uniforms:wu,side:THREE.FrontSide,transparent:true,depthWrite:false}));
-        wm.position.set(70,7,-92); wm.renderOrder=-6; wm.visible=false;
+        wm.position.set(62,7,-78); wm.renderOrder=-6; wm.visible=false;
         root.add(wm); this.witBol={m:wm,u:wu}; }
       // ---- sterrenprint in de lucht ----
       this.sterAmt=0;
@@ -568,8 +568,8 @@
         sm.renderOrder=-19; sm.visible=false; root.add(sm); this.sterHemel={m:sm,u:su}; }
       // ---- planeten: een vaste ver weg, de rest komt gaandeweg ----
       this.planAmt=0; this.planeten=[];
-      const PLN=[{r:22,x:-58,y:26,z:-150,vast:1,w:0.00},{r:9,x:52,y:12,z:-120,w:0.35},
-                 {r:34,x:70,y:30,z:-165,w:0.62},{r:6,x:-30,y:9,z:-88,w:0.85}];
+      const PLN=[{r:22,x:-52,y:24,z:-78,vast:1,w:0.00},{r:9,x:46,y:12,z:-72,w:0.35},
+                 {r:34,x:56,y:28,z:-66,w:0.62},{r:6,x:-28,y:9,z:-60,w:0.85}];
       for(let q=0;q<PLN.length;q++){ const P9=PLN[q], nu=shellU();
         nu.uCut.value=99999; nu.uWave.value=0; nu.uSharp.value=1.3; nu.uAlpha.value=0.0;
         const nm=new THREE.Mesh(new THREE.SphereGeometry(P9.r,26,18),
@@ -899,7 +899,7 @@
             if(wa0[k9]&&A9.u[k9]) A9.u[k9].value=wa0[k9].value; });
           A9.u.uMode.value=((A9.q+(this.faseN||0))%2)?2:1;
           A9.u.uAlpha.value=this.aurAmt*(0.20+0.07*Math.sin(this.elapsed*A9.f));
-          A9.m.position.y=20+A9.q*5+Math.sin(this.elapsed*A9.f*0.5)*3;
+          A9.m.position.y=19+A9.q*5+Math.sin(this.elapsed*A9.f*0.5)*3;
           A9.m.rotation.z=Math.sin(this.elapsed*A9.f*0.23+A9.q)*0.14; } }
       // witte bol kruipt rechts -> links over de hele ronde
       this.witAmt+=(((menu||!SC.wit9)?0:1)-this.witAmt)*kv;
@@ -908,7 +908,7 @@
         if(W9.m.visible){
           ['uTime','uBeat'].forEach(function(k9){ if(ww0[k9]&&W9.u[k9]) W9.u[k9].value=ww0[k9].value; });
           W9.u.uMode.value=0; W9.u.uAlpha.value=this.witAmt*0.75;
-          W9.m.position.set(74-148*WF, 6+Math.sin(WF*3.1416)*5, -92); } }
+          W9.m.position.set(62-124*WF, 6+Math.sin(WF*3.1416)*5, -78); } }
       // sterrenprint (eigen scene of na de instorting)
       this.sterAmt+=(((menu||!(SC.ster||this.knKlaar))?0:1)-this.sterAmt)*kv;
       if(this.sterHemel){ const S9=this.sterHemel, ws0=this.walls[0].u;
@@ -1939,10 +1939,13 @@
         G.bl=(G.bl===undefined?0:G.bl)+((G.open?1:0)-(G.bl||0))*Math.min(1,s*1.6);
         let pN=0;
         for(let i=0;i<G.cubes.length;i++){ const c=G.cubes[i]; if(c.alive&&!c.ind&&!c.kern) pN++; }
-        if(pN<18){ G.gro=(G.gro||0)+s;
+        if(pN<30){ G.gro=(G.gro||0)+s;
           if(G.gro>3){ G.gro=0;
-            for(let p9=0;p9<6;p9++) for(let i=0;i<6;i++)
-              this.piece(G,1+p9*6+i,1.3,3,{pet:p9,pi:i}); } }
+            for(let p9=0;p9<6;p9++){
+              let lp=0;
+              for(let q=0;q<G.cubes.length;q++){ const c9=G.cubes[q];
+                if(c9.alive&&!c9.ind&&c9.pet===p9) lp++; }
+              if(lp===0){ for(let i=0;i<6;i++) this.piece(G,1+p9*6+i,1.3,3,{pet:p9,pi:i}); break; } } } }
         else G.gro=0;
         G.bsT=(G.bsT===undefined?2.5:G.bsT)-s;
         if(G.bsT<=0&&G.open){ G.bsT=this.baasT(2.8); let n6=0;
@@ -3645,7 +3648,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v118.2</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v118.3</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -3716,7 +3719,7 @@
         <a-plane id="btnDemo" class="menu-btn" position="0 0.14 -2.08" width="1.3" height="0.22" material="color:#1f3a5a;opacity:0.97;transparent:true"><a-text value="DEMO" align="center" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v118.2" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v118.3" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
