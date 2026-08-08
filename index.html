@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v130.0
+  //  DIEPE TRIP v132.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1901,6 +1901,7 @@
       ((this.el.sceneEl&&this.el.sceneEl.object3D)||this.el.object3D).add(mm);
       this.schipMesh=mm; this.schipTex=tex; },
     techTick:function(s){
+      this.state='tech'; this.gap=1e9; this.bWacht=0;
       if(!this.techSchip||!this.techSchip.blok.alive){
         if(this.techSchip){ if(this.schipMesh) this.schipMesh.visible=false;
           this.techW+=s; if(this.techW<2) return; }
@@ -3199,6 +3200,11 @@
         if(this.dmC>2.2){ this.dmC=0; this.verder(); } }
       if(window.PAUSED) return;                     // pauze of game-over: de wereld staat volledig stil
       this.T+=s;
+      if(this.techGo&&window.PHASE==='les'){ window.PHASE='trip';
+        if(this.lesLeeg) this.lesLeeg();
+        const ti0=document.querySelector('#introTitel'); if(ti0) ti0.setAttribute('value','');
+        const sk0=document.querySelector('#lesSkip'); if(sk0) sk0.setAttribute('visible',false);
+        this.les=99; }
       if(window.PHASE==='les'){ this.lesTick(s);
         if(this.lesFreeze) return; }
       if(window.DEMO&&on&&window.PHASE==='trip') this.demoTick(s);
@@ -3288,6 +3294,7 @@
             if(md==='skulls') this.cheatSkul=1; } } }
       if(!les){
         if(this.techGo){ this.techGo=0; this.state='tech'; this.gap=1e9; this.bWacht=0;
+        window.LEVEL=1; this.level=1; window.LEVELDONE=false;
           for(let a=this.groups.length-1;a>=0;a--){ const g=this.groups[a];
             this.stopHum(g); for(const c of g.cubes) this.release(c); this.groups.splice(a,1); }
           this.techW=0; this.techSchip=null;
@@ -4377,7 +4384,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v130.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v132.0</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4457,9 +4464,10 @@
         <a-plane id="btnDemo" class="menu-btn" position="0 0.14 -2.08" width="1.3" height="0.22" material="color:#1f3a5a;opacity:0.97;transparent:true"><a-text value="DEMO" align="center" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-plane id="btnCont" class="menu-btn" position="0 -0.12 -2.08" width="1.3" height="0.22" material="color:#26262a;opacity:0.97;transparent:true"><a-text id="contTxt" value="CONTINUE" align="center" color="#5a5a62" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-plane id="btnTech" class="menu-btn" position="0 -0.38 -2.08" width="1.3" height="0.2" material="color:#0e4a52;opacity:0.97;transparent:true"><a-text value="TECH" align="center" color="#8fe8f0" width="1.6" position="0 0 0.01"></a-text></a-plane>
+        <a-plane id="btnTestM" class="menu-btn" position="0 -0.62 -2.08" width="1.3" height="0.2" material="color:#333a55;opacity:0.97;transparent:true"><a-text value="TEST MENU" align="center" color="#aab4d0" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v130.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v132.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
@@ -4572,6 +4580,13 @@
         document.addEventListener('visibilitychange',function(){
           if(document.visibilityState==='visible'&&wlWil&&!wl9) wakeAan(); });
         document.querySelector('#btnStart').addEventListener('click',function(){ window.DEMO=false; startTrip(); wakeAan(); });
+        document.querySelector('#btnTestM').addEventListener('click',function(){
+          const cp=$('#cheatPaneel'); if(!cp) return;
+          $('#menu').setAttribute('visible',false);
+          cp.setAttribute('position','0 1.6 -2.2');
+          cp.setAttribute('rotation','0 0 0');
+          cp.setAttribute('visible',true);
+          window.TMVANMENU=1; });
         document.querySelector('#btnTech').addEventListener('click',function(){
           const sc9=$('#rig').components.shooter;
           if(!sc9) return;
@@ -4629,6 +4644,9 @@
           tel();
         }catch(e9){} })();
         document.querySelector('#chOpen').addEventListener('click',function(){
+          const cp0=$('#cheatPaneel');
+          if(cp0){ cp0.setAttribute('position','0 1.6 2.6'); cp0.setAttribute('rotation','0 180 0'); }
+          window.TMVANMENU=0;
           $('#cheatKnop').setAttribute('visible',false);
           $('#cheatPaneel').setAttribute('visible',true); });
         for(let li=1;li<=25;li++)(function(li){
@@ -4643,8 +4661,9 @@
           $('#cheatKnop').setAttribute('visible',false);
           sc9.pz=0; window.PAUSED=false;
           const pt9=document.querySelector('#pauzeTxt'); if(pt9) pt9.setAttribute('value','');
-          window.TECHMODE=0;
+          window.TECHMODE=0; window.TMVANMENU=0; window.DEMO=false;
           sc9.cheatW={lvl:(window.CHEATLVL||1),mode:mode};
+          if(window.PHASE==='menu') startTrip();
           sw9.scene=(window.CHEATLVL||1)-1; sw9.elapsed=99999; window.LEVELDONE=true; };
         document.querySelector('#chTech').addEventListener('click',function(){
           const sc9=$('#rig').components.shooter;
@@ -4662,7 +4681,9 @@
         document.querySelector('#chWS').addEventListener('click',function(){ chGa('skulls'); });
         document.querySelector('#chX').addEventListener('click',function(){
           $('#cheatPaneel').setAttribute('visible',false);
-          $('#cheatKnop').setAttribute('visible',true); });
+          if(window.TMVANMENU){ window.TMVANMENU=0;
+            $('#menu').setAttribute('visible',true); }
+          else $('#cheatKnop').setAttribute('visible',true); });
         document.querySelector('#btnJa').addEventListener('click',function(){
           const sc=document.querySelector('#rig').components.shooter;
           if(sc&&!sc.verder()){ } });
