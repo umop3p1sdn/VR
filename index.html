@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v129.0
+  //  DIEPE TRIP v130.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -4377,7 +4377,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v129.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v130.0</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4456,9 +4456,10 @@
         <a-plane id="btnStart" class="menu-btn" position="0 0.44 -2.08" width="1.3" height="0.24" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
         <a-plane id="btnDemo" class="menu-btn" position="0 0.14 -2.08" width="1.3" height="0.22" material="color:#1f3a5a;opacity:0.97;transparent:true"><a-text value="DEMO" align="center" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-plane id="btnCont" class="menu-btn" position="0 -0.12 -2.08" width="1.3" height="0.22" material="color:#26262a;opacity:0.97;transparent:true"><a-text id="contTxt" value="CONTINUE" align="center" color="#5a5a62" width="1.6" position="0 0 0.01"></a-text></a-plane>
+        <a-plane id="btnTech" class="menu-btn" position="0 -0.38 -2.08" width="1.3" height="0.2" material="color:#0e4a52;opacity:0.97;transparent:true"><a-text value="TECH" align="center" color="#8fe8f0" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v129.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v130.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
@@ -4571,6 +4572,13 @@
         document.addEventListener('visibilitychange',function(){
           if(document.visibilityState==='visible'&&wlWil&&!wl9) wakeAan(); });
         document.querySelector('#btnStart').addEventListener('click',function(){ window.DEMO=false; startTrip(); wakeAan(); });
+        document.querySelector('#btnTech').addEventListener('click',function(){
+          const sc9=$('#rig').components.shooter;
+          if(!sc9) return;
+          window.DEMO=false;
+          window.TECHPEND=1; window.TECHMODE=1; sc9.techGo=1;
+          if(window.PHASE==='menu') startTrip(); else wakeAan();
+          window.TECHPEND=0; });
         const leesSave=function(){ try{ const r9=localStorage.getItem('diepetrip_save');
           if(!r9) return null; const o9=JSON.parse(r9);
           return (o9&&o9.l>1)?o9:null; }catch(e9){ return null; } };
