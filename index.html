@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v128.0
+  //  DIEPE TRIP v129.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -725,6 +725,8 @@
       if(SC.ev===3){ this.snakeZ=-200; this.snakeSide=(Math.random()<0.5?1:-1); }
     },
     tick:function(t,dt){ const s=Math.min(0.08,(dt||16)/1000);
+      if(window.TECHMODE){ if(this.el.object3D.visible) this.el.object3D.visible=false; return; }
+      if(!this.el.object3D.visible) this.el.object3D.visible=true;
       if(window.USE_TRACK&&ANA){ ANA.getByteFrequencyData(ANAD); let b=0; for(let k=1;k<7;k++)b+=ANAD[k]; b/=(6*255);
         window.BEAT=Math.max((window.BEAT||0)*0.82,Math.max(0,(b-0.52)*2.4)); }
       else window.BEAT=Math.max(0,(window.BEAT||0)-s*5);
@@ -1522,6 +1524,9 @@
         G.gw=N; G.size=(N<=2?2.5:(N===3?2.0:(N===4?1.7:1.45))); G.gap=(N<=2?5.2:(N===3?4.6:(N===4?4.0:3.5)));
         G.speed=-1.1; G.cz=(N<=2?-22:(N===3?-25:(N<=4?-28:-33)));
         for(let i=0;i<cnt;i++) this.piece(G,i,G.size,this.taai(),(this.level>=4)?{split:4,gen:0}:null);
+      } else if(form==='techschip'){
+        G.speed=0; G.techschip=1; G.cz=-26; G.cx=0; G.cy=2.6; G.tsA=Math.random()*6.283;
+        this.piece(G,0,1.6,10,{});
       } else if(form==='laser'){
         G.speed=0; G.laserS=1; G.cz=-40-Math.random()*6;
         G.cx=(Math.random()*2-1)*13; G.cy=1.6+(Math.random()*2-1)*4;
@@ -1854,6 +1859,65 @@
       for(let a=this.groups.length-1;a>=0;a--){ const G=this.groups[a]; this.stopHum(G);
         for(let b=0;b<G.cubes.length;b++) this.release(G.cubes[b]); this.groups.splice(a,1); }
       for(let i=0;i<this.picks.length;i++){ this.picks[i].live=false; this.picks[i].m.visible=false; } },
+    maakSchipBillboard:function(){
+      if(this.schipMesh) return;
+      const cv=document.createElement('canvas'); cv.width=512; cv.height=256;
+      const g=cv.getContext('2d');
+      const schip=function(ox,schade){
+        g.save(); g.translate(ox+128,128);
+        g.lineCap='round';
+        for(let pass=0;pass<2;pass++){
+          g.lineWidth=pass?5:14;
+          g.strokeStyle=pass?'#dffcff':'rgba(60,220,255,0.35)';
+          g.beginPath();
+          g.moveTo(0,-86); g.lineTo(56,44); g.lineTo(22,30); g.lineTo(0,58);
+          g.lineTo(-22,30); g.lineTo(-56,44); g.closePath(); g.stroke();
+          g.beginPath();
+          g.moveTo(0,-46); g.lineTo(16,-6); g.lineTo(-16,-6); g.closePath(); g.stroke(); }
+        g.fillStyle='rgba(40,200,255,0.25)';
+        g.beginPath(); g.moveTo(0,-86); g.lineTo(56,44); g.lineTo(0,58); g.lineTo(-56,44); g.closePath(); g.fill();
+        g.fillStyle='#eaffff';
+        g.beginPath(); g.moveTo(0,-46); g.lineTo(16,-6); g.lineTo(-16,-6); g.closePath(); g.fill();
+        for(const mx of [-30,30]){
+          g.fillStyle=schade?'rgba(255,140,40,0.9)':'rgba(120,220,255,0.9)';
+          g.beginPath(); g.ellipse(mx,64,7,16+(schade?8:0),0,0,6.283); g.fill(); }
+        if(schade){
+          g.strokeStyle='#ffb020'; g.lineWidth=5;
+          g.beginPath(); g.moveTo(-40,20); g.lineTo(-16,-14); g.lineTo(-30,-34); g.stroke();
+          g.beginPath(); g.moveTo(34,30); g.lineTo(12,4); g.stroke();
+          for(const fp of [[-24,-2],[22,16],[6,-30]]){
+            g.fillStyle='rgba(255,90,20,0.95)';
+            g.beginPath(); g.ellipse(fp[0],fp[1],7,14,0.4,0,6.283); g.fill();
+            g.fillStyle='rgba(255,220,80,0.95)';
+            g.beginPath(); g.ellipse(fp[0],fp[1]+3,3.5,7,0.4,0,6.283); g.fill(); } }
+        g.restore(); };
+      schip(0,0); schip(256,1);
+      const tex=new THREE.CanvasTexture(cv);
+      tex.repeat.set(0.5,1);
+      const mm=new THREE.Mesh(new THREE.PlaneGeometry(6.5,3.25),
+        new THREE.MeshBasicMaterial({map:tex,transparent:true,alphaTest:0.25,
+          side:THREE.DoubleSide,depthWrite:false}));
+      mm.visible=false;
+      ((this.el.sceneEl&&this.el.sceneEl.object3D)||this.el.object3D).add(mm);
+      this.schipMesh=mm; this.schipTex=tex; },
+    techTick:function(s){
+      if(!this.techSchip||!this.techSchip.blok.alive){
+        if(this.techSchip){ if(this.schipMesh) this.schipMesh.visible=false;
+          this.techW+=s; if(this.techW<2) return; }
+        this.techW=0;
+        this.spawn(0,'techschip');
+        const G=this.groups[this.groups.length-1];
+        if(!G||!G.techschip) return;
+        this.techSchip={G:G,blok:G.cubes[0],fase:0};
+        if(this.schipTex) this.schipTex.offset.x=0;
+        if(this.schipMesh) this.schipMesh.visible=true;
+        return; }
+      const TS=this.techSchip, c=TS.blok;
+      const f=(c.hp<=5)?1:0;
+      if(f!==TS.fase){ TS.fase=f; if(this.schipTex) this.schipTex.offset.x=f*0.5; }
+      if(this.schipMesh){
+        this.schipMesh.position.set(TS.G.cx,TS.G.cy,TS.G.cz);
+        this.schipMesh.lookAt(0,TS.G.cy,0); } },
     lesDoos:function(k,x9){
       for(let i=0;i<this.picks.length;i++){ const P=this.picks[i];
         if(P.live||P.k!==k) continue;
@@ -3223,6 +3287,13 @@
             this.bWacht=1; this.bFase=0; this.bT=0;
             if(md==='skulls') this.cheatSkul=1; } } }
       if(!les){
+        if(this.techGo){ this.techGo=0; this.state='tech'; this.gap=1e9; this.bWacht=0;
+          for(let a=this.groups.length-1;a>=0;a--){ const g=this.groups[a];
+            this.stopHum(g); for(const c of g.cubes) this.release(c); this.groups.splice(a,1); }
+          this.techW=0; this.techSchip=null;
+          const r9=document.querySelector('#rndTitel'); if(r9) r9.setAttribute('value','TECH LAB');
+          this.maakSchipBillboard(); }
+        if(this.state==='tech'){ this.techTick(s); }
         if(this.state==='pauze'){ this.gap-=s;
           if(this.gap<=0&&this.level>=9){                 // grote rondes: eerst ruimte, dan de volgende golf
             let druk=0;
@@ -3603,6 +3674,10 @@
           if(typeof G.cx==='number') G.cx+=(0-G.cx)*hk;
           if(typeof G.cy==='number') G.cy+=(1.6-G.cy)*hk; }
         if(G.phantom){ G.faseK+=s; G.faseUit=((G.faseK%2.6)>1.6)?1:0; }
+        if(G.techschip){ G.tsA+=s*0.5;
+          G.cx=Math.sin(G.tsA)*10;
+          G.cy=2.4+Math.sin(G.tsA*0.7)*1.5;
+          G.cz=-26+Math.cos(G.tsA*0.8)*4; }
         if(G.laserS){
           const kop=G.cubes[0];
           const kopLeeft=(kop&&kop.alive&&!kop.ind);
@@ -3812,6 +3887,8 @@
             y=1.6+Math.sin(u*0.5+1.2)*5.5;
             z=-9-9.5*(1+Math.sin(u*0.38));
             if(G.age>26) z+=(G.age-26)*6;
+          } else if(G.form==='techschip'){
+            x=G.cx; y=G.cy; z=G.cz;
           } else if(G.form==='laser'){
             const b7=(c.li||0);
             x=G.cx+Math.sin(G.age*0.6+b7*0.35)*1.6;
@@ -3943,7 +4020,7 @@
               this.release(c); continue; } }
           living++;
           if(G.ent>0){ const e=G.ent*G.ent; x+=G.ex*e; y+=G.ey*e; z+=G.ez*e; }
-          if(!c.ind&&G.werp>0&&G.form!=='pendel'&&G.form!=='skull'&&G.form!=='blink'&&G.form!=='wachter'&&G.form!=='torret'&&G.form!=='raider'&&G.form!=='groeier'&&G.form!=='deler'&&G.form!=='hersteller'&&G.form!=='laser'&&G.form!=='mijn'&&G.form!=='spook'&&G.form!=='parasiet'&&G.form!=='bommer'&&G.form!=='schild'&&G.form!=='korf'&&!G.faseUit&&z<-8&&Math.random()<0.35){
+          if(!c.ind&&G.werp>0&&G.form!=='pendel'&&G.form!=='skull'&&G.form!=='blink'&&G.form!=='wachter'&&G.form!=='torret'&&G.form!=='raider'&&G.form!=='groeier'&&G.form!=='deler'&&G.form!=='hersteller'&&G.form!=='laser'&&G.form!=='mijn'&&G.form!=='spook'&&G.form!=='parasiet'&&G.form!=='techschip'&&G.form!=='bommer'&&G.form!=='schild'&&G.form!=='korf'&&!G.faseUit&&z<-8&&Math.random()<0.35){
             G.werp--; c.ind=1; c.hurt=1; c.px=x; c.py=y; c.pz=z;
             const dx=-x, dy=1.6-y, dz=-z, L2=Math.max(0.001,Math.sqrt(dx*dx+dy*dy+dz*dz)), sp2=13+Math.random()*8;
             c.vx=dx/L2*sp2; c.vy=dy/L2*sp2; c.vz=dz/L2*sp2; }
@@ -4255,6 +4332,7 @@
   //  START / EINDE
   // =========================================================
   function startTrip(){ if(window.PHASE!=='menu') return; AC();
+    if(!window.TECHPEND) window.TECHMODE=0;
     if(PLAY.length){ try{
       ANA=A.createAnalyser(); ANA.fftSize=256; ANAD=new Uint8Array(ANA.frequencyBinCount); ANA.connect(MASTER);
       playAt(0); window.USE_TRACK=true; }catch(e){ window.USE_TRACK=false; } }
@@ -4299,7 +4377,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v128.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v129.0</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4354,7 +4432,8 @@
         <a-plane id="chWM" class="menu-btn" position="-0.32 -0.22 0.01" width="0.56" height="0.22" material="color:#1f5a3a;opacity:0.95;transparent:true"><a-text value="MIDDEN" align="center" width="1.5" position="0 0 0.01"></a-text></a-plane>
         <a-plane id="chWB" class="menu-btn" position="0.32 -0.22 0.01" width="0.56" height="0.22" material="color:#6b2727;opacity:0.95;transparent:true"><a-text value="BAAS" align="center" width="1.5" position="0 0 0.01"></a-text></a-plane>
         <a-plane id="chWS" class="menu-btn" position="0.95 -0.22 0.01" width="0.56" height="0.22" material="color:#5a2769;opacity:0.95;transparent:true"><a-text value="SKULLS" align="center" width="1.5" position="0 0 0.01"></a-text></a-plane>
-        <a-plane id="chX" class="menu-btn" position="0 -0.55 0.01" width="0.7" height="0.2" material="color:#3a3a3a;opacity:0.95;transparent:true"><a-text value="SLUIT" align="center" width="1.3" position="0 0 0.01"></a-text></a-plane>
+        <a-plane id="chX" class="menu-btn" position="-0.45 -0.55 0.01" width="0.7" height="0.2" material="color:#3a3a3a;opacity:0.95;transparent:true"><a-text value="SLUIT" align="center" width="1.3" position="0 0 0.01"></a-text></a-plane>
+        <a-plane id="chTech" class="menu-btn" position="0.45 -0.55 0.01" width="0.7" height="0.2" material="color:#0e4a52;opacity:0.95;transparent:true"><a-text value="TECH" align="center" width="1.3" position="0 0 0.01"></a-text></a-plane>
       </a-entity>
       <a-entity id="menu" position="0 0 -0.7">
         <a-plane position="0 1.52 -2.1" width="2.5" height="2.35" material="color:#0a0714;opacity:0.94;transparent:true"></a-plane>
@@ -4379,7 +4458,7 @@
         <a-plane id="btnCont" class="menu-btn" position="0 -0.12 -2.08" width="1.3" height="0.22" material="color:#26262a;opacity:0.97;transparent:true"><a-text id="contTxt" value="CONTINUE" align="center" color="#5a5a62" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v128.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v129.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
@@ -4556,8 +4635,19 @@
           $('#cheatKnop').setAttribute('visible',false);
           sc9.pz=0; window.PAUSED=false;
           const pt9=document.querySelector('#pauzeTxt'); if(pt9) pt9.setAttribute('value','');
+          window.TECHMODE=0;
           sc9.cheatW={lvl:(window.CHEATLVL||1),mode:mode};
           sw9.scene=(window.CHEATLVL||1)-1; sw9.elapsed=99999; window.LEVELDONE=true; };
+        document.querySelector('#chTech').addEventListener('click',function(){
+          const sc9=$('#rig').components.shooter;
+          if(!sc9) return;
+          $('#cheatPaneel').setAttribute('visible',false);
+          $('#cheatKnop').setAttribute('visible',false);
+          sc9.pz=0; window.PAUSED=false;
+          const pt9=document.querySelector('#pauzeTxt'); if(pt9) pt9.setAttribute('value','');
+          window.TECHPEND=1; window.TECHMODE=1; sc9.techGo=1;
+          if(window.PHASE==='menu') startTrip(); else wakeAan();
+          window.TECHPEND=0; });
         document.querySelector('#chW1').addEventListener('click',function(){ chGa('start'); });
         document.querySelector('#chWM').addEventListener('click',function(){ chGa('mid'); });
         document.querySelector('#chWB').addEventListener('click',function(){ chGa('baas'); });
