@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v134.3
+  //  DIEPE TRIP v137.1
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1957,14 +1957,17 @@
         if(sch){ schade([[-60,-6],[54,2],[0,30],[-20,-40],[26,-30]]);
           g.strokeStyle='#ff7020'; g.lineWidth=6;
           g.beginPath(); g.moveTo(-90,20); g.lineTo(-40,-10); g.stroke(); } };
-      const F=[SCOUT,FIGHTER,BOMBER,DRONE,SAUCER,WASP,BAAS];
+      const F=[SCOUT,FIGHTER,BOMBER,DRONE,SAUCER,WASP,BAAS,FIGHTER];
       for(let i=0;i<F.length;i++){ cel(i*2,function(){ F[i](0); }); cel(i*2+1,function(){ F[i](1); }); }
       const tex=new THREE.CanvasTexture(cv);
       this.bbTex=tex;
       this.bbMat=new THREE.MeshBasicMaterial({map:tex,transparent:true,alphaTest:0.22,
         side:THREE.DoubleSide,depthWrite:false});
       this.bbPool=[];
-      const par=((this.el.sceneEl&&this.el.sceneEl.object3D)||this.el.object3D);
+      const zelf9=this;
+      this.artLaad(this.ART_SCHEPEN,function(t){        // Sjoerds schepen (transparant, 4x4)
+        zelf9.bbMat.map=t; zelf9.bbMat.needsUpdate=true; zelf9.artSchepen=1; });
+      const par=this.el.object3D;
       for(let i=0;i<30;i++){ const geo=new THREE.PlaneGeometry(1,1);
         const mm=new THREE.Mesh(geo,this.bbMat); mm.visible=false; par.add(mm);
         this.bbPool.push({m:mm,geo:geo,vrij:true,cel:-1}); } },
@@ -2009,22 +2012,42 @@
         g.beginPath(); g.moveTo(-60,-40); g.lineTo(-20,30); g.lineTo(-70,70); g.stroke();
         g.beginPath(); g.moveTo(90,-18); g.lineTo(140,60); g.stroke(); });
       const tex=new THREE.CanvasTexture(cv);
-      const par=((this.el.sceneEl&&this.el.sceneEl.object3D)||this.el.object3D);
+      const par=this.el.object3D;
       this.lucht=[];
-      const plek=[[-52,26,-88,44],[58,32,-76,52],[-30,14,-95,30],[40,9,-70,26]];
+      // cel, x, y, z, breedte, hoogte, soort  (soort 1 = zeldzame passant)
+      const plek=[[1,   0, 34,-205, 620,414, 0],    // het heelal: reusachtig achter alles
+                  [2, -78, 46,-150,  70, 47, 0],    // ruimtestation ver weg
+                  [3,  92, 12,-130,  86, 57, 0],    // platform laag rechts
+                  [0, 190, 44,-165, 150,100, 1]];   // ringplaneet: komt af en toe langs
       for(let i=0;i<4;i++){
         const geo=new THREE.PlaneGeometry(1,1);
+        const cel9=plek[i][0];
         const uv=geo.attributes&&geo.attributes.uv;
-        if(uv&&uv.setXY){ const u=(i%2)*0.5, v=1-(Math.floor(i/2)+1)*0.5;
+        if(uv&&uv.setXY){ const u=(cel9%2)*0.5, v=1-(Math.floor(cel9/2)+1)*0.5;
           uv.setXY(0,u,v+0.5); uv.setXY(1,u+0.5,v+0.5); uv.setXY(2,u,v); uv.setXY(3,u+0.5,v);
           uv.needsUpdate=true; }
         const mm=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:tex,transparent:true,
           alphaTest:0.02,side:THREE.DoubleSide,depthWrite:false,opacity:0.9}));
-        mm.position.set(plek[i][0],plek[i][1],plek[i][2]);
-        mm.userData.bx=plek[i][0]; mm.userData.by=plek[i][1];
-        mm.scale.set(plek[i][3],plek[i][3],1);
-        mm.renderOrder=-8; mm.lookAt(0,1.6,0);
-        par.add(mm); this.lucht.push({m:mm,a:Math.random()*6.283,r:plek[i][3]}); } },
+        mm.position.set(plek[i][1],plek[i][2],plek[i][3]);
+        mm.userData.bx=plek[i][1]; mm.userData.by=plek[i][2];
+        mm.scale.set(plek[i][4],plek[i][5],1);
+        mm.renderOrder=(i===0)?-14:-8;
+        mm.lookAt(0,1.6,0);
+        if(plek[i][6]===1) mm.visible=false;                 // passant wacht op zijn beurt
+        par.add(mm);
+        this.lucht.push({m:mm,a:Math.random()*6.283,w:plek[i][4],h:plek[i][5],
+          pass:plek[i][6]===1,pT:35+Math.random()*40,pz:plek[i][3],py:plek[i][2]}); }
+      const zelf8=this;
+      this.artLaad(this.ART_HEMEL,function(t){          // Sjoerds planeet/melkweg/station/platform
+        for(let i=0;i<zelf8.lucht.length;i++){ const L=zelf8.lucht[i];
+          L.m.material.map=t; L.m.material.needsUpdate=true; }
+        zelf8.artHemel=1; }); },
+    ART_SCHEPEN:'art/E411FA3F-BA3C-4C2B-A377-AE61435F75B8.png',
+    ART_HEMEL:'art/C72D68F0-CB47-4432-B911-1CE953B57E55.png',
+    artLaad:function(url,klaar){
+      try{ const L=new THREE.TextureLoader();
+        L.load(url,function(t){ try{ klaar(t); }catch(e){} },undefined,function(){ });
+      }catch(e){} },
     bbPak:function(){ if(!this.bbPool) return null;
       for(let i=0;i<this.bbPool.length;i++){ const b=this.bbPool[i];
         if(b.vrij){ b.vrij=false; b.m.visible=true; return b; } } return null; },
@@ -2083,14 +2106,24 @@
       {n:'DRONE',   hp:2,  sc:2.4, hit:1.6, x0:15, y0:5, z0:-40},
       {n:'SAUCER',  hp:8,  sc:5.0, hit:2.8, x0:18, y0:3, z0:-26},
       {n:'WASP',    hp:4,  sc:3.2, hit:2.0, x0:12, y0:4, z0:-58},
-      {n:'MOTHERSHIP',hp:60,sc:15.0,hit:6.0,x0:0,  y0:0, z0:-40}],
-    labSpawn:function(tp){
+      {n:'MOTHERSHIP',hp:60,sc:15.0,hit:6.0,x0:0,  y0:0, z0:-40},
+      {n:'HEAVY',   hp:14, sc:5.6, hit:3.2, x0:13, y0:4, z0:-56}],
+    labSpawn:function(tp,reus){
       window.LABT=tp;
       this.spawn(0,'techschip');
       const G=this.groups[this.groups.length-1];
       window.LABT=undefined;
       if(!G||!G.techschip) return null;
-      G.tLab=1; G.bb=this.bbPak();
+      G.tLab=1;
+      const T8=this.LABTYPE[G.tType||0];
+      if(reus&&G.tType!==6){                              // reus: 4x zo groot, veel taaier
+        G.tReus=1; G.tSchaal=T8.sc*4;
+        const c8=G.cubes[0];
+        if(c8){ c8.hp=T8.hp*6; c8.size=(T8.hit||2)*3.2; }
+        G.tHp=T8.hp*6;
+        G.cz=Math.min(G.cz,-46);                          // reuzen komen van verder
+      } else G.tSchaal=T8.sc;
+      G.bb=this.bbPak();
       return G; },
     labBord:function(t9){ const r9=document.querySelector('#rndTitel');
       if(r9) r9.setAttribute('value',t9); },
@@ -2098,10 +2131,19 @@
       this.state='tech'; this.gap=1e9; this.bWacht=0;
       if(!this.bbPool) this.maakLab();
       if(!this.lucht) this.maakLabLucht();
-      for(let i=0;i<this.lucht.length;i++){ const L=this.lucht[i];   // traag wiegen rond een vaste plek
-        L.a+=s*0.012*(1+i*0.3);
-        L.m.position.x=L.m.userData.bx+Math.sin(L.a)*3.5;
-        L.m.position.y=L.m.userData.by+Math.cos(L.a*0.7)*1.6;
+      for(let i=0;i<this.lucht.length;i++){ const L=this.lucht[i];
+        if(L.pass){                                        // ringplaneet: zelden, en traag
+          L.pT-=s;
+          if(L.pT<=0){
+            if(!L.m.visible){ L.m.visible=true; L.px=205; }  // begin van de overtocht
+            L.px-=s*4.6;                                     // 410m in ~90s = rustig drijven
+            L.m.position.set(L.px,L.py+Math.sin(L.px*0.004)*7,L.pz);
+            L.m.lookAt(0,1.6,0);
+            if(L.px<-205){ L.m.visible=false; L.pT=150+Math.random()*120; } }  // pas na 2.5-4.5 min weer
+          continue; }
+        L.a+=s*0.008*(1+i*0.25);                           // de vaste hemel wiegt nauwelijks
+        L.m.position.x=L.m.userData.bx+Math.sin(L.a)*(i===0?9:3.5);
+        L.m.position.y=L.m.userData.by+Math.cos(L.a*0.7)*(i===0?4:1.6);
         L.m.lookAt(0,1.6,0); }
       if(this.labGolf===undefined){ this.labGolf=0; this.labFase='pauze'; this.labT=1.2; }
       let levend=0;
@@ -2114,7 +2156,7 @@
             const half=(c.hp<=(G.tHp||T9.hp)*0.5)?1:0;
             this.bbCel(G.bb,(G.tType||0)*2+half);
             G.bb.m.position.set(G.cx,G.cy,G.cz);
-            G.bb.m.scale.set(T9.sc,T9.sc*0.5,1);
+            const sc8=G.tSchaal||T9.sc; G.bb.m.scale.set(sc8,sc8*0.5,1);
             G.bb.m.lookAt(0,G.cy,0); } }
         else if(G.bb){ this.bbVrij(G.bb); G.bb=null; } }
       if(this.labFase==='golf'){
@@ -2135,9 +2177,11 @@
           else { this.labGolf++;
             const w=this.labGolf;
             const soorten=(w<3)?[0]:((w<5)?[0,3]:((w<8)?[0,3,5]:((w<11)?[0,1,3,5]:
-              ((w<15)?[0,1,2,3,5]:[0,1,2,3,4,5]))));
+              ((w<13)?[0,1,2,3,5]:((w<16)?[0,1,2,3,5,7]:[0,1,2,3,4,5,7])))));
             const n9=Math.min(8,1+Math.floor(w*0.45));
-            for(let q=0;q<n9;q++) this.labSpawn(soorten[Math.floor(Math.random()*soorten.length)]);
+            for(let q=0;q<n9;q++){
+              const reus9=(w>=5)&&(Math.random()<Math.min(0.28,0.06+w*0.012));
+              this.labSpawn(soorten[Math.floor(Math.random()*soorten.length)],reus9); }
             this.labFase='golf';
             this.labBord('TECH LAB - WAVE '+w+'/20'); } } } },
     lesDoos:function(k,x9){
@@ -3942,6 +3986,14 @@
             if(G.tSt<=0){ G.tSt=3.4+Math.random(); }
             if(G.cz>-7) G.tSt=Math.min(G.tSt,1.2);
             if(G.cz<-64) G.cz=-64; }
+          else if(tt===7){                              // HEAVY: taaie jager, komt langzaam dichterbij
+            G.cz+=s*2.2; G.cx+=(G.tDx-G.cx)*Math.min(1,s*0.7);
+            G.cy+=(G.tDy-G.cy)*Math.min(1,s*0.7);
+            if(G.cz>-16) G.cz=-16;
+            G.tSt-=s;
+            if(G.tSt<=0){ G.tSt=2.8+Math.random();
+              G.tDx=(Math.random()*2-1)*15; G.tDy=1.6+(Math.random()*2-1)*4;
+              for(let q=0;q<2;q++) this.spuw(G,19); } }
           else {                                        // MOTHERSHIP: baas van het lab
             G.cx=Math.sin(G.tsA*0.22)*15; G.cy=4.2+Math.sin(G.tsA*0.31)*1.6;
             G.cz=-38+Math.sin(G.tsA*0.17)*6;
@@ -4330,7 +4382,7 @@
           else if(G.taaislang){ col.lerp(this.gold,0.25+0.2*Math.sin(this.T*3+c.i)); }
           if(c.flash>0){ col.lerp(this.white,Math.min(1,c.flash)); c.flash-=s*4; }
           c.m.material.color.copy(col);
-          c.m.scale.setScalar(G.techschip?0.001:((c.size||1)*(c.core?1.3:1)*(1+0.35*Math.max(0,c.flash||0))));
+          c.m.scale.setScalar((G.techschip&&G.bb)?0.001:((c.size||1)*(c.core?1.3:1)*(1+0.35*Math.max(0,c.flash||0))));
           this.writeSlot(c.m); }
         if(G.hm){ const v=Math.pow(Math.max(0,1-minD/22),2)*0.16;
           G.hm.g.gain.value+=(v-G.hm.g.gain.value)*Math.min(1,s*8);
@@ -4652,7 +4704,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v134.3</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v137.1</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4735,7 +4787,7 @@
         <a-plane id="btnTestM" class="menu-btn" position="0 -0.62 -2.08" width="1.3" height="0.2" material="color:#333a55;opacity:0.97;transparent:true"><a-text value="TEST MENU" align="center" color="#aab4d0" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v134.3" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v137.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
