@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v137.1
+  //  DIEPE TRIP v139.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -2015,16 +2015,16 @@
       const par=this.el.object3D;
       this.lucht=[];
       // cel, x, y, z, breedte, hoogte, soort  (soort 1 = zeldzame passant)
-      const plek=[[1,   0, 34,-205, 620,414, 0],    // het heelal: reusachtig achter alles
-                  [2, -78, 46,-150,  70, 47, 0],    // ruimtestation ver weg
-                  [3,  92, 12,-130,  86, 57, 0],    // platform laag rechts
-                  [0, 190, 44,-165, 150,100, 1]];   // ringplaneet: komt af en toe langs
+      const plek=[[1,   0, 40,-330,1150,767, 0],    // het heelal: heel diep, beeldvullend
+                  [2,-135, 62,-215,  78, 52, 0],    // ruimtestation ver weg, uit het midden
+                  [3, 150, 10,-195,  92, 61, 0],    // platform laag rechts
+                  [0, 260, 52,-250,  92, 61, 1]];   // ringplaneet: klein, ver, heel traag
       for(let i=0;i<4;i++){
         const geo=new THREE.PlaneGeometry(1,1);
         const cel9=plek[i][0];
         const uv=geo.attributes&&geo.attributes.uv;
-        if(uv&&uv.setXY){ const u=(cel9%2)*0.5, v=1-(Math.floor(cel9/2)+1)*0.5;
-          uv.setXY(0,u,v+0.5); uv.setXY(1,u+0.5,v+0.5); uv.setXY(2,u,v); uv.setXY(3,u+0.5,v);
+        if(uv&&uv.setXY){ const m9=0.002, u=(cel9%2)*0.5+m9, v=1-(Math.floor(cel9/2)+1)*0.5+m9, d9=0.5-m9*2;
+          uv.setXY(0,u,v+d9); uv.setXY(1,u+d9,v+d9); uv.setXY(2,u,v); uv.setXY(3,u+d9,v);
           uv.needsUpdate=true; }
         const mm=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:tex,transparent:true,
           alphaTest:0.02,side:THREE.DoubleSide,depthWrite:false,opacity:0.9}));
@@ -2039,9 +2039,22 @@
           pass:plek[i][6]===1,pT:35+Math.random()*40,pz:plek[i][3],py:plek[i][2]}); }
       const zelf8=this;
       this.artLaad(this.ART_HEMEL,function(t){          // Sjoerds planeet/melkweg/station/platform
-        for(let i=0;i<zelf8.lucht.length;i++){ const L=zelf8.lucht[i];
+        for(let i=1;i<zelf8.lucht.length;i++){ const L=zelf8.lucht[i];   // i=0 (cosmos) blijft van mij
           L.m.material.map=t; L.m.material.needsUpdate=true; }
-        zelf8.artHemel=1; }); },
+        zelf8.artHemel=1; });
+      // losse plaatjes per hemelobject als ze in art/ staan (overschrijven de atlas)
+      const los=['art/cosmos.png','art/station.png','art/wreck.png','art/planet.png'];
+      for(let i=0;i<4;i++)(function(i){
+        zelf8.artLaad(los[i],function(t){ const L=zelf8.lucht[i];
+          if(!L) return;
+          const uv=L.m.geometry.attributes&&L.m.geometry.attributes.uv;
+          if(uv&&uv.setXY){ uv.setXY(0,0,1); uv.setXY(1,1,1); uv.setXY(2,0,0); uv.setXY(3,1,0); uv.needsUpdate=true; }
+          L.m.material.map=t; L.m.material.needsUpdate=true;
+          const im=t.image;                                  // verhouding uit de plaat zelf halen
+          if(im&&im.width&&im.height){ const ar=im.width/im.height;
+            const hh=(i===0)?820:L.h;                          // de cosmos vult de lucht
+            L.w=hh*ar; L.h=hh; L.m.scale.set(L.w,L.h,1); }
+          if(i===0) L.m.material.opacity=1; }); })(i); },
     ART_SCHEPEN:'art/E411FA3F-BA3C-4C2B-A377-AE61435F75B8.png',
     ART_HEMEL:'art/C72D68F0-CB47-4432-B911-1CE953B57E55.png',
     artLaad:function(url,klaar){
@@ -2055,7 +2068,7 @@
     bbCel:function(b,cel){
       if(!b||b.cel===cel) return; b.cel=cel;
       const uv=b.geo.attributes&&b.geo.attributes.uv; if(!uv||!uv.setXY) return;
-      const u=(cel%4)/4, v=1-(Math.floor(cel/4)+1)/4, d=0.25;
+      const m9=0.0015, u=(cel%4)/4+m9, v=1-(Math.floor(cel/4)+1)/4+m9, d=0.25-m9*2;
       uv.setXY(0,u,v+d); uv.setXY(1,u+d,v+d); uv.setXY(2,u,v); uv.setXY(3,u+d,v);
       uv.needsUpdate=true; },
     maakSchipBillboard:function(){
@@ -2100,14 +2113,14 @@
       ((this.el.sceneEl&&this.el.sceneEl.object3D)||this.el.object3D).add(mm);
       this.schipMesh=mm; this.schipTex=tex; },
     LABTYPE:[
-      {n:'SCOUT',   hp:3,  sc:3.4, hit:2.2, x0:13, y0:3, z0:-78},
-      {n:'FIGHTER', hp:6,  sc:4.2, hit:2.6, x0:16, y0:4, z0:-46},
-      {n:'BOMBER',  hp:12, sc:6.0, hit:3.4, x0:11, y0:3, z0:-70},
-      {n:'DRONE',   hp:2,  sc:2.4, hit:1.6, x0:15, y0:5, z0:-40},
-      {n:'SAUCER',  hp:8,  sc:5.0, hit:2.8, x0:18, y0:3, z0:-26},
-      {n:'WASP',    hp:4,  sc:3.2, hit:2.0, x0:12, y0:4, z0:-58},
-      {n:'MOTHERSHIP',hp:60,sc:15.0,hit:6.0,x0:0,  y0:0, z0:-40},
-      {n:'HEAVY',   hp:14, sc:5.6, hit:3.2, x0:13, y0:4, z0:-56}],
+      {n:'SCOUT',   hp:3,  sc:6.5, hit:3.0, x0:11, y0:3, z0:-52},
+      {n:'FIGHTER', hp:6,  sc:8.0, hit:3.6, x0:13, y0:4, z0:-38},
+      {n:'BOMBER',  hp:12, sc:11.0,hit:4.6, x0:10, y0:3, z0:-46},
+      {n:'DRONE',   hp:2,  sc:4.6, hit:2.4, x0:12, y0:5, z0:-32},
+      {n:'SAUCER',  hp:8,  sc:9.5, hit:4.0, x0:15, y0:3, z0:-24},
+      {n:'WASP',    hp:4,  sc:6.0, hit:2.8, x0:11, y0:4, z0:-40},
+      {n:'MOTHERSHIP',hp:60,sc:26.0,hit:8.0,x0:0,  y0:0, z0:-38},
+      {n:'HEAVY',   hp:14, sc:10.0,hit:4.4, x0:12, y0:4, z0:-44}],
     labSpawn:function(tp,reus){
       window.LABT=tp;
       this.spawn(0,'techschip');
@@ -2125,7 +2138,7 @@
       } else G.tSchaal=T8.sc;
       G.bb=this.bbPak();
       return G; },
-    labBord:function(t9){ const r9=document.querySelector('#rndTitel');
+    labBord:function(t9){ this.labTxt=t9; const r9=document.querySelector('#rndTitel');
       if(r9) r9.setAttribute('value',t9); },
     techTick:function(s){
       this.state='tech'; this.gap=1e9; this.bWacht=0;
@@ -2135,11 +2148,11 @@
         if(L.pass){                                        // ringplaneet: zelden, en traag
           L.pT-=s;
           if(L.pT<=0){
-            if(!L.m.visible){ L.m.visible=true; L.px=205; }  // begin van de overtocht
-            L.px-=s*4.6;                                     // 410m in ~90s = rustig drijven
-            L.m.position.set(L.px,L.py+Math.sin(L.px*0.004)*7,L.pz);
+            if(!L.m.visible){ L.m.visible=true; L.px=280; }  // begin van de overtocht
+            L.px-=s*2.1;                                     // 560m in ~4.5 min = heel traag
+            L.m.position.set(L.px,L.py+Math.sin(L.px*0.003)*9,L.pz);
             L.m.lookAt(0,1.6,0);
-            if(L.px<-205){ L.m.visible=false; L.pT=150+Math.random()*120; } }  // pas na 2.5-4.5 min weer
+            if(L.px<-280){ L.m.visible=false; L.pT=210+Math.random()*180; } }  // 3.5-6.5 min weg
           continue; }
         L.a+=s*0.008*(1+i*0.25);                           // de vaste hemel wiegt nauwelijks
         L.m.position.x=L.m.userData.bx+Math.sin(L.a)*(i===0?9:3.5);
@@ -2159,6 +2172,12 @@
             const sc8=G.tSchaal||T9.sc; G.bb.m.scale.set(sc8,sc8*0.5,1);
             G.bb.m.lookAt(0,G.cy,0); } }
         else if(G.bb){ this.bbVrij(G.bb); G.bb=null; } }
+      this.labMeet=(this.labMeet||0)-s;
+      if(this.labMeet<=0){ this.labMeet=0.4;
+        const r8=document.querySelector('#rndTitel');
+        if(r8) r8.setAttribute('value',(this.labTxt||'TECH LAB')+'\nenemies '+levend+
+          '   sprites '+this.bbPool.filter(function(x){ return !x.vrij; }).length+
+          '   art '+(this.artSchepen?'on':'off')); }
       if(this.labFase==='golf'){
         if(levend===0){ this.labFase='pauze'; this.labT=1.4;
           this.labBord(this.labGolf>=20?'BOSS INCOMING':('WAVE '+this.labGolf+' CLEAR')); } }
@@ -4704,7 +4723,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v137.1</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v139.0</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4787,7 +4806,7 @@
         <a-plane id="btnTestM" class="menu-btn" position="0 -0.62 -2.08" width="1.3" height="0.2" material="color:#333a55;opacity:0.97;transparent:true"><a-text value="TEST MENU" align="center" color="#aab4d0" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v137.1" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v139.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
