@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v139.0
+  //  DIEPE TRIP v144.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -2057,10 +2057,58 @@
           if(i===0) L.m.material.opacity=1; }); })(i); },
     ART_SCHEPEN:'art/E411FA3F-BA3C-4C2B-A377-AE61435F75B8.png',
     ART_HEMEL:'art/C72D68F0-CB47-4432-B911-1CE953B57E55.png',
-    artLaad:function(url,klaar){
+    artLaad:function(url,klaar,fout){
       try{ const L=new THREE.TextureLoader();
-        L.load(url,function(t){ try{ klaar(t); }catch(e){} },undefined,function(){ });
-      }catch(e){} },
+        L.load(url,function(t){ try{ klaar(t); }catch(e){} },undefined,
+          function(){ try{ if(fout) fout(); }catch(e){} });
+      }catch(e){ if(fout) fout(); } },
+    artScan:function(){                              // leest de map art/ zelf uit - namen maken niet uit
+      if(this.artBezig) return; this.artBezig=1;
+      const zelf=this, KEY='diepetrip_art';
+      let cache=null;
+      try{ cache=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
+      if(cache&&cache.length) this.artKies(cache);
+      if(typeof fetch!=='function') return;
+      try{ fetch('https://api.github.com/repos/umop3p1sdn/VR/contents/art')
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          if(!j||!j.filter) return;
+          const lijst=j.filter(function(x){ return x&&x.name&&/\.(png|jpg|jpeg|webp)$/i.test(x.name); })
+                       .map(function(x){ return {n:x.name,s:x.size||0}; });
+          if(!lijst.length) return;
+          try{ localStorage.setItem(KEY,JSON.stringify(lijst)); }catch(e){}
+          zelf.artKies(lijst); })
+        .catch(function(){}); }catch(e){} },
+    artKies:function(lijst){                         // elke plaat laden en op VORM herkennen
+      const zelf=this, gevonden=[];
+      let open=lijst.length;
+      const klaar9=function(){ if(--open<=0) zelf.artToepassen(gevonden); };
+      for(let i=0;i<lijst.length;i++)(function(f){
+        zelf.artLaad('art/'+f.n,function(t){
+          const im=t.image;
+          if(im&&im.width) gevonden.push({t:t,w:im.width,h:im.height,ar:im.width/im.height,n:f.n});
+          klaar9(); },klaar9); })(lijst[i]); },
+    artToepassen:function(v){
+      if(!v.length) return;
+      const grootst=function(l){ let b=null;
+        for(let i=0;i<l.length;i++) if(!b||l[i].w*l[i].h>b.w*b.h) b=l[i];
+        return b; };
+      const breed=grootst(v.filter(function(x){ return x.ar>=1.7; }));            // panorama = cosmos
+      const vierk=grootst(v.filter(function(x){ return x.ar>0.85&&x.ar<1.18; })); // vierkant = schepen
+      const half =grootst(v.filter(function(x){ return x.ar>=1.3&&x.ar<1.7; }));  // 3:2 = hemelatlas
+      const uit=[];
+      if(vierk&&this.bbMat){ this.bbMat.map=vierk.t; this.bbMat.needsUpdate=true;
+        this.artSchepen=1; uit.push('ships'+vierk.w); }
+      if(half&&this.lucht){ for(let i=1;i<this.lucht.length;i++){
+          this.lucht[i].m.material.map=half.t; this.lucht[i].m.material.needsUpdate=true; }
+        this.artHemel=1; uit.push('sky'+half.w); }
+      if(breed&&this.lucht&&this.lucht[0]){ const L=this.lucht[0];
+        const uv=L.m.geometry.attributes&&L.m.geometry.attributes.uv;
+        if(uv&&uv.setXY){ uv.setXY(0,0,1); uv.setXY(1,1,1); uv.setXY(2,0,0); uv.setXY(3,1,0); uv.needsUpdate=true; }
+        L.m.material.map=breed.t; L.m.material.opacity=1; L.m.material.needsUpdate=true;
+        L.h=820; L.w=820*breed.ar; L.m.scale.set(L.w,L.h,1);
+        uit.push('cosmos'+breed.ar.toFixed(1)); }
+      this.artUit=uit.join(' '); },
     bbPak:function(){ if(!this.bbPool) return null;
       for(let i=0;i<this.bbPool.length;i++){ const b=this.bbPool[i];
         if(b.vrij){ b.vrij=false; b.m.visible=true; return b; } } return null; },
@@ -2144,6 +2192,7 @@
       this.state='tech'; this.gap=1e9; this.bWacht=0;
       if(!this.bbPool) this.maakLab();
       if(!this.lucht) this.maakLabLucht();
+      if(!this.artBezig) this.artScan();
       for(let i=0;i<this.lucht.length;i++){ const L=this.lucht[i];
         if(L.pass){                                        // ringplaneet: zelden, en traag
           L.pT-=s;
@@ -2172,12 +2221,24 @@
             const sc8=G.tSchaal||T9.sc; G.bb.m.scale.set(sc8,sc8*0.5,1);
             G.bb.m.lookAt(0,G.cy,0); } }
         else if(G.bb){ this.bbVrij(G.bb); G.bb=null; } }
+      { let ref=0;                                       // ijkpunt: gewone vijand uit het echte spel
+        for(let i=0;i<this.groups.length;i++){ const G9=this.groups[i];
+          if(G9.techschip) continue;
+          for(let q=0;q<G9.cubes.length;q++) if(G9.cubes[q].alive&&!G9.cubes[q].ind) ref++; }
+        this.labRef=ref;
+        this.refT=(this.refT===undefined?0.5:this.refT)-s;
+        if(ref===0&&this.refT<=0){ this.refT=3;
+          this.spawn(1,'wachter');
+          const W9=this.groups[this.groups.length-1];
+          if(W9){ W9.cx=0; W9.cy=2.2; W9.cz=-16; } } }
       this.labMeet=(this.labMeet||0)-s;
       if(this.labMeet<=0){ this.labMeet=0.4;
         const r8=document.querySelector('#rndTitel');
         if(r8) r8.setAttribute('value',(this.labTxt||'TECH LAB')+'\nenemies '+levend+
           '   sprites '+this.bbPool.filter(function(x){ return !x.vrij; }).length+
-          '   art '+(this.artSchepen?'on':'off')); }
+          '   ref '+(this.labRef||0)+
+          '   art '+(this.artUit||(this.artSchepen?'on':'off'))+
+          '   tex '+((this.bbMat&&this.bbMat.map&&this.bbMat.map.image)?'ok':'LEEG')); }
       if(this.labFase==='golf'){
         if(levend===0){ this.labFase='pauze'; this.labT=1.4;
           this.labBord(this.labGolf>=20?'BOSS INCOMING':('WAVE '+this.labGolf+' CLEAR')); } }
@@ -3558,7 +3619,7 @@
       // ---- levels en golven; vormen komen er gaandeweg bij ----
       const les=(window.PHASE==='les');
       const L=(window.LEVEL||0);
-      if(!les&&L<=0){ if(this.groups.length){
+      if(!les&&L<=0&&!window.TECHMODE){ if(this.groups.length){
           for(let a3=this.groups.length-1;a3>=0;a3--){ const G3=this.groups[a3]; if(G3.sier) continue;
             this.stopHum(G3);
             for(let b3=0;b3<G3.cubes.length;b3++) this.release(G3.cubes[b3]); this.groups.splice(a3,1); } }
@@ -3566,7 +3627,7 @@
           for(let s8=0;s8<3;s8++)
             this.skullSpawn(3+s8,s8,{R:17,R0:17,hoek:s8*2.094,snel:0.22,blok:0.9,hoog:3.4,hp:9,sier:1}); }
         this.level=L; this.wave=0; this.waves=0; this.state='wacht'; }
-      else if(L!==this.level){ this.level=L; this.wave=0; this.waves=(18+L*2); this.rushQ=null; this.tussenB=0; this.bWacht=0;
+      else if(L!==this.level&&!window.TECHMODE){ this.level=L; this.wave=0; this.waves=(18+L*2); this.rushQ=null; this.tussenB=0; this.bWacht=0;
         this.gap=1.0; this.state='pauze'; if(L===2) this.pickT=16*this.pickF();
         if(this.cheatW&&this.cheatW.lvl===L){ const md=this.cheatW.mode; this.cheatW=null;
           for(let a3=this.groups.length-1;a3>=0;a3--){ const G3=this.groups[a3]; this.stopHum(G3);
@@ -4401,7 +4462,7 @@
           else if(G.taaislang){ col.lerp(this.gold,0.25+0.2*Math.sin(this.T*3+c.i)); }
           if(c.flash>0){ col.lerp(this.white,Math.min(1,c.flash)); c.flash-=s*4; }
           c.m.material.color.copy(col);
-          c.m.scale.setScalar((G.techschip&&G.bb)?0.001:((c.size||1)*(c.core?1.3:1)*(1+0.35*Math.max(0,c.flash||0))));
+          c.m.scale.setScalar((c.size||1)*(c.core?1.3:1)*(1+0.35*Math.max(0,c.flash||0)));
           this.writeSlot(c.m); }
         if(G.hm){ const v=Math.pow(Math.max(0,1-minD/22),2)*0.16;
           G.hm.g.gain.value+=(v-G.hm.g.gain.value)*Math.min(1,s*8);
@@ -4723,7 +4784,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v139.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v144.0</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4806,7 +4867,7 @@
         <a-plane id="btnTestM" class="menu-btn" position="0 -0.62 -2.08" width="1.3" height="0.2" material="color:#333a55;opacity:0.97;transparent:true"><a-text value="TEST MENU" align="center" color="#aab4d0" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v139.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v144.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
