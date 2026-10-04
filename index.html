@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v146.0
+  //  DIEPE TRIP v147.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1822,6 +1822,26 @@
     waarde:function(c){ const sz=c.size||1;
       const p=(sz<1.0)?30:((sz<1.5)?22:((sz<2.2)?14:9));
       this.telHit(p,sz); return p; },
+    COMBOKL:['#9ae0ff','#6ad1a0','#ffd24a','#ff9a3a','#ffffff'],
+    comboHud:function(){                          // combo in beeld, met aflopende tijdbalk
+      const C=document.querySelector('#comboHud'); if(!C) return;
+      const n=this.combo||0;
+      const aan=(n>=2)&&(window.PHASE==='trip')&&!window.PARADE;
+      if(aan!==this.cbAan){ this.cbAan=aan; C.setAttribute('visible',aan); }
+      if(!aan) return;
+      const kl=this.COMBOKL[(n>=60)?4:((n>=30)?3:((n>=10)?2:((n>=5)?1:0)))];
+      if(n!==this.cbN){ this.cbN=n;
+        const eN=document.querySelector('#comboNum');
+        if(eN){ eN.setAttribute('value','x'+n); eN.setAttribute('color',kl); }
+        const eS=document.querySelector('#comboSub');
+        if(eS){ const x=Math.min(9,Math.floor(n/10));
+          eS.setAttribute('value',x?('COMBO   BONUS '+x+'x'):'COMBO'); }
+        const eB=document.querySelector('#comboBalk');
+        if(eB) eB.setAttribute('material','color:'+kl+';shader:flat'); }
+      const f=Math.max(0,Math.min(1,(2.0-(this.T-(this.laatst||0)))/2.0));
+      const eB2=document.querySelector('#comboBalk');
+      if(eB2){ eB2.setAttribute('width',(0.30*f).toFixed(3));
+        eB2.setAttribute('position',(-(0.30*(1-f))/2).toFixed(3)+' -0.085 0.001'); } },
     sluitCombo:function(){
       if(this.combo>1){ const x=Math.min(9,Math.floor(this.combo/10));
         this.bonus=(this.bonus||0)+Math.round((this.comboPts||0)*x); }
@@ -3481,12 +3501,12 @@
       return L; },
     focusKnop:function(h){
       if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.PAUSED) return;
-      if(this.fprev!==undefined&&(this.T-this.fprev)<2.0) this.fmode=this.fmode?0:1;
+      this.fmode=0;                               // v147: geen auto/aimed-keuze meer, alles is auto
       this.fprev=this.T;
       const L=this.salvoDoelen(h);
       for(let i=0;i<L.length&&i<50;i++) if(L[i].c) L[i].c.fmark=2.0;
       const e=document.querySelector('#wisselTxt');
-      if(e) e.setAttribute('value','FOCUS: '+(this.fmode?'AIMED':'AUTO')+'\n'+Math.min(50,L.length)+' TARGETS');
+      if(e) e.setAttribute('value','FOCUS\n'+Math.min(50,L.length)+' TARGETS');
       this.wisT=2.0; gunSnd(0); },
     ultimate:function(h){
       if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.OUTRO||window.PARADE||window.PAUSED) return;
@@ -3524,7 +3544,7 @@
         for(let k=0;k<aantal;k++){
           for(let i=0;i<this.rockets.length;i++){ const R=this.rockets[i]; if(R.live) continue;
             R.o.copy(this.ori); R.dir.copy(this.dir); R.d=0; R.tot=0; R.live=true;
-            R.hom=0; R.zoek=null; R.rad=W.up?7.0:4.5; R.klein=0; R.m.scale.setScalar(1);
+            R.hom=1; R.zoek=null; R.rad=W.up?7.0:4.5; R.klein=0; R.m.scale.setScalar(1);
             R.ph=k*(6.283/Math.max(1,aantal-1))+Math.random()*0.4; R.swarm=(k===0)?0:(1.5+Math.random()*1.0);
             R.m.position.copy(this.ori); R.m.visible=true; break; } } }
       else if(W.t===2){ gunSnd(this.dir.x*0.9); gunSnd(this.dir.x*0.5);
@@ -3597,6 +3617,7 @@
         const hv=document.querySelector('#hurt');
         if(hv) hv.setAttribute('material','color:#ff2030;opacity:'+this.rood.toFixed(3)+';transparent:true;shader:flat'); }
       if(this.combo&&this.T-(this.laatst||0)>2.0) this.sluitCombo();
+      this.comboHud();
       if(on&&this.held.length) for(let i=0;i<this.held.length;i++) this.fire(this.held[i]);
       for(let i=0;i<this.bolts.length;i++){ const B=this.bolts[i]; if(B.d>=B.md) continue;
         B.pd=B.d; B.d+=175*s; B.m.position.copy(B.o).addScaledVector(B.dir,B.d);
@@ -4579,16 +4600,23 @@
         if(R.spiraal){ R.ph+=s*4.2; const rr=3.5*Math.min(1,R.d*0.04);
           R.m.position.x+=Math.cos(R.ph)*rr; R.m.position.y+=Math.sin(R.ph)*rr; }
         const q3=R.m.position;
-        this.areaHit(q3,3.6,20,3);
-        R.zt=(R.zt||0)-s;
-        if(R.zt<=0){ R.zt=(R.spiraal&&R.d>=20&&(R.st||0)<3.5)?0.10:0.16;
-          const T2=this.targets(); const pts2=[]; let n2=0, nmax=R.nz||3;
-          for(let k=0;k<T2.length&&n2<nmax;k++){
-            if(T2[k].p.distanceToSquared(q3)<110){ pts2.push(q3.clone()); pts2.push(T2[k].p.clone());
-              this.zapRaak(T2[k]); n2++; } }
-          if(pts2.length) for(let k=0;k<pts2.length;k+=2) this.zap([pts2[k],pts2[k+1]]); }
         if(Math.random()<0.6) this.burst(q3.x,q3.y,q3.z,this.bcol.setHex(0xff5a72),1,6);
-        if(R.d>150){ R.live=false; R.m.visible=false; } }
+        // v147: geen bliksem en geen doorlopende veegschade meer — hij slaat IN waar hij raakt
+        let raak3=false;
+        for(let a3=0;a3<this.groups.length&&!raak3;a3++){ const G3=this.groups[a3];
+          for(let b3=0;b3<G3.cubes.length;b3++){ const c3=G3.cubes[b3];
+            if(c3.alive&&c3.m.position.distanceToSquared(q3)<3.0){ raak3=true; break; } } }
+        if(!raak3&&this.bosses.length){ const B3=this.bosses[0];
+          for(let k3=0;k3<B3.cells.length;k3++){ const c3=B3.cells[k3];
+            if(c3.alive&&c3.wx!==undefined){ const dx3=c3.wx-q3.x, dy3=c3.wy-q3.y, dz3=c3.wz-q3.z;
+              if(dx3*dx3+dy3*dy3+dz3*dz3<3.0){ raak3=true; break; } } } }
+        if(raak3){ const rr3=R.spiraal?7.0:5.0;
+          this.areaHit(q3,rr3,26,9);
+          this.fireBlast(q3.clone(),rr3,1);
+          this.burst(q3.x,q3.y,q3.z,this.bcol.setHex(0xff5a72),22,30);
+          boomSnd(q3.x/9); window.SHOOTFLASH=Math.max(window.SHOOTFLASH||0,0.5);
+          R.live=false; R.m.visible=false; }
+        else if(R.d>150){ R.live=false; R.m.visible=false; } }
       // raketten
       for(let i=0;i<this.rockets.length;i++){ const R=this.rockets[i]; if(!R.live) continue;
         if(R.hom&&!R.zoek&&(R.tot||0)>6){ const T=this.targets();
@@ -4672,6 +4700,15 @@
       if(this.blastLife>0&&this.bosses.length) this.bossDamage(this.blast.position.x,this.blast.position.y,
         this.blast.position.z,this.blast.scale.x,10);
       this.tekenBuffers();
+      // ---- krachtbalk baas: weg zodra er geen baasgroep meer BESTAAT ----
+      // (de skulls-balk werd alleen bijgewerkt vanuit de kopgroep zelf; was die weg,
+      //  dan bleef het laatste restje balk de hele ronde staan)
+      const bbG=document.querySelector('#baasBalk');
+      if(bbG&&bbG.getAttribute('visible')){
+        let baasEr=!!(this.bosses&&this.bosses.length);
+        for(let q8=0;q8<this.groups.length&&!baasEr;q8++){ const Gq8=this.groups[q8];
+          if(Gq8.form==='baas'||Gq8.sk9) baasEr=true; }
+        if(!baasEr) bbG.setAttribute('visible',false); }
       const dbg=document.querySelector('#dbgTxt');
       if(dbg){ const N=this.WNAME;
         const naam=function(pre,W){ if(!W) return pre+'-';
@@ -4817,7 +4854,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v146.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v147.0</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4900,7 +4937,7 @@
         <a-plane id="btnTestM" class="menu-btn" position="0 -0.62 -2.08" width="1.3" height="0.2" material="color:#333a55;opacity:0.97;transparent:true"><a-text value="TEST MENU" align="center" color="#aab4d0" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v146.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v147.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
@@ -4966,6 +5003,12 @@
         <a-text id="pauzeTxt" value="" align="center" color="#ffd24a" width="2.6" position="0 0.34 -1.6"></a-text>
         <a-text id="wisselTxt" value="" align="center" color="#9ae0ff" width="0.95" position="-0.52 0.16 -1.4"></a-text>
         <a-text id="perfectTxt" value="" align="center" color="#ffd24a" width="1.1" position="0.52 0.16 -1.4"></a-text>
+        <a-entity id="comboHud" visible="false" position="0.52 -0.02 -1.4">
+          <a-text id="comboNum" value="" align="center" color="#ffd24a" width="2.0" position="0 0.05 0"></a-text>
+          <a-text id="comboSub" value="" align="center" color="#9ae0ff" width="0.72" position="0 -0.05 0"></a-text>
+          <a-plane position="0 -0.085 0" width="0.30" height="0.013" material="color:#000;opacity:0.55;transparent:true;shader:flat"></a-plane>
+          <a-plane id="comboBalk" position="0 -0.085 0.001" width="0.30" height="0.009" material="color:#ffd24a;shader:flat"></a-plane>
+        </a-entity>
         <a-text id="dbgTxt" value="" align="center" color="#7d8ba0" width="0.85" position="0 -0.60 -1.3"></a-text>
         <a-text id="errTxt" value="" align="center" color="#ff5a6a" width="1.0" position="0 -0.55 -1.3"></a-text>
         <a-plane id="hurt" position="0 0 -0.31" width="2.6" height="2.6" material="color:#ff2030;opacity:0;transparent:true;shader:flat"></a-plane>
