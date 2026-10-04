@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v144.0
+  //  DIEPE TRIP v145.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -1295,6 +1295,7 @@
       this.WCOL=[0xc44cff,0xff8a2a,0x54e06a,0xff3a5a,0xeaffff,0xffe14a];
       this.UPCOL=0xff4ce0;
       this.WNAME=['','rocket','shotgun','cannon','electro','machine gun'];
+      this.WDIR=['','STICK UP','STICK RIGHT','STICK DOWN','STICK LEFT','TOP BUTTON'];
       this.WAMMO=[0,0,0,0,0,0];
       this.picks=[];
       this.AMMOCOL=0xbfe14a; this.ULTCOL=0x8affff;
@@ -1350,6 +1351,15 @@
           h.addEventListener(ev,function(){ self.ultimate(h); }); });
         ['abuttondown','bbuttondown','xbuttondown','ybuttondown'].forEach(function(ev){
           h.addEventListener(ev,function(){ self.wissel(h); }); });
+        h.addEventListener('thumbstickmoved',function(e){     // stick-richting = wapenkeuze
+          if(!e||!e.detail) return; h.__tsOk=1;
+          self.stik(h,e.detail.x||0,e.detail.y||0); });
+        h.addEventListener('axismove',function(e){            // vangnet: controllers zonder nette stick-events
+          if(h.__tsOk||!e||!e.detail||!e.detail.axis) return;
+          const ax=e.detail.axis; let x9=0,y9=0;
+          if(ax.length>=4&&(Math.abs(ax[2])>0.001||Math.abs(ax[3])>0.001)){ x9=ax[2]; y9=ax[3]; }
+          else if(ax.length>=2){ x9=ax[0]; y9=ax[1]; }
+          self.stik(h,x9,y9); });
         h.addEventListener('thumbstickdown',function(){ self.pauzeKnop(); });
         h.addEventListener('buttondown',function(e){        // vangnet: stick-druk als rauwe knop 3
           if(e&&e.detail&&e.detail.id===3) self.pauzeKnop(); });
@@ -1390,23 +1400,36 @@
     toonZak:function(k,W){
       const e=document.querySelector('#wisselTxt'); if(!e) return;
       e.setAttribute('value',(this.WNAME[k]||'').toUpperCase()+' LV'+((W.lvlT&&W.lvlT[k])||1)+
-        ' ['+(W.mag[k]||0)+']\nIN POCKET - PRESS TOP BUTTON');
+        ' ['+(W.mag[k]||0)+']\nIN POCKET - '+((this.WDIR&&this.WDIR[k])||'STICK UP'));
       this.wisT=2.6; },
     toonWissel:function(W){
       const e=document.querySelector('#wisselTxt'); if(!e) return;
       e.setAttribute('value',(this.WNAME[W.t]||'').toUpperCase()+
         ((W.t>=1&&W.t<=4)?('\n['+(W.mag[W.t]||0)+']'):''));
       this.wisT=1.6; },
-    wissel:function(h){
+    wissel:function(h){                           // bovenknop: main = focus, special = mitrailleur terug
       if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.PAUSED) return;
       const nw9=Date.now(); if(nw9-(this.wisDeb||0)<300) return; this.wisDeb=nw9;
       if(h.id!==this.spec()){ this.focusKnop(h); return; }
+      this.kiesWapen(h,5); },
+    stik:function(h,x,y){                         // joystick-richting kiest het wapen
+      if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.PAUSED){ h.__stik=0; return; }
+      if(h.id!==this.spec()) return;              // alleen de wapenhand
+      const ax=Math.abs(x), ay=Math.abs(y), d9=Math.max(ax,ay);
+      if(d9<0.42){ h.__stik=0; return; }          // terug naar het midden = weer scherp
+      if(d9<0.65) return;                         // nog niet ver genoeg geduwd
+      const w9=(ay>=ax)?((y<0)?1:3):((x>0)?2:4);  // op=raket neer=kanon rechts=hagel links=electro
+      if(h.__stik===w9) return;                   // zelfde duw, nog niet losgelaten
+      h.__stik=w9; this.kiesWapen(h,w9); },
+    kiesWapen:function(h,t){
+      const W=this.wp(h); if(!W) return;
+      if(t!==5&&(W.mag[t]||0)<=0){                // niet in de zak: melden, niets wisselen
+        const e9=document.querySelector('#wisselTxt');
+        if(e9) e9.setAttribute('value','NO '+(this.WNAME[t]||'').toUpperCase()+
+          '\nnot in your pocket');
+        this.wisT=1.4; return; }
       if(window.PHASE==='les') this.lesWis=1;
-      const W=this.wp(h), volg=[1,2,3,4,5];
-      let i=volg.indexOf(W.t); if(i<0) i=4;
-      for(let k=1;k<=5;k++){ const t=volg[(i+k)%5];
-        if(t===5||((W.mag[t]||0)>0)){ W.t=t;
-          if(W.lvlT&&W.lvlT[t]) W.lvl=W.lvlT[t]; break; } }
+      if(W.t!==t){ W.t=t; if(W.lvlT&&W.lvlT[t]) W.lvl=W.lvlT[t]; }
       this.toonWissel(W); gunSnd(0); },
     toonPerfect:function(n,extra){
       const e=document.querySelector('#perfectTxt');
@@ -2358,8 +2381,8 @@
             if(srt>=2){ this.lesN=1; this.lesWis=0; this.lesHands={}; }
           } else if(this.lesN===1){
             this.lesFreeze=1;
-            this.lesRing(spec,'trigger');
-            this.lesTekst('PRESS A TOP BUTTON TO CHANGE GUNS','A B X or Y - cycles your weapons');
+            this.lesRing(spec,'stick');
+            this.lesTekst('PUSH THE STICK TO PICK A GUN','up rocket - right shotgun - down cannon - left electro');
             if(this.lesWis){ this.lesFreeze=0; this.lesN=2; this.lesHands={}; }
           } else {
             this.lesTekst('NOW FIRE THAT GUN','');
@@ -3409,7 +3432,11 @@
       rot.x+=(wilX-rot.x)*Math.min(1,s*2.5);
       for(const id in this.hands) this.fire(this.hands[id]);
       this.dmW=(this.dmW||0)+s;
-      if(this.dmW>12){ this.dmW=0; this.wisDeb=0; this.wissel(this.hands[this.spec()]); }
+      if(this.dmW>12){ this.dmW=0; this.wisDeb=0;                  // piloot stapt zelf door de wapens
+        const hs9=this.hands[this.spec()], Wd=hs9?this.wp(hs9):null;
+        if(Wd){ const vg=[1,2,3,4,5]; let i9=vg.indexOf(Wd.t); if(i9<0) i9=4;
+          for(let k9=1;k9<=5;k9++){ const t9=vg[(i9+k9)%5];
+            if(t9===5||((Wd.mag[t9]||0)>0)){ this.kiesWapen(hs9,t9); break; } } } }
       this.dmU=(this.dmU||0)+s;
       if(this.dmU>17&&this.ults>0){ this.dmU=0;
         const sp=this.spec(), pr=(sp==='leftHand')?'rightHand':'leftHand';
@@ -3453,7 +3480,7 @@
       const L=this.salvoDoelen(h);
       for(let i=0;i<L.length&&i<50;i++) if(L[i].c) L[i].c.fmark=2.0;
       const e=document.querySelector('#wisselTxt');
-      if(e) e.setAttribute('value','FOCUS: '+(this.fmode?'AIMED':'AUTO')+'\n'+Math.min(50,L.length)+' DOELEN');
+      if(e) e.setAttribute('value','FOCUS: '+(this.fmode?'AIMED':'AUTO')+'\n'+Math.min(50,L.length)+' TARGETS');
       this.wisT=2.0; gunSnd(0); },
     ultimate:function(h){
       if((window.PHASE!=='trip'&&window.PHASE!=='les')||window.OUTRO||window.PARADE||window.PAUSED) return;
@@ -4784,7 +4811,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v144.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v145.0</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4867,7 +4894,7 @@
         <a-plane id="btnTestM" class="menu-btn" position="0 -0.62 -2.08" width="1.3" height="0.2" material="color:#333a55;opacity:0.97;transparent:true"><a-text value="TEST MENU" align="center" color="#aab4d0" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v144.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v145.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
