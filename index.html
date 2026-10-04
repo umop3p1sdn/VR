@@ -12,7 +12,7 @@
   </style>
   <script>
   // =========================================================
-  //  DIEPE TRIP v145.0
+  //  DIEPE TRIP v146.0
   //  tunnel -> door de mond naar buiten -> zwarte leegte -> nieuwe tunnel
   //  drie soorten verschijningen, elk kort en anders
   //  duur = beide tracks (4:12 + 4:00)
@@ -2393,9 +2393,12 @@
           if(this.lesN===0){ this.lesVul(120); this.lesRing('none');
             this.lesTekst('ENEMIES INCOMING','get ready');
             if(this.lesT>2.2) this.lesN=1; break; }
-          if(this.lesN===1){ this.lesFreeze=1; this.lesVul(120);
+          if(this.lesN===1){
+            this.lesFreeze=(this.ult||this.ultRak)?0:1;   // ult in de lucht = NOOIT bevriezen (anders deadlock)
+            this.ults=Math.max(this.ults,2); this.lesVul(120);
             this.lesRing(prim,'grip');
-            this.lesTekst('MAIN HAND: SQUEEZE THE GRIP','grip = 50 rockets - top buttons = focus targets');
+            this.lesTekst((prim==='leftHand'?'LEFT':'RIGHT')+' HAND - SQUEEZE THE GRIP',
+              'ultimate 1 of 2: 50 homing rockets');
             if(this.ultRak||this.lesUlt===prim){ this.lesFreeze=0; this.lesN=2; } break; }
           this.lesRing('none');
           this.lesTekst('50 ROCKETS!','one per target');
@@ -2406,9 +2409,12 @@
           if(this.lesN===0){ this.lesVul(140); this.lesRing('none');
             this.lesTekst('MORE ENEMIES','');
             if(this.lesT>1.8) this.lesN=1; break; }
-          if(this.lesN===1){ this.lesFreeze=1; this.lesVul(140);
+          if(this.lesN===1){
+            this.lesFreeze=(this.ult||this.ultRak)?0:1;   // idem: laat een lopende ult altijd uitwerken
+            this.ults=Math.max(this.ults,2); this.lesVul(140);
             this.lesRing(spec,'grip');
-            this.lesTekst('OTHER HAND: SQUEEZE THE GRIP','grip = suck ball - top buttons = swap weapon');
+            this.lesTekst((spec==='leftHand'?'LEFT':'RIGHT')+' HAND - SQUEEZE THE GRIP',
+              'ultimate 2 of 2: the suck orb');
             if(this.lesUlt===spec||this.ult){ this.lesFreeze=0; this.lesN=2; } break; }
           this.lesRing('none');
           if(this.suckK>0.5) this.lesTekst('SHOOT ALL WHEN SUCKED IN!','bunched up = easy points');
@@ -4811,7 +4817,7 @@
 </head>
 <body>
   <div id="loader"><div style="font-size:22px;letter-spacing:4px">DIEPE TRIP</div>
-    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v145.0</div>
+    <div style="font-size:16px;color:#5ad0ff;margin-top:6px">v146.0</div>
     <div id="playsDiv" style="font-size:13px;color:#3a8ab0;margin-top:2px"></div>
     <div id="ldPhase" style="font-size:15px;color:#8a7aa8;margin-top:10px">loading…</div><div id="ldErr"></div></div>
   <script>
@@ -4873,7 +4879,7 @@
         <a-plane position="0 1.52 -2.1" width="2.5" height="2.35" material="color:#0a0714;opacity:0.94;transparent:true"></a-plane>
         <a-plane position="0 1.52 -2.11" width="2.58" height="2.43" material="color:#b04aff;opacity:0.18;transparent:true"></a-plane>
         <a-text value="DIEPE TRIP" align="center" color="#d8b0ff" width="4.2" position="0 2.55 -2.08"></a-text>
-        <a-text value="Shoot everything while the trip flows around you.&#10;Small blocks are worth more points than big ones.&#10;Hit again within 2 seconds to keep your combo alive.&#10;The longer the combo, the bigger your bonus.&#10;&#10;One hand always holds the machine gun.&#10;Shoot machine gun boxes to make it stronger.&#10;Your other hand takes the weapon you pick up.&#10;Grabbing the same weapon again levels it up.&#10;Your level carries over to a different weapon.&#10;The purple block doubles both hands.&#10;Green box = 10 extra shots.&#10;Grip = ultimate. Machine gun hand: 50 homing rockets.&#10;Other hand: an orb that sucks everything in and blows."
+        <a-text value="Shoot everything while the trip flows around you.&#10;Small blocks are worth more points than big ones.&#10;Hit again within 2 seconds to keep your combo alive.&#10;The longer the combo, the bigger your bonus.&#10;&#10;One hand always holds the machine gun.&#10;Shoot machine gun boxes to make it stronger.&#10;Your other hand takes the weapon you pick up.&#10;Push its stick to pick a gun: up rocket, right shotgun,&#10;down cannon, left electro. Top button = machine gun.&#10;Grabbing the same weapon again levels it up.&#10;Your level carries over to a different weapon.&#10;The purple block doubles both hands.&#10;Green box = 10 extra shots.&#10;Grip = ultimate. Machine gun hand: 50 homing rockets.&#10;Other hand: an orb that sucks everything in and blows."
                 align="center" color="#9aa8c0" width="1.45" position="0 1.68 -2.08"></a-text>
         <a-text value="which hand holds the machine gun?" align="center" color="#7c8794" width="1.5" position="0 1.02 -2.08"></a-text>
         <a-plane id="btnLinks" class="menu-btn" position="-0.42 0.94 -2.08" width="0.62" height="0.18" material="color:#5a1f7a;opacity:0.97;transparent:true"></a-plane>
@@ -4894,7 +4900,7 @@
         <a-plane id="btnTestM" class="menu-btn" position="0 -0.62 -2.08" width="1.3" height="0.2" material="color:#333a55;opacity:0.97;transparent:true"><a-text value="TEST MENU" align="center" color="#aab4d0" width="1.6" position="0 0 0.01"></a-text></a-plane>
         <a-text value="START" align="center" color="#fff" width="3.2" position="0 0.44 -2.07"></a-text>
         <a-text id="trkInfo" value="searching music..." align="center" color="#7c8794" width="1.3" position="0 0.28 -2.07"></a-text>
-        <a-text value="v145.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
+        <a-text value="v146.0" align="right" color="#5ad0ff" width="1.2" position="1.13 0.28 -2.07"></a-text>
         <a-text id="playsTxt" value="" align="right" color="#3a8ab0" width="1.0" position="1.13 0.21 -2.07"></a-text>
       </a-entity>
       <a-entity id="lesSkip" visible="false">
